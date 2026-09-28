@@ -1,0 +1,95 @@
+@use '../../../styles/tokens' as t;
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.stat-card {
+  --stat-color: #{t.$text-muted};
+  --stat-bg: rgba(146, 151, 179, 0.15);
+
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  border: 1px solid transparent;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    box-shadow: t.$shadow-md;
+  }
+
+  &.is-selected {
+    border-color: var(--stat-color);
+  }
+
+  &--active {
+    --stat-color: #{t.$success};
+    --stat-bg: rgba(22, 163, 74, 0.12);
+  }
+
+  &--expiring {
+    --stat-color: #{t.$warning};
+    --stat-bg: rgba(217, 119, 6, 0.14);
+  }
+
+  &--expired {
+    --stat-color: #{t.$danger};
+    --stat-bg: rgba(220, 38, 38, 0.1);
+  }
+}
+
+.stat-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: t.$radius-md;
+  background: var(--stat-bg);
+  color: var(--stat-color);
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.stat-card__value {
+  display: block;
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: t.$text-primary;
+}
+
+.stat-card__label {
+  display: block;
+  font-size: 0.78rem;
+  color: t.$text-secondary;
+}
+
+.remaining {
+  font-weight: 600;
+
+  &--expiring {
+    color: t.$warning;
+  }
+
+  &--expired {
+    color: t.$danger;
+  }
+
+  &--none {
+    color: t.$text-muted;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

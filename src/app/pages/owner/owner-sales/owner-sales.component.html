@@ -1,0 +1,202 @@
+<div class="page-header card">
+  <span class="page-header__icon"><i class="bi bi-cart-check"></i></span>
+  <div>
+    <h2 class="page-header__title">{{ context.isSeller() ? 'Mes ventes' : 'Ventes' }} — {{ context.selectedStore()?.name || 'Toutes les boutiques' }}</h2>
+    <p class="page-header__desc">{{ context.isSeller() ? 'Les ventes que vous avez enregistrées' : 'Chiffre d\'affaires, encaissements et détail de chaque vente' }} sur la période.<ng-container *ngIf="context.isOwner()"> Changez de boutique depuis le sélecteur en haut de page.</ng-container></p>
+  </div>
+</div>
+
+<div class="card toolbar-card">
+  <app-period-filter (rangeChange)="onRange($event)" />
+  <p class="dashboard-caption" *ngIf="result() as r">
+    <i class="bi bi-calendar3"></i>
+    Du {{ formatIsoDate(r.period.start) }} au {{ formatIsoDate(r.period.end) }} ({{ r.period.days }} jours)
+    · comparé au {{ formatIsoDate(r.period.previous_start) }} – {{ formatIsoDate(r.period.previous_end) }}
+  </p>
+</div>
+
+<app-store-blocked *ngIf="context.selectedIsBlocked()" />
+
+<ng-container *ngIf="!context.selectedIsBlocked()">
+  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+  <div class="state-message text-center text-muted" *ngIf="isLoading() && !result()">Chargement...</div>
+
+  <ng-container *ngIf="result() as r">
+    <div class="notice" *ngIf="r.excluded_stores.length > 0" role="status">
+      <i class="bi bi-info-circle"></i>
+      {{ r.excluded_stores.length }} boutique(s) sans abonnement en cours non incluse(s) :
+      <ng-container *ngFor="let s of r.excluded_stores; let last = last">{{ s.store_name }}{{ last ? '.' : ', ' }}</ng-container>
+    </div>
+
+    <!-- Indicateurs de la période -->
+    <div class="kpi-grid sales-kpis" [class.is-refreshing]="isLoading()">
+      <ng-container *ngFor="let k of kpis()">
+        <div class="card kpi" [class.kpi--due]="k.tone === 'due'" [class.kpi--muted]="k.tone === 'muted'">
+          <div class="kpi__label"><i class="bi {{ k.icon }}"></i> {{ k.label }}</div>
+          <div class="kpi__value">{{ k.value }}</div>
+          <div class="kpi__foot">
+            <span *ngIf="k.delta as d" class="kpi__delta" [class.kpi__delta--good]="d.good && d.direction !== 'flat'" [class.kpi__delta--bad]="!d.good" [class.kpi__delta--flat]="d.direction === 'flat'">
+              <i class="bi" [class.bi-arrow-up-right]="d.direction === 'up'" [class.bi-arrow-down-right]="d.direction === 'down'" [class.bi-dash]="d.direction === 'flat'"></i>
+              {{ d.text }}
+            </span>
+            <span class="kpi__hint" *ngIf="k.hint">{{ k.hint }}</span>
+            <button type="button" class="kpi__link" *ngIf="k.tone === 'due' && r.summary.outstanding > 0" (click)="showUnpaid()">
+              Voir les ventes à encaisser
+            </button>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+
+    <div class="chart-grid chart-grid--wide-left">
+      <section class="card chart-card">
+        <header class="chart-card__header">
+          <h3>Chiffre d'affaires</h3>
+          <span class="chart-card__total">{{ money(r.summary.revenue.value) }}</span>
+        </header>
+        <p class="chart-card__sub">Ventes validées par {{ r.period.granularity === 'day' ? 'jour' : r.period.granularity === 'week' ? 'semaine' : 'mois' }}, en {{ r.currency }}</p>
+        <app-time-series-chart
+          kind="area"
+          label="Chiffre d'affaires"
+          [points]="r.series"
+          [granularity]="r.period.granularity"
+          [formatValue]="moneyFormatter()"
+          [loading]="isLoading()"
+        />
+      </section>
+
+      <section class="card chart-card" [class.is-refreshing]="isLoading()">
+        <!-- Classement inutile pour un vendeur : il ne voit que ses ventes -->
+        <ng-container *ngIf="!context.isSeller()">
+        <header class="chart-card__header">
+          <h3>Par vendeur</h3>
+        </header>
+        <p class="chart-card__sub">Chiffre d'affaires des ventes validées</p>
+        <div class="state-message text-center text-muted" *ngIf="r.by_seller.length === 0">Aucune vente validée sur la période.</div>
+        <ol class="ranking" *ngIf="r.by_seller.length > 0">
+          <li *ngFor="let s of r.by_seller" class="ranking__row">
+            <div class="ranking__head">
+              <span class="ranking__name">{{ s.name }}</span>
+              <span class="ranking__value">{{ money(s.revenue) }}</span>
+            </div>
+            <div class="ranking__track">
+              <div class="ranking__bar" [style.width.%]="(s.revenue / sellerMax()) * 100"></div>
+            </div>
+            <span class="ranking__meta">{{ formatNumber(s.sales_count) }} vente(s)</span>
+          </li>
+        </ol>
+        </ng-container>
+
+        <h4 class="sub-heading">Moyens de paiement</h4>
+        <p class="text-muted empty" *ngIf="r.by_payment_type.length === 0">Aucun paiement reçu.</p>
+        <ul class="payment-split" *ngIf="r.by_payment_type.length > 0">
+          <li *ngFor="let p of r.by_payment_type">
+            <span class="payment-split__name">{{ paymentTypes[p.type] || p.type }}</span>
+            <span class="payment-split__share">{{ paymentTotal() ? ((p.total / paymentTotal()) * 100 | number: '1.0-0') : 0 }} %</span>
+            <strong class="num">{{ money(p.total) }}</strong>
+          </li>
+        </ul>
+      </section>
+    </div>
+
+    <!-- Liste -->
+    <div class="card toolbar-card">
+      <div class="table-card__toolbar">
+        <div class="toolbar-filters">
+          <div class="search">
+            <i class="bi bi-search"></i>
+            <input type="text" placeholder="N° de vente, facture, client, vendeur..." [(ngModel)]="search" (keyup.enter)="applyFilters()" aria-label="Rechercher une vente" />
+          </div>
+          <select class="filter-select" [(ngModel)]="status" (ngModelChange)="applyFilters()" aria-label="Filtrer par statut">
+            <option value="">Tous les statuts</option>
+            <option *ngFor="let s of saleStatuses" [value]="s">{{ saleStatusLabels[s] }}</option>
+          </select>
+          <select class="filter-select" [(ngModel)]="paymentStatus" (ngModelChange)="applyFilters()" aria-label="Filtrer par paiement">
+            <option value="">Tous les paiements</option>
+            <option value="due">À encaisser (partielle ou non payée)</option>
+            <option *ngFor="let p of paymentStatuses" [value]="p">{{ paymentLabels[p] }}</option>
+          </select>
+          <select class="filter-select" [(ngModel)]="sort" (ngModelChange)="applyFilters()" aria-label="Trier les ventes">
+            <option value="recent">Plus récentes</option>
+            <option value="amount">Plus gros montants</option>
+          </select>
+          <button type="button" class="btn btn--ghost" *ngIf="hasFilters()" (click)="resetFilters()">
+            <i class="bi bi-x-circle"></i> Réinitialiser
+          </button>
+        </div>
+        <div class="export-group" role="group" aria-label="Exporter la liste">
+          <button type="button" class="btn btn--ghost" (click)="exportFile('csv')" [disabled]="!!isExporting() || r.meta.total === 0" title="Tableur (Excel)">
+            <i class="bi bi-filetype-csv"></i> {{ isExporting() === 'csv' ? 'Export...' : 'CSV' }}
+          </button>
+          <button type="button" class="btn btn--ghost" (click)="exportFile('pdf')" [disabled]="!!isExporting()" title="Rapport imprimable">
+            <i class="bi bi-file-earmark-pdf"></i> {{ isExporting() === 'pdf' ? 'Génération...' : 'PDF' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <p class="sales-summary" [class.is-refreshing]="isLoading()">
+      <strong>{{ formatNumber(r.meta.total) }}</strong> vente(s) correspondant aux filtres
+      <span class="text-muted" *ngIf="r.summary.pending_count > 0"> · {{ r.summary.pending_count }} en attente de validation sur la période</span>
+    </p>
+
+    <div class="state-message text-center text-muted card" *ngIf="r.data.length === 0">
+      Aucune vente ne correspond à ces critères.
+    </div>
+
+    <div class="card table-card" *ngIf="r.data.length > 0" [class.is-refreshing]="isLoading()">
+      <table class="table sales-table">
+        <thead>
+          <tr>
+            <th>Vente</th>
+            <th *ngIf="!context.selectedId()">Boutique</th>
+            <th>Client</th>
+            <th>Vendeur</th>
+            <th class="text-right">Montant</th>
+            <th>Paiement</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let sale of r.data"
+            class="sales-table__row"
+            tabindex="0"
+            role="button"
+            [attr.aria-label]="'Voir le détail de la vente ' + sale.sale_number"
+            (click)="selectedSale.set(sale)"
+            (keyup.enter)="selectedSale.set(sale)"
+          >
+            <td>
+              <div class="person__name">{{ sale.sale_number }}</div>
+              <div class="person__sub">{{ sale.date | date: 'dd/MM/yyyy HH:mm' }}</div>
+            </td>
+            <td *ngIf="!context.selectedId()">{{ sale.store?.name }}</td>
+            <td>{{ sale.customer }}</td>
+            <td class="text-muted">{{ sale.seller || '—' }}</td>
+            <td class="text-right num">
+              <div>{{ money(sale.total_amount) }}</div>
+              <div class="person__sub" *ngIf="sale.status !== 'cancelled' && sale.invoice && sale.invoice.balance > 0">Reste {{ money(sale.invoice.balance) }}</div>
+            </td>
+            <td><span class="badge pay pay--{{ sale.payment_status }}">{{ paymentLabels[sale.payment_status] }}</span></td>
+            <td><span class="badge status status--{{ sale.status }}">{{ saleStatusLabels[sale.status] }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card pagination-card" *ngIf="r.meta.last_page > 1">
+      <div class="pagination">
+        <button type="button" class="icon-btn" [disabled]="r.meta.current_page === 1" (click)="goToPage(r.meta.current_page - 1)" aria-label="Page précédente">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <span class="pagination__label">Page {{ r.meta.current_page }} / {{ r.meta.last_page }}</span>
+        <button type="button" class="icon-btn" [disabled]="r.meta.current_page === r.meta.last_page" (click)="goToPage(r.meta.current_page + 1)" aria-label="Page suivante">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </ng-container>
+</ng-container>
+
+<app-owner-sale-detail *ngIf="selectedSale() as sale" [saleId]="sale.id" (closed)="selectedSale.set(null)" />

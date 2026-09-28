@@ -1,0 +1,101 @@
+<div class="chart" [class.chart--loading]="loading()">
+  <div class="chart__frame" #frame [hidden]="showTable()">
+    <svg
+      class="chart__svg"
+      [attr.viewBox]="'0 0 ' + width() + ' ' + height"
+      [attr.height]="height"
+      role="img"
+      tabindex="0"
+      [attr.aria-label]="label() + ' — utilisez les flèches gauche et droite pour parcourir les valeurs'"
+      (pointermove)="onPointerMove($event)"
+      (pointerleave)="activeIndex.set(null)"
+      (keydown)="onKeydown($event)"
+      (focus)="onFocus()"
+      (blur)="activeIndex.set(null)"
+    >
+      <!-- Grille horizontale (filets) + graduations -->
+      <g class="chart__grid">
+        <ng-container *ngFor="let tick of ticks()">
+          <line [attr.x1]="margin.left" [attr.x2]="width() - margin.right" [attr.y1]="tick.y" [attr.y2]="tick.y" />
+          <text class="chart__tick" [attr.x]="margin.left - 8" [attr.y]="tick.y" dy="0.32em" text-anchor="end">
+            {{ tick.label }}
+          </text>
+        </ng-container>
+      </g>
+
+      <!-- Crosshair -->
+      <line
+        *ngIf="tooltip() as tip"
+        class="chart__crosshair"
+        [attr.x1]="tip.x"
+        [attr.x2]="tip.x"
+        [attr.y1]="margin.top"
+        [attr.y2]="baselineY"
+      />
+
+      <!-- Colonnes -->
+      <g *ngIf="kind() === 'column'" class="chart__bars">
+        <ng-container *ngFor="let bar of bars(); let i = index">
+          <path *ngIf="bar.hasValue" [attr.d]="bar.path" [class.is-active]="activeIndex() === i" />
+        </ng-container>
+      </g>
+
+      <!-- Aire + ligne -->
+      <g *ngIf="kind() === 'area'">
+        <path class="chart__area" [attr.d]="areaPath()" />
+        <path class="chart__line" [attr.d]="linePath()" />
+        <circle *ngIf="tooltip() as tip" class="chart__dot" [attr.cx]="tip.x" [attr.cy]="tip.y" r="4.5" />
+      </g>
+
+      <!-- Ligne de base -->
+      <line class="chart__baseline" [attr.x1]="margin.left" [attr.x2]="width() - margin.right" [attr.y1]="baselineY" [attr.y2]="baselineY" />
+
+      <!-- Abscisses -->
+      <text
+        *ngFor="let l of xLabels()"
+        class="chart__tick"
+        [attr.x]="l.x"
+        [attr.y]="baselineY + 18"
+        text-anchor="middle"
+      >
+        {{ l.text }}
+      </text>
+    </svg>
+
+    <div class="chart__empty" *ngIf="isEmpty()">Aucune donnée sur la période</div>
+
+    <div
+      class="chart__tooltip"
+      *ngIf="tooltip() as tip"
+      [style.left.px]="tip.left"
+      role="status"
+      aria-live="polite"
+    >
+      <span class="chart__tooltip-value"><i class="chart__key"></i>{{ tip.value }}</span>
+      <span class="chart__tooltip-label">{{ tip.label }}</span>
+    </div>
+  </div>
+
+  <div class="chart__table" *ngIf="showTable()">
+    <table>
+      <caption class="visually-hidden">{{ label() }}</caption>
+      <thead>
+        <tr>
+          <th scope="col">Période</th>
+          <th scope="col" class="num">{{ label() }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of tableRows()">
+          <td>{{ row.label }}</td>
+          <td class="num">{{ row.value }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <button type="button" class="chart__toggle" (click)="showTable.set(!showTable())" [attr.aria-pressed]="showTable()">
+    <i class="bi" [class.bi-table]="!showTable()" [class.bi-bar-chart]="showTable()"></i>
+    {{ showTable() ? 'Voir le graphique' : 'Voir le tableau' }}
+  </button>
+</div>

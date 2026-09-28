@@ -1,0 +1,134 @@
+@use '../../../../styles/tokens' as t;
+@use '../../../../styles/form-controls' as f;
+
+.auth-form {
+  width: 100%;
+  max-width: 26rem;
+}
+
+.alert {
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.alert--error {
+  background: rgba(220, 38, 38, 0.08);
+  color: #dc2626;
+}
+
+.auth-form__eyebrow {
+  margin-bottom: 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: t.$accent;
+}
+
+.auth-form__title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: t.$text-primary;
+}
+
+.auth-form__desc {
+  margin-top: 0.6rem;
+  margin-bottom: 1.75rem;
+  font-size: 0.9rem;
+  color: t.$text-secondary;
+  line-height: 1.55;
+
+  strong {
+    color: t.$text-primary;
+  }
+}
+
+.otp {
+  display: flex;
+  gap: 0.65rem;
+  margin-bottom: 1.25rem;
+}
+
+.otp__cell {
+  width: 100%;
+  aspect-ratio: 1;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  border: 1px solid t.$border-color;
+  border-radius: t.$radius-md;
+  color: t.$text-primary;
+  background: t.$card-bg;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:focus {
+    outline: none;
+    border-color: t.$accent;
+    box-shadow: 0 0 0 3px rgba(91, 79, 229, 0.15);
+  }
+}
+
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-bottom: 1.35rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: t.$radius-md;
+  background: rgba(22, 163, 74, 0.08);
+  color: t.$success;
+  font-size: 0.82rem;
+  line-height: 1.5;
+
+  i {
+    margin-top: 0.15rem;
+    flex-shrink: 0;
+  }
+}
+
+.btn-primary {
+  @include f.btn-primary;
+}
+
+.resend {
+  margin-top: 1.25rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: t.$text-secondary;
+
+  strong {
+    color: t.$text-primary;
+  }
+}
+
+.resend__btn {
+  border: none;
+  background: transparent;
+  color: t.$accent;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.back-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: t.$accent;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

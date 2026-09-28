@@ -1,0 +1,131 @@
+@use '../../../../styles/tokens' as t;
+
+.sf-intro {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+}
+
+.sf-whatsapp {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: t.$radius-md;
+  background: rgba(22, 163, 74, 0.08);
+  font-size: 0.85rem;
+
+  > i {
+    font-size: 1.35rem;
+    color: #15803d;
+  }
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+
+  &.is-invalid {
+    background: rgba(220, 38, 38, 0.07);
+
+    > i,
+    strong {
+      color: #b91c1c;
+    }
+  }
+}
+
+.sf-whatsapp__label,
+.sf-whatsapp__hint {
+  font-size: 0.76rem;
+  color: t.$text-secondary;
+}
+
+.sf-toggle {
+  align-items: flex-start;
+  margin-bottom: 1rem;
+
+  input {
+    margin-top: 0.15rem;
+  }
+}
+
+.d-block {
+  display: block;
+  font-size: 0.78rem;
+}
+
+.sf-slug {
+  display: flex;
+  align-items: stretch;
+
+  .field__input {
+    flex: 1;
+    min-width: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+}
+
+.sf-slug__prefix {
+  display: inline-flex;
+  align-items: center;
+  max-width: 45%;
+  padding: 0 0.6rem;
+  border: 1px solid t.$border-color;
+  border-right: none;
+  border-radius: t.$radius-md 0 0 t.$radius-md;
+  background: t.$page-bg;
+  font-size: 0.8rem;
+  color: t.$text-secondary;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sf-error {
+  color: t.$danger;
+}
+
+.sf-link-btn {
+  margin-left: 0.35rem;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: t.$accent;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.sf-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+  font-size: 0.82rem;
+
+  code {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+.sf-issues {
+  margin: 1rem 0 0;
+  padding: 0.6rem 0.75rem;
+  list-style: none;
+  border-radius: t.$radius-md;
+  background: rgba(217, 119, 6, 0.08);
+  font-size: 0.8rem;
+  color: #92400e;
+
+  li + li {
+    margin-top: 0.3rem;
+  }
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}

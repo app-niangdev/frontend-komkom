@@ -1,0 +1,126 @@
+<div class="page-header card">
+  <span class="page-header__icon"><i class="bi bi-building"></i></span>
+  <div>
+    <h2 class="page-header__title">Mon entreprise</h2>
+    <p class="page-header__desc">Informations, logo et couleurs utilisés sur vos documents et dans l'application. Ils s'appliquent à toutes vos boutiques, sauf celles qui ont leur propre identité.</p>
+  </div>
+</div>
+
+<div class="state-message text-center text-muted" *ngIf="isLoading()">Chargement...</div>
+
+<form #companyForm="ngForm" (ngSubmit)="save(companyForm)" novalidate *ngIf="company() as c">
+  <div class="company-layout">
+    <div class="company-main">
+      <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+
+      <section class="card">
+        <h3 class="section-heading"><i class="bi bi-card-text"></i> Informations</h3>
+        <div class="form-grid">
+          <div class="field">
+            <label class="field__label" for="name">Raison sociale *</label>
+            <input id="name" class="field__input" [(ngModel)]="form.name" name="name" required maxlength="255" />
+          </div>
+          <div class="field">
+            <label class="field__label" for="short_name">Nom abrégé *</label>
+            <input id="short_name" class="field__input" [(ngModel)]="form.short_name" name="short_name" required maxlength="50" />
+          </div>
+          <div class="field field--full">
+            <label class="field__label" for="slogan">Slogan</label>
+            <input id="slogan" class="field__input" [(ngModel)]="form.slogan" name="slogan" maxlength="255" />
+          </div>
+          <div class="field">
+            <label class="field__label" for="email">Email *</label>
+            <input id="email" type="email" class="field__input" [(ngModel)]="form.email" name="email" required email />
+          </div>
+          <div class="field">
+            <label class="field__label" for="head_office_address">Adresse du siège *</label>
+            <input id="head_office_address" class="field__input" [(ngModel)]="form.head_office_address" name="head_office_address" required maxlength="255" />
+          </div>
+          <div class="field">
+            <label class="field__label" for="phone_one">Téléphone principal *</label>
+            <input id="phone_one" type="tel" class="field__input" [(ngModel)]="form.phone_one" name="phone_one" required maxlength="20" />
+          </div>
+          <div class="field">
+            <label class="field__label" for="phone_two">Téléphone secondaire</label>
+            <input id="phone_two" type="tel" class="field__input" [(ngModel)]="form.phone_two" name="phone_two" maxlength="20" />
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3 class="section-heading"><i class="bi bi-palette"></i> Identité visuelle</h3>
+        <div class="form-grid">
+          <div class="field field--full">
+            <span class="field__label">Logo</span>
+            <div class="logo-field">
+              <div class="logo-field__preview">
+                <img *ngIf="logoPreview()" [src]="logoPreview()" alt="Aperçu du logo" />
+                <i class="bi bi-image" *ngIf="!logoPreview()"></i>
+              </div>
+              <div class="logo-field__controls">
+                <label for="logo_file" class="btn btn--ghost logo-field__upload-btn">
+                  <i class="bi bi-upload"></i> {{ logoPreview() ? 'Remplacer' : 'Choisir une image' }}
+                </label>
+                <input id="logo_file" type="file" accept="image/png,image/jpeg,image/webp" class="logo-field__input" (change)="onLogoSelected($event)" />
+                <button type="button" class="logo-field__remove" *ngIf="logoPreview()" (click)="onRemoveLogo()">
+                  <i class="bi bi-trash"></i> Retirer le logo
+                </button>
+                <span class="text-muted form-hint-inline">JPG, PNG ou WEBP — 2 Mo maximum.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="primary_color">Couleur principale *</label>
+            <div class="color-field">
+              <input id="primary_color" type="color" [(ngModel)]="form.primary_color" name="primary_color" required />
+              <code>{{ form.primary_color }}</code>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field__label" for="secondary_color">Couleur secondaire *</label>
+            <div class="color-field">
+              <input id="secondary_color" type="color" [(ngModel)]="form.secondary_color" name="secondary_color" required />
+              <code>{{ form.secondary_color }}</code>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Aperçu en direct -->
+    <aside class="company-side">
+      <div class="card brand-preview">
+        <span class="brand-preview__label">Aperçu</span>
+        <div class="brand-preview__header" [style.background]="form.primary_color">
+          <div class="brand-preview__logo">
+            <img *ngIf="logoPreview()" [src]="logoPreview()" alt="" />
+            <span *ngIf="!logoPreview()">{{ (form.short_name || '?').charAt(0) | uppercase }}</span>
+          </div>
+          <div>
+            <strong>{{ form.name || 'Raison sociale' }}</strong>
+            <span *ngIf="form.slogan">{{ form.slogan }}</span>
+          </div>
+        </div>
+        <div class="brand-preview__body">
+          <span class="brand-preview__chip" [style.background]="form.secondary_color">Secondaire</span>
+          <span class="brand-preview__btn" [style.background]="form.primary_color">Bouton principal</span>
+        </div>
+        <p class="brand-preview__meta text-muted">
+          <i class="bi bi-shop"></i> {{ c.stores_count }} boutique(s) rattachée(s)
+        </p>
+      </div>
+
+      <div class="card save-card">
+        <p class="text-muted" *ngIf="!hasChanges()"><i class="bi bi-check2-circle"></i> Aucune modification en attente.</p>
+        <p *ngIf="hasChanges()"><i class="bi bi-pencil"></i> Modifications non enregistrées.</p>
+        <div class="save-card__actions">
+          <button type="button" class="btn btn--ghost" [disabled]="!hasChanges() || isSaving()" (click)="reset(companyForm)">Annuler</button>
+          <button type="submit" class="btn btn--primary" [disabled]="!hasChanges() || isSaving()">
+            {{ isSaving() ? 'Enregistrement...' : 'Enregistrer' }}
+          </button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</form>

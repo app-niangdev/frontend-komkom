@@ -1,0 +1,330 @@
+@use '../../../../styles/tokens' as t;
+
+.notice {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 1rem;
+  border-radius: t.$radius-md;
+  background: rgba(217, 119, 6, 0.08);
+  border: 1px solid rgba(217, 119, 6, 0.25);
+  font-size: 0.85rem;
+  color: #92400e;
+}
+
+.is-refreshing {
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+// ——— Synthèse ———
+.pay-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.pay-total {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  background: linear-gradient(135deg, t.$accent, #7c6ff0);
+  border: none;
+  color: #fff;
+}
+
+.pay-total__label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  opacity: 0.9;
+}
+
+.pay-total__value {
+  font-size: 2rem;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.pay-total__sub {
+  font-size: 0.82rem;
+  opacity: 0.85;
+}
+
+.pay-total__delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  align-self: flex-start;
+  margin-top: 0.35rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  font-size: 0.76rem;
+  font-weight: 600;
+
+  &.is-good {
+    background: rgba(22, 163, 74, 0.35);
+  }
+
+  &.is-bad {
+    background: rgba(220, 38, 38, 0.35);
+  }
+}
+
+.pay-origin {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font: inherit;
+  text-align: left;
+  color: t.$text-primary;
+  cursor: pointer;
+
+  strong {
+    font-size: 1.4rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &:hover {
+    border-color: rgba(91, 79, 229, 0.45);
+  }
+
+  &.is-selected {
+    border-color: t.$accent;
+    box-shadow: 0 0 0 1px t.$accent;
+  }
+}
+
+.pay-origin--debt strong {
+  color: t.$success;
+}
+
+.pay-origin__label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: t.$text-secondary;
+}
+
+.pay-origin__sub {
+  font-size: 0.76rem;
+  color: t.$text-muted;
+}
+
+// ——— Répartition et évolution ———
+.pay-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.methods {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.method {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr) 112px;
+  grid-template-areas:
+    'name bar amount'
+    'name bar meta';
+  column-gap: 0.75rem;
+  align-items: center;
+  width: 100%;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid transparent;
+  border-radius: t.$radius-md;
+  background: none;
+  font: inherit;
+  text-align: left;
+  color: t.$text-primary;
+  cursor: pointer;
+
+  &:hover {
+    background: t.$page-bg;
+  }
+
+  &.is-selected {
+    border-color: t.$accent;
+    background: rgba(91, 79, 229, 0.05);
+  }
+
+  &.is-empty {
+    opacity: 0.55;
+  }
+}
+
+.method__name {
+  grid-area: name;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.method__bar,
+.cashiers__bar {
+  height: 8px;
+  border-radius: 999px;
+  background: t.$page-bg;
+  overflow: hidden;
+
+  span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: t.$accent;
+  }
+}
+
+.method__bar {
+  grid-area: bar;
+}
+
+.method__amount {
+  grid-area: amount;
+  font-size: 0.88rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.method__meta {
+  grid-area: meta;
+  font-size: 0.72rem;
+  color: t.$text-muted;
+  text-align: right;
+}
+
+.sub-heading {
+  margin: 1rem 0 0.5rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid t.$border-color;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.cashiers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: grid;
+    grid-template-columns: 130px minmax(0, 1fr) 112px;
+    gap: 0.75rem;
+    align-items: center;
+    font-size: 0.84rem;
+  }
+}
+
+.cashiers__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cashiers__bar span {
+  background: #9b92f2;
+}
+
+.cashiers__amount {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.day-hint ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.86rem;
+  color: t.$text-secondary;
+
+  li {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  i {
+    flex-shrink: 0;
+    color: t.$success;
+  }
+}
+
+// ——— Liste ———
+.payments-table__row {
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: t.$page-bg;
+    outline: none;
+  }
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.badge.origin {
+  &--at_sale {
+    background: rgba(91, 79, 229, 0.1);
+    color: t.$accent;
+  }
+
+  &--debt {
+    background: rgba(22, 163, 74, 0.12);
+    color: t.$success;
+  }
+}
+
+.is-settled {
+  color: t.$success;
+}
+
+@media (max-width: 1199.98px) {
+  .pay-hero {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .pay-total {
+    grid-column: 1 / -1;
+  }
+
+  .pay-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .pay-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .pay-total__value {
+    font-size: 1.6rem;
+  }
+
+  .method,
+  .cashiers li {
+    grid-template-columns: 110px minmax(0, 1fr) auto;
+  }
+}

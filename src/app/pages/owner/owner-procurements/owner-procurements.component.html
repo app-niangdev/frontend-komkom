@@ -1,0 +1,294 @@
+<div class="page-header card">
+  <span class="page-header__icon"><i class="bi bi-truck"></i></span>
+  <div class="page-header__body">
+    <h2 class="page-header__title">Approvisionnements — {{ context.selectedStore()?.name || 'Toutes les boutiques' }}</h2>
+    <p class="page-header__desc">Achats auprès de vos fournisseurs : ce qui est reçu, ce qui reste à réceptionner et le détail de chaque livraison.</p>
+  </div>
+  <div class="page-header__actions">
+    <a class="btn btn--ghost page-header__cta" [routerLink]="context.base() + '/procurements/scan'" title="Saisir les IMEI / n° de série au lecteur code-barres">
+      <i class="bi bi-upc-scan"></i> Par scanner
+    </a>
+    <a class="btn btn--primary page-header__cta" [routerLink]="context.base() + '/procurements/new'">
+      <i class="bi bi-plus-lg"></i> Nouvel approvisionnement
+    </a>
+  </div>
+</div>
+
+<div class="card toolbar-card">
+  <app-period-filter (rangeChange)="onRange($event)" />
+  <p class="dashboard-caption" *ngIf="result() as r">
+    <i class="bi bi-calendar3"></i>
+    Du {{ formatIsoDate(r.period.start) }} au {{ formatIsoDate(r.period.end) }} ({{ r.period.days }} jours)
+    · comparé au {{ formatIsoDate(r.period.previous_start) }} – {{ formatIsoDate(r.period.previous_end) }}
+  </p>
+</div>
+
+<app-store-blocked *ngIf="context.selectedIsBlocked()" />
+
+<ng-container *ngIf="!context.selectedIsBlocked()">
+  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+  <div class="state-message text-center text-muted" *ngIf="isLoading() && !result()">Chargement...</div>
+
+  <ng-container *ngIf="result() as r">
+    <div class="notice" *ngIf="r.excluded_stores.length > 0" role="status">
+      <i class="bi bi-info-circle"></i>
+      <span>
+        {{ r.excluded_stores.length }} boutique(s) sans abonnement en cours non incluse(s) :
+        <ng-container *ngFor="let s of r.excluded_stores; let last = last">{{ s.store_name }}{{ last ? '.' : ', ' }}</ng-container>
+      </span>
+    </div>
+
+    <!-- Indicateurs -->
+    <div class="kpi-grid supply-kpis" [class.is-refreshing]="isLoading()">
+      <div class="card kpi">
+        <div class="kpi__label"><i class="bi bi-box-arrow-in-down"></i> Achats reçus</div>
+        <div class="kpi__value">{{ money(r.summary.received.value) }}</div>
+        <div class="kpi__foot">
+          <span *ngIf="receivedDelta() as d" class="kpi__delta kpi__delta--flat">
+            <i class="bi" [class.bi-arrow-up-right]="d.direction === 'up'" [class.bi-arrow-down-right]="d.direction === 'down'" [class.bi-dash]="d.direction === 'flat'"></i>
+            {{ d.text }}
+          </span>
+          <span class="kpi__hint">{{ money(r.summary.received.previous) }} la période précédente</span>
+        </div>
+      </div>
+      <div class="card kpi">
+        <div class="kpi__label"><i class="bi bi-truck"></i> Livraisons reçues</div>
+        <div class="kpi__value">{{ formatNumber(r.summary.received_count.value) }}</div>
+        <div class="kpi__foot">
+          <span *ngIf="countDelta() as d" class="kpi__delta kpi__delta--flat">
+            <i class="bi" [class.bi-arrow-up-right]="d.direction === 'up'" [class.bi-arrow-down-right]="d.direction === 'down'" [class.bi-dash]="d.direction === 'flat'"></i>
+            {{ d.text }}
+          </span>
+          <span class="kpi__hint">{{ formatNumber(r.summary.received_count.previous) }} la période précédente</span>
+        </div>
+      </div>
+      <div class="card kpi" [class.kpi--attention]="r.summary.pending.count > 0">
+        <div class="kpi__label"><i class="bi bi-hourglass-split"></i> À réceptionner</div>
+        <div class="kpi__value">{{ formatNumber(r.summary.pending.count) }}</div>
+        <div class="kpi__foot">
+          <span class="kpi__hint" *ngIf="r.summary.pending.count > 0">
+            {{ money(r.summary.pending.amount) }} · toutes dates confondues
+          </span>
+          <span class="kpi__hint" *ngIf="r.summary.pending.count === 0">Rien en attente</span>
+          <button type="button" class="kpi__link" *ngIf="r.summary.pending.count > 0 && status !== 'pending'" (click)="setStatus('pending')">
+            Voir les livraisons attendues
+          </button>
+        </div>
+      </div>
+      <div class="card kpi kpi--muted">
+        <div class="kpi__label"><i class="bi bi-x-circle"></i> Annulés</div>
+        <div class="kpi__value">{{ formatNumber(r.summary.status_counts.cancelled) }}</div>
+        <div class="kpi__foot">
+          <span class="kpi__hint">{{ money(r.summary.cancelled_amount) }} sur la période</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-grid chart-grid--wide-left">
+      <section class="card chart-card">
+        <header class="chart-card__header">
+          <h3>Achats reçus</h3>
+          <span class="chart-card__total">{{ money(r.summary.received.value) }}</span>
+        </header>
+        <p class="chart-card__sub">Montant des approvisionnements réceptionnés par {{ r.period.granularity === 'day' ? 'jour' : r.period.granularity === 'week' ? 'semaine' : 'mois' }}, en {{ r.currency }}</p>
+        <app-time-series-chart
+          kind="column"
+          label="Achats reçus"
+          [points]="r.series"
+          [granularity]="r.period.granularity"
+          [formatValue]="moneyFormatter()"
+          [loading]="isLoading()"
+        />
+      </section>
+
+      <section class="card chart-card" [class.is-refreshing]="isLoading()">
+        <header class="chart-card__header">
+          <h3>Principaux fournisseurs</h3>
+        </header>
+        <p class="chart-card__sub">Achats reçus sur la période — cliquez pour filtrer la liste</p>
+        <div class="state-message text-center text-muted" *ngIf="r.summary.by_supplier.length === 0">Aucun achat reçu sur la période.</div>
+        <ol class="ranking" *ngIf="r.summary.by_supplier.length > 0">
+          <li *ngFor="let s of r.summary.by_supplier" class="ranking__row">
+            <button type="button" class="ranking__button" [class.is-active]="supplierId === s.id" (click)="filterSupplier(s.id)" [attr.aria-pressed]="supplierId === s.id">
+              <div class="ranking__head">
+                <span class="ranking__name">{{ s.name }}</span>
+                <span class="ranking__value">{{ money(s.total) }}</span>
+              </div>
+              <div class="ranking__track">
+                <div class="ranking__bar" [style.width.%]="(s.total / supplierMax()) * 100"></div>
+              </div>
+              <span class="ranking__meta">{{ formatNumber(s.count) }} livraison(s)</span>
+            </button>
+          </li>
+        </ol>
+
+        <ng-container *ngIf="r.summary.top_products.length > 0">
+          <h4 class="sub-heading">Produits les plus achetés</h4>
+          <ol class="ranking">
+            <li *ngFor="let p of r.summary.top_products" class="ranking__row">
+              <div class="ranking__head">
+                <span class="ranking__name">{{ p.name }}</span>
+                <span class="ranking__value">{{ money(p.total) }}</span>
+              </div>
+              <div class="ranking__track">
+                <div class="ranking__bar ranking__bar--alt" [style.width.%]="(p.total / productMax()) * 100"></div>
+              </div>
+              <span class="ranking__meta">{{ p.quantity | number: '1.0-3' }} {{ p.unit }}</span>
+            </li>
+          </ol>
+        </ng-container>
+      </section>
+    </div>
+
+    <!-- Filtres de la liste -->
+    <div class="card toolbar-card">
+      <div class="status-tabs" role="tablist" aria-label="Filtrer par statut">
+        <button
+          *ngFor="let tab of statusTabs"
+          type="button"
+          role="tab"
+          class="status-tabs__tab"
+          [class.is-active]="status === tab.key"
+          [attr.aria-selected]="status === tab.key"
+          (click)="setStatus(tab.key)"
+        >
+          {{ tab.label }}
+          <span class="status-tabs__count">{{ formatNumber(tab.key ? r.summary.status_counts[tab.key] : r.summary.status_counts.all) }}</span>
+        </button>
+      </div>
+      <div class="table-card__toolbar">
+        <div class="toolbar-filters">
+          <div class="search">
+            <i class="bi bi-search"></i>
+            <input type="text" placeholder="N° ou fournisseur..." [(ngModel)]="search" (keyup.enter)="load(1)" aria-label="Rechercher un approvisionnement" />
+          </div>
+          <select class="filter-select" [(ngModel)]="supplierId" (ngModelChange)="load(1)" aria-label="Filtrer par fournisseur">
+            <option [ngValue]="null">Tous les fournisseurs</option>
+            <option *ngFor="let s of suppliers()" [ngValue]="s.id">{{ s.name }}{{ !context.selectedId() && s.store ? ' — ' + s.store.name : '' }}</option>
+          </select>
+          <select class="filter-select" [(ngModel)]="sort" (ngModelChange)="load(1)" aria-label="Trier">
+            <option value="recent">Plus récents</option>
+            <option value="amount">Plus gros montants</option>
+          </select>
+          <button type="button" class="btn btn--ghost" *ngIf="filtersActive" (click)="resetFilters()">
+            <i class="bi bi-x-circle"></i> Réinitialiser
+          </button>
+        </div>
+      </div>
+      <p class="filter-note" *ngIf="status === 'pending' && pendingOutsidePeriod()">
+        <i class="bi bi-info-circle"></i>
+        Des approvisionnements en attente datent d'avant la période affichée : élargissez la période pour tous les voir.
+      </p>
+    </div>
+
+    <!-- Liste -->
+    <div class="card empty-state" *ngIf="r.data.length === 0">
+      <i class="bi bi-truck empty-state__icon"></i>
+      <ng-container *ngIf="filtersActive; else noSupply">
+        <p>Aucun approvisionnement ne correspond à ces filtres.</p>
+        <button type="button" class="btn btn--ghost" (click)="resetFilters()">Effacer les filtres</button>
+      </ng-container>
+      <ng-template #noSupply>
+        <p>Aucun approvisionnement sur la période.</p>
+        <a class="btn btn--primary" [routerLink]="context.base() + '/procurements/new'"><i class="bi bi-plus-lg"></i> Saisir une livraison</a>
+      </ng-template>
+    </div>
+
+    <div class="card table-card" *ngIf="r.data.length > 0" [class.is-refreshing]="isLoading()">
+      <table class="table supplies-table">
+        <thead>
+          <tr>
+            <th>Approvisionnement</th>
+            <th>Fournisseur</th>
+            <th *ngIf="!context.selectedId()">Boutique</th>
+            <th class="text-right">Montant</th>
+            <th>Statut</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let s of r.data"
+            class="supplies-table__row"
+            tabindex="0"
+            (click)="detailId.set(s.id)"
+            (keydown.enter)="detailId.set(s.id)"
+            [attr.aria-label]="'Voir l\'approvisionnement ' + s.order_number"
+          >
+            <td>
+              <div class="person__name mono">{{ s.order_number }}</div>
+              <div class="person__sub">{{ s.date | date: 'dd/MM/yyyy HH:mm' }} · {{ s.lines_count }} produit(s)</div>
+            </td>
+            <td>
+              <div>{{ s.supplier?.name || '—' }}</div>
+              <div class="person__sub" *ngIf="s.supplier?.phone">{{ s.supplier?.phone }}</div>
+            </td>
+            <td *ngIf="!context.selectedId()">{{ s.store?.name }}</td>
+            <td class="text-right num"><strong>{{ money(s.total_amount) }}</strong></td>
+            <td>
+              <span class="badge supply-status supply-status--{{ s.status }}">{{ statusLabels[s.status] }}</span>
+              <div class="person__sub" *ngIf="s.status === 'received' && s.received_at">le {{ s.received_at | date: 'dd/MM/yyyy' }}</div>
+            </td>
+            <td class="text-right">
+              <div class="table-actions">
+                <ng-container *ngIf="s.status === 'pending'">
+                  <button
+                    type="button"
+                    class="icon-btn icon-btn--success"
+                    title="Réceptionner"
+                    [attr.aria-label]="'Réceptionner ' + s.order_number"
+                    [disabled]="busyId() === s.id"
+                    (click)="receive(s, $event)"
+                  >
+                    <i class="bi bi-box-arrow-in-down"></i>
+                  </button>
+                  <a
+                    class="icon-btn"
+                    title="Modifier"
+                    [attr.aria-label]="'Modifier ' + s.order_number"
+                    [routerLink]="[context.base() + '/procurements', s.id, 'edit']"
+                    (click)="$event.stopPropagation()"
+                  >
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                  <button
+                    type="button"
+                    class="icon-btn icon-btn--danger"
+                    title="Annuler"
+                    [attr.aria-label]="'Annuler ' + s.order_number"
+                    [disabled]="busyId() === s.id"
+                    (click)="cancel(s, $event)"
+                  >
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </ng-container>
+                <button type="button" class="icon-btn" title="Voir le détail" [attr.aria-label]="'Voir ' + s.order_number" (click)="detailId.set(s.id); $event.stopPropagation()">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card pagination-card" *ngIf="r.meta.last_page > 1">
+      <div class="pagination">
+        <button type="button" class="icon-btn" [disabled]="r.meta.current_page === 1" (click)="goToPage(r.meta.current_page - 1)" aria-label="Page précédente">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <span class="pagination__label">Page {{ r.meta.current_page }} / {{ r.meta.last_page }} · {{ formatNumber(r.meta.total) }} approvisionnement(s)</span>
+        <button type="button" class="icon-btn" [disabled]="r.meta.current_page === r.meta.last_page" (click)="goToPage(r.meta.current_page + 1)" aria-label="Page suivante">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </ng-container>
+</ng-container>
+
+<app-procurement-detail
+  *ngIf="detailId() as id"
+  [supplyId]="id"
+  (changed)="reload()"
+  (closed)="detailId.set(null)"
+/>

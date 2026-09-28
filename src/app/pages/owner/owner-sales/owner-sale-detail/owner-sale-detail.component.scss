@@ -1,0 +1,152 @@
+@use '../../../../../styles/tokens' as t;
+
+.sale-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem 1.25rem;
+  margin-bottom: 1.25rem;
+  padding: 0.9rem 1rem;
+  border-radius: t.$radius-md;
+  background: t.$page-bg;
+  font-size: 0.86rem;
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    align-items: flex-start;
+  }
+}
+
+.sale-meta__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: t.$text-muted;
+}
+
+.section-title {
+  margin: 1.1rem 0 0.6rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: t.$text-primary;
+}
+
+.section-title__sub {
+  font-weight: 500;
+  font-size: 0.8rem;
+}
+
+.detail-table {
+  border: 1px solid t.$border-color;
+  border-radius: t.$radius-md;
+  margin-bottom: 0;
+
+  th,
+  td {
+    padding: 0.6rem 0.9rem;
+  }
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.totals {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.3rem;
+  margin: 0.85rem 0 0;
+
+  > div {
+    display: flex;
+    gap: 1.5rem;
+    min-width: 240px;
+    justify-content: space-between;
+    font-size: 0.86rem;
+  }
+
+  dt {
+    color: t.$text-secondary;
+  }
+
+  dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+    color: t.$text-primary;
+  }
+}
+
+.totals__main {
+  padding-top: 0.35rem;
+  border-top: 1px solid t.$border-color;
+  font-size: 0.98rem !important;
+  font-weight: 700;
+}
+
+.totals__due dd,
+.totals__due dt {
+  color: t.$danger;
+  font-weight: 700;
+}
+
+.cancelled-note {
+  display: flex;
+  gap: 0.45rem;
+  margin: 0.85rem 0 0;
+  padding: 0.6rem 0.8rem;
+  border-radius: t.$radius-md;
+  background: t.$page-bg;
+  font-size: 0.83rem;
+  color: t.$text-secondary;
+}
+
+.payments {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: grid;
+    grid-template-columns: 90px 110px 1fr auto;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid t.$border-color;
+    border-radius: t.$radius-md;
+    font-size: 0.85rem;
+  }
+}
+
+.payments__type {
+  font-weight: 600;
+}
+
+.payments__user {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty {
+  font-size: 0.85rem;
+}
+
+@media (max-width: 575.98px) {
+  .sale-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .payments li {
+    grid-template-columns: 1fr auto;
+  }
+
+  .payments__user {
+    display: none;
+  }
+}

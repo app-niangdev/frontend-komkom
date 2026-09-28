@@ -1,0 +1,102 @@
+<div class="modal-backdrop" (click)="closed.emit()"></div>
+<div class="modal modal--xl" role="dialog" aria-modal="true" aria-labelledby="supplier-file-title">
+  <div class="modal__header">
+    <h3 id="supplier-file-title">{{ supplier()?.name || 'Fournisseur' }}</h3>
+    <button type="button" class="icon-btn" title="Fermer" aria-label="Fermer" (click)="closed.emit()"><i class="bi bi-x-lg"></i></button>
+  </div>
+
+  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+  <div class="state-message text-center text-muted" *ngIf="!supplier() && !errorMessage()">Chargement...</div>
+
+  <ng-container *ngIf="supplier() as s">
+    <div class="contact">
+      <div class="contact__info">
+        <span class="contact__label">Boutique</span>
+        <strong>{{ s.store?.name }}</strong>
+      </div>
+      <div class="contact__info">
+        <span class="contact__label">Téléphone</span>
+        <strong><a [href]="'tel:' + s.phone">{{ s.phone }}</a></strong>
+        <span *ngIf="s.phone_two"><a [href]="'tel:' + s.phone_two">{{ s.phone_two }}</a></span>
+      </div>
+      <div class="contact__info">
+        <span class="contact__label">E-mail</span>
+        <a *ngIf="s.email" [href]="'mailto:' + s.email">{{ s.email }}</a>
+        <span class="text-muted" *ngIf="!s.email">—</span>
+      </div>
+      <div class="contact__info">
+        <span class="contact__label">Adresse</span>
+        <span>{{ s.address || '—' }}</span>
+      </div>
+      <div class="contact__actions">
+        <a class="btn btn--ghost btn--sm" [href]="'tel:' + s.phone"><i class="bi bi-telephone"></i> Appeler</a>
+        <a class="btn btn--ghost btn--sm" *ngIf="whatsapp(s.phone) as wa" [href]="wa" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> WhatsApp</a>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <span class="stat__label">Total acheté</span>
+        <strong class="stat__value">{{ money(s.received_total) }}</strong>
+        <span class="text-muted">{{ formatNumber(s.received_count) }} livraison(s) reçue(s)</span>
+      </div>
+      <div class="stat">
+        <span class="stat__label">Livraison moyenne</span>
+        <strong class="stat__value">{{ money(s.average_amount) }}</strong>
+        <span class="text-muted" *ngIf="s.first_supply_at">Premier achat le {{ s.first_supply_at | date: 'dd/MM/yyyy' }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat__label">Dernière livraison</span>
+        <strong class="stat__value">{{ s.last_supply_at ? (s.last_supply_at | date: 'dd/MM/yyyy') : '—' }}</strong>
+      </div>
+      <div class="stat" [class.stat--attention]="s.pending_count > 0">
+        <span class="stat__label">En attente</span>
+        <strong class="stat__value">{{ formatNumber(s.pending_count) }}</strong>
+        <span class="text-muted" *ngIf="s.pending_count > 0">{{ money(s.pending_amount) }} à réceptionner</span>
+      </div>
+    </div>
+
+    <div class="columns">
+      <section>
+        <h4 class="section-title">Derniers approvisionnements</h4>
+        <p class="text-muted empty" *ngIf="s.recent_supplies.length === 0">Aucun approvisionnement pour l'instant.</p>
+        <ul class="supply-list" *ngIf="s.recent_supplies.length > 0">
+          <li *ngFor="let sup of s.recent_supplies">
+            <a [routerLink]="[context.base() + '/procurements']" [queryParams]="{ open: sup.id }">
+              <div>
+                <span class="mono">{{ sup.order_number }}</span>
+                <span class="text-muted"> · {{ sup.date | date: 'dd/MM/yyyy' }} · {{ sup.lines_count }} produit(s)</span>
+              </div>
+              <div class="supply-list__right">
+                <strong class="num">{{ money(sup.total_amount) }}</strong>
+                <span class="badge supply-status supply-status--{{ sup.status }}">{{ statusLabels[sup.status] }}</span>
+              </div>
+            </a>
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h4 class="section-title">Produits achetés</h4>
+        <p class="text-muted empty" *ngIf="s.top_products.length === 0">Aucun achat reçu.</p>
+        <ul class="product-list" *ngIf="s.top_products.length > 0">
+          <li *ngFor="let p of s.top_products">
+            <div>
+              <strong>{{ p.name }}</strong>
+              <span class="text-muted">{{ p.quantity | number: '1.0-3' }} {{ p.unit }} · dernier achat le {{ p.last_at | date: 'dd/MM/yyyy' }}</span>
+            </div>
+            <span class="num">{{ money(p.total) }}</span>
+          </li>
+        </ul>
+      </section>
+    </div>
+
+    <div class="modal__actions">
+      <button type="button" class="btn btn--danger" (click)="remove.emit(s)"><i class="bi bi-trash"></i> Supprimer</button>
+      <button type="button" class="btn btn--ghost" (click)="edit.emit(s)"><i class="bi bi-pencil"></i> Modifier</button>
+      <a class="btn btn--primary" [routerLink]="context.base() + '/procurements/new'" [queryParams]="{ store: s.store?.id, supplier: s.id }">
+        <i class="bi bi-truck"></i> Nouvel approvisionnement
+      </a>
+    </div>
+  </ng-container>
+</div>

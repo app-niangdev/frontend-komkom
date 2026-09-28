@@ -1,0 +1,74 @@
+@use '../../../../styles/tokens' as t;
+
+.sf-link {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: t.$radius-md;
+  background: rgba(91, 79, 229, 0.06);
+
+  > i {
+    font-size: 1.1rem;
+    color: t.$accent;
+  }
+
+  &.is-offline {
+    background: rgba(217, 119, 6, 0.08);
+
+    > i {
+      color: t.$warning;
+    }
+  }
+}
+
+.sf-link__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.sf-link__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: t.$text-secondary;
+}
+
+.sf-link__url {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: t.$accent;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border: 1px solid t.$border-color;
+  border-radius: 8px;
+  background: t.$card-bg;
+  color: t.$text-secondary;
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    color: t.$accent;
+    border-color: t.$accent;
+  }
+}
+
+.sf-link-off {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  font-size: 0.8rem;
+  color: t.$text-muted;
+}

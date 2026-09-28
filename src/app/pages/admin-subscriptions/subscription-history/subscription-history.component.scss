@@ -1,0 +1,60 @@
+@use '../../../../styles/tokens' as t;
+
+.status-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem 1.75rem;
+  margin-bottom: 1.25rem;
+  padding: 0.9rem 1rem;
+  border-radius: t.$radius-md;
+  background: t.$page-bg;
+  font-size: 0.87rem;
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+}
+
+.status-summary__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: t.$text-muted;
+}
+
+.status-summary__cta {
+  margin-left: auto;
+}
+
+.history-table {
+  border: 1px solid t.$border-color;
+  border-radius: t.$radius-md;
+  margin-bottom: 0;
+}
+
+tr.is-past td {
+  color: t.$text-secondary;
+}
+
+.period-tag {
+  display: inline-block;
+  margin-top: 0.2rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+
+  &--current {
+    color: t.$success;
+  }
+
+  &--upcoming {
+    color: t.$accent;
+  }
+
+  &--past {
+    color: t.$text-muted;
+  }
+}

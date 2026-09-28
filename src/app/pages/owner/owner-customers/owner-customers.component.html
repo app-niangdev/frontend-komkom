@@ -1,0 +1,174 @@
+<div class="page-header card">
+  <span class="page-header__icon"><i class="bi bi-person-lines-fill"></i></span>
+  <div>
+    <h2 class="page-header__title">Clients — {{ context.selectedStore()?.name || 'Toutes les boutiques' }}</h2>
+    <p class="page-header__desc">Vos clients, ce qu'ils achètent et ce qu'ils doivent encore. Ouvrez une fiche pour voir l'historique et les factures en attente.</p>
+  </div>
+</div>
+
+<app-store-blocked *ngIf="context.selectedIsBlocked()" />
+
+<ng-container *ngIf="!context.selectedIsBlocked()">
+  <!-- Synthèse (les compteurs filtrent la liste) -->
+  <div class="customer-summary" *ngIf="result() as r">
+    <div class="card summary-tile">
+      <span class="summary-tile__label"><i class="bi bi-people"></i> Clients</span>
+      <strong>{{ formatNumber(r.summary.customers) }}</strong>
+      <span class="summary-tile__hint">{{ money(r.summary.total_purchases) }} d'achats validés</span>
+    </div>
+    <button
+      type="button"
+      class="card summary-tile summary-tile--button summary-tile--due"
+      [class.is-selected]="segment === 'debtors'"
+      [attr.aria-pressed]="segment === 'debtors'"
+      (click)="toggleSegment('debtors')"
+    >
+      <span class="summary-tile__label"><i class="bi bi-hourglass-split"></i> À relancer</span>
+      <strong>{{ formatNumber(r.summary.debtors) }}</strong>
+      <span class="summary-tile__hint">{{ money(r.summary.total_due) }} restant dû</span>
+    </button>
+    <button
+      type="button"
+      class="card summary-tile summary-tile--button"
+      [class.is-selected]="segment === 'buyers'"
+      [attr.aria-pressed]="segment === 'buyers'"
+      (click)="toggleSegment('buyers')"
+    >
+      <span class="summary-tile__label"><i class="bi bi-bag-check"></i> Acheteurs</span>
+      <strong>{{ formatNumber(r.summary.customers - r.summary.inactive) }}</strong>
+      <span class="summary-tile__hint">au moins un achat validé</span>
+    </button>
+    <button
+      type="button"
+      class="card summary-tile summary-tile--button"
+      [class.is-selected]="segment === 'inactive'"
+      [attr.aria-pressed]="segment === 'inactive'"
+      (click)="toggleSegment('inactive')"
+    >
+      <span class="summary-tile__label"><i class="bi bi-person-dash"></i> Sans achat</span>
+      <strong>{{ formatNumber(r.summary.inactive) }}</strong>
+      <span class="summary-tile__hint">enregistrés sans vente</span>
+    </button>
+  </div>
+
+  <div class="card toolbar-card">
+    <div class="table-card__toolbar">
+      <div class="toolbar-filters">
+        <div class="search">
+          <i class="bi bi-search"></i>
+          <input type="text" placeholder="Nom, téléphone, email, adresse..." [(ngModel)]="search" (keyup.enter)="load(1)" aria-label="Rechercher un client" />
+        </div>
+        <label class="sort-field">
+          <span>Trier par</span>
+          <select class="filter-select" [(ngModel)]="sort" (ngModelChange)="load(1)">
+            <option *ngFor="let o of sortOptions" [value]="o.key">{{ o.label }}</option>
+          </select>
+        </label>
+        <button type="button" class="btn btn--ghost" *ngIf="hasFilters()" (click)="resetFilters()">
+          <i class="bi bi-x-circle"></i> Réinitialiser
+        </button>
+      </div>
+      <button type="button" class="btn btn--primary" (click)="formCustomer.set(null)">
+        <i class="bi bi-person-plus"></i> Nouveau client
+      </button>
+    </div>
+  </div>
+
+  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+  <div class="state-message text-center text-muted" *ngIf="isLoading() && !result()">Chargement...</div>
+
+  <ng-container *ngIf="result() as r">
+    <div class="state-message text-center text-muted card" *ngIf="r.data.length === 0">
+      <ng-container *ngIf="hasFilters(); else noCustomer">Aucun client ne correspond à ces critères.</ng-container>
+      <ng-template #noCustomer>
+        Aucun client enregistré pour le moment.
+        <button type="button" class="link-btn" (click)="formCustomer.set(null)">Ajouter le premier client</button>
+      </ng-template>
+    </div>
+
+    <div class="card table-card" *ngIf="r.data.length > 0" [class.is-refreshing]="isLoading()">
+      <table class="table customers-table">
+        <thead>
+          <tr>
+            <th>Client</th>
+            <th *ngIf="!context.selectedId()">Boutique</th>
+            <th class="text-right">Achats</th>
+            <th class="text-right">Reste dû</th>
+            <th>Dernier achat</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of r.data">
+            <td>
+              <button type="button" class="customer-link" (click)="fileId.set(c.id)" [attr.aria-label]="'Ouvrir la fiche de ' + c.name">
+                <span class="person__avatar" aria-hidden="true">{{ c.name.charAt(0) | uppercase }}</span>
+                <span>
+                  <span class="person__name">{{ c.name }}</span>
+                  <span class="person__sub">
+                    <i class="bi bi-telephone"></i> {{ c.phone }}<ng-container *ngIf="c.email"> · {{ c.email }}</ng-container>
+                  </span>
+                </span>
+              </button>
+            </td>
+            <td *ngIf="!context.selectedId()">{{ c.store?.name }}</td>
+            <td class="text-right num">
+              {{ money(c.total_purchases) }}
+              <div class="person__sub">{{ formatNumber(c.sales_count) }} vente(s)</div>
+            </td>
+            <td class="text-right num">
+              <ng-container *ngIf="c.balance_due > 0; else noDue">
+                <span class="due">{{ money(c.balance_due) }}</span>
+                <div class="person__sub">{{ c.open_invoices }} facture(s)</div>
+              </ng-container>
+              <ng-template #noDue><span class="text-muted">—</span></ng-template>
+            </td>
+            <td class="text-muted">{{ c.last_purchase_at ? formatIsoDate(c.last_purchase_at) : 'Aucun' }}</td>
+            <td class="text-right">
+              <div class="table-actions">
+                <button type="button" class="icon-btn icon-btn--primary" title="Fiche client" [attr.aria-label]="'Fiche de ' + c.name" (click)="fileId.set(c.id)">
+                  <i class="bi bi-eye"></i>
+                </button>
+                <button type="button" class="icon-btn" title="Modifier" [attr.aria-label]="'Modifier ' + c.name" (click)="formCustomer.set(c)">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button
+                  type="button"
+                  class="icon-btn icon-btn--danger"
+                  *ngIf="!context.isSeller()"
+                  [disabled]="c.sales_count > 0"
+                  [title]="c.sales_count > 0 ? 'Impossible : ce client a des achats' : 'Supprimer'"
+                  [attr.aria-label]="'Supprimer ' + c.name"
+                  (click)="askDelete(c)"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card pagination-card" *ngIf="r.meta.last_page > 1">
+      <div class="pagination">
+        <button type="button" class="icon-btn" [disabled]="r.meta.current_page === 1" (click)="goToPage(r.meta.current_page - 1)" aria-label="Page précédente">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <span class="pagination__label">Page {{ r.meta.current_page }} / {{ r.meta.last_page }} ({{ formatNumber(r.meta.total) }} clients)</span>
+        <button type="button" class="icon-btn" [disabled]="r.meta.current_page === r.meta.last_page" (click)="goToPage(r.meta.current_page + 1)" aria-label="Page suivante">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </ng-container>
+</ng-container>
+
+<app-customer-file *ngIf="fileId() as id" [customerId]="id" (edit)="editFromFile()" (closed)="fileId.set(null)" />
+
+<app-customer-form
+  *ngIf="formCustomer() !== undefined"
+  [customer]="formCustomer() ?? null"
+  (saved)="onSaved($event)"
+  (closed)="formCustomer.set(undefined)"
+/>

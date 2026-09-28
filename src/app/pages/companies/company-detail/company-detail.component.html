@@ -1,0 +1,186 @@
+<a routerLink="/admin/companies" class="back-link"><i class="bi bi-arrow-left"></i> Toutes les entreprises</a>
+
+<div class="state-message text-center text-muted" *ngIf="isLoadingCompany() && !company()">Chargement...</div>
+<div class="alert alert--error" *ngIf="companyError()">{{ companyError() }}</div>
+
+<ng-container *ngIf="company() as company">
+  <!-- Fiche entreprise -->
+  <div class="card company-hero">
+    <div class="company-hero__main">
+      <div class="entity-card__logo company-hero__logo" [style.color]="company.primary_color">
+        <img *ngIf="company.logo_url" [src]="company.logo_url" [alt]="company.name" />
+        <span *ngIf="!company.logo_url">{{ company.short_name.charAt(0) | uppercase }}</span>
+      </div>
+      <div class="company-hero__title">
+        <h2>{{ company.name }}</h2>
+        <p class="text-muted">{{ company.slogan || company.short_name }}</p>
+      </div>
+      <div class="company-hero__actions">
+        <button type="button" class="btn btn--ghost" (click)="isCompanyFormOpen.set(true)">
+          <i class="bi bi-pencil"></i> Modifier
+        </button>
+        <button type="button" class="btn btn--danger" (click)="askDeleteCompany()">
+          <i class="bi bi-trash"></i> Supprimer
+        </button>
+      </div>
+    </div>
+
+    <dl class="info-grid">
+      <div>
+        <dt>Email</dt>
+        <dd>{{ company.email }}</dd>
+      </div>
+      <div>
+        <dt>Téléphone</dt>
+        <dd>{{ company.phone_one }}<span *ngIf="company.phone_two"> · {{ company.phone_two }}</span></dd>
+      </div>
+      <div>
+        <dt>Siège</dt>
+        <dd>{{ company.head_office_address || '—' }}</dd>
+      </div>
+      <div>
+        <dt>Propriétaire</dt>
+        <dd *ngIf="company.owner?.user as owner">
+          {{ owner.full_name }}
+          <span class="text-muted d-block">{{ owner.email }} · {{ owner.phone_number_one }}</span>
+        </dd>
+        <dd *ngIf="!company.owner?.user">—</dd>
+      </div>
+      <div>
+        <dt>Couleurs</dt>
+        <dd class="swatches">
+          <span class="swatch" [style.background]="company.primary_color" [title]="company.primary_color"></span>
+          <span class="swatch" [style.background]="company.secondary_color" [title]="company.secondary_color"></span>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <!-- Boutiques -->
+  <div class="card toolbar-card">
+    <div class="table-card__toolbar">
+      <div class="section-heading">
+        <h3><i class="bi bi-shop"></i> Boutiques</h3>
+        <span class="badge badge--muted">{{ total() }}</span>
+      </div>
+      <div class="search">
+        <i class="bi bi-search"></i>
+        <input type="text" placeholder="Rechercher une boutique..." [(ngModel)]="search" (keyup.enter)="onSearch()" />
+      </div>
+      <button type="button" class="btn btn--primary" (click)="openCreateStore()">
+        <i class="bi bi-plus-lg"></i> Nouvelle boutique
+      </button>
+    </div>
+  </div>
+
+  <div class="alert alert--error" *ngIf="storesError()">{{ storesError() }}</div>
+  <div class="state-message text-center text-muted" *ngIf="isLoadingStores()">Chargement...</div>
+  <div class="state-message text-center text-muted" *ngIf="!isLoadingStores() && stores().length === 0 && !storesError()">
+    Aucune boutique pour cette entreprise.
+  </div>
+
+  <div class="entity-grid" *ngIf="!isLoadingStores() && stores().length > 0">
+    <div class="card entity-card" *ngFor="let store of stores()">
+      <div class="entity-card__header">
+        <div class="entity-card__logo" [style.color]="store.effective_primary_color">
+          <img *ngIf="store.logo_url" [src]="store.logo_url" [alt]="store.name" />
+          <span *ngIf="!store.logo_url">{{ store.name.charAt(0) | uppercase }}</span>
+        </div>
+        <span class="badge" [class.badge--success]="store.active" [class.badge--muted]="!store.active">
+          {{ store.active ? 'Active' : 'Désactivée' }}
+        </span>
+      </div>
+
+      <div>
+        <h3 class="entity-card__name">{{ store.name }}</h3>
+        <p class="entity-card__slogan" *ngIf="store.slogan">{{ store.slogan }}</p>
+      </div>
+
+      <dl class="entity-card__meta">
+        <div class="entity-card__meta-row">
+          <dt><i class="bi bi-geo-alt"></i> Adresse</dt>
+          <dd [title]="store.address">{{ store.address }}</dd>
+        </div>
+        <div class="entity-card__meta-row">
+          <dt><i class="bi bi-telephone"></i> Téléphone</dt>
+          <dd>{{ store.phone_one }}</dd>
+        </div>
+      </dl>
+
+      <div class="storefront-row" *ngIf="storefrontOf(store) as sf">
+        <span
+          class="badge"
+          [class.badge--success]="sf.storefront.online"
+          [class.badge--warning]="sf.storefront.enabled && !sf.storefront.online"
+          [class.badge--muted]="!sf.storefront.enabled"
+          [title]="sf.storefront.issues.join(' ')"
+        >
+          <i class="bi bi-globe2"></i>
+          {{ sf.storefront.online ? 'Vitrine en ligne' : sf.storefront.enabled ? 'Vitrine hors ligne' : 'Sans vitrine' }}
+        </span>
+        <ng-container *ngIf="sf.storefront.enabled && sf.storefront.url as url">
+          <a class="storefront-row__link" [href]="url" target="_blank" rel="noopener" [title]="url">/{{ sf.storefront.slug }}</a>
+          <button type="button" class="icon-btn" title="Copier le lien" aria-label="Copier le lien de la vitrine" (click)="copyStorefrontLink(url)">
+            <i class="bi bi-clipboard"></i>
+          </button>
+        </ng-container>
+      </div>
+
+      <div class="store-stats">
+        <span title="Produits"><i class="bi bi-box-seam"></i> {{ store.nb_products }}</span>
+        <span title="Ventes"><i class="bi bi-cart"></i> {{ store.nb_sales }}</span>
+        <span title="Managers"><i class="bi bi-person-gear"></i> {{ store.nb_managers }}</span>
+        <span title="Fournisseurs"><i class="bi bi-bag"></i> {{ store.nb_suppliers }}</span>
+      </div>
+
+      <div class="entity-card__actions">
+        <button type="button" class="icon-btn" title="Modifier" (click)="openEditStore(store)">
+          <i class="bi bi-pencil"></i>
+        </button>
+        <button type="button" class="icon-btn" title="Vitrine publique" aria-label="Vitrine publique" (click)="openStorefront(store)" [disabled]="!storefrontOf(store)">
+          <i class="bi bi-globe2"></i>
+        </button>
+        <button type="button" class="icon-btn" [title]="store.active ? 'Désactiver' : 'Réactiver'" (click)="toggleStore(store)">
+          <i class="bi" [class.bi-toggle-on]="store.active" [class.bi-toggle-off]="!store.active"></i>
+        </button>
+        <button type="button" class="icon-btn icon-btn--danger" title="Supprimer" (click)="askDeleteStore(store)">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card pagination-card" *ngIf="lastPage() > 1">
+    <div class="pagination">
+      <button type="button" class="icon-btn" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">
+        <i class="bi bi-chevron-left"></i>
+      </button>
+      <span class="pagination__label">Page {{ currentPage() }} / {{ lastPage() }} ({{ total() }} boutiques)</span>
+      <button type="button" class="icon-btn" [disabled]="currentPage() === lastPage()" (click)="goToPage(currentPage() + 1)">
+        <i class="bi bi-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <app-company-form
+    *ngIf="isCompanyFormOpen()"
+    [company]="company"
+    (saved)="onCompanySaved($event)"
+    (closed)="isCompanyFormOpen.set(false)"
+  />
+
+  <app-storefront-settings
+    *ngIf="storefrontStore() as sf"
+    [store]="sf"
+    (saved)="onStorefrontSaved($event)"
+    (closed)="storefrontStore.set(null)"
+  />
+
+  <app-store-form
+    *ngIf="isStoreFormOpen()"
+    [company]="company"
+    [store]="editingStore()"
+    (saved)="onStoreSaved($event)"
+    (closed)="isStoreFormOpen.set(false)"
+  />
+</ng-container>

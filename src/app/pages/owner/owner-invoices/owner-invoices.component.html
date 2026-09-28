@@ -1,0 +1,128 @@
+<div class="page-header card">
+  <span class="page-header__icon"><i class="bi bi-receipt-cutoff"></i></span>
+  <div>
+    <h2 class="page-header__title">Factures & reçus — {{ context.selectedStore()?.name || 'Toutes les boutiques' }}</h2>
+    <p class="page-header__desc"><ng-container *ngIf="context.isSeller()">Les factures de vos ventes. </ng-container>Chaque vente produit une facture. Encaissez le reste dû des clients et imprimez factures, tickets et reçus.</p>
+  </div>
+  <a class="btn btn--primary page-header__cta" [routerLink]="context.base() + '/sales/new'"><i class="bi bi-plus-lg"></i> Nouvelle vente</a>
+</div>
+
+<div class="card toolbar-card">
+  <app-period-filter (rangeChange)="onRange($event)" />
+</div>
+
+<app-store-blocked *ngIf="context.selectedIsBlocked()" />
+
+<ng-container *ngIf="!context.selectedIsBlocked()">
+  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+  <div class="state-message text-center text-muted" *ngIf="isLoading() && !result()">Chargement...</div>
+
+  <ng-container *ngIf="result() as r">
+    <div class="kpi-grid invoice-kpis" [class.is-refreshing]="isLoading()">
+      <div class="card kpi" *ngFor="let k of kpis()" [class.kpi--due]="k.tone === 'due'">
+        <div class="kpi__label"><i class="bi {{ k.icon }}"></i> {{ k.label }}</div>
+        <div class="kpi__value">{{ k.value }}</div>
+        <div class="kpi__foot">
+          <span class="kpi__hint" *ngIf="k.hint">{{ k.hint }}</span>
+          <button type="button" class="kpi__link" *ngIf="k.tone === 'due' && status !== 'due'" (click)="showDue()">Voir les factures à encaisser</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card toolbar-card">
+      <div class="table-card__toolbar">
+        <div class="toolbar-filters">
+          <div class="search">
+            <i class="bi bi-search"></i>
+            <input type="text" placeholder="N° de facture, de vente, client, téléphone..." [(ngModel)]="search" (keyup.enter)="applyFilters()" aria-label="Rechercher une facture" />
+          </div>
+          <select class="filter-select" [(ngModel)]="status" (ngModelChange)="applyFilters()" aria-label="Filtrer par statut">
+            <option value="">Toutes les factures</option>
+            <option value="due">À encaisser (partielle ou non payée)</option>
+            <option *ngFor="let s of statuses" [value]="s">{{ statusLabels[s] }}</option>
+          </select>
+          <button type="button" class="btn btn--ghost" *ngIf="hasFilters()" (click)="resetFilters()">
+            <i class="bi bi-x-circle"></i> Réinitialiser
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="state-message text-center text-muted card" *ngIf="r.data.length === 0">
+      {{ hasFilters() ? 'Aucune facture ne correspond à ces critères.' : 'Aucune facture sur la période.' }}
+    </div>
+
+    <div class="card table-card" *ngIf="r.data.length > 0" [class.is-refreshing]="isLoading()">
+      <table class="table invoices-table">
+        <thead>
+          <tr>
+            <th>Facture</th>
+            <th *ngIf="!context.selectedId()">Boutique</th>
+            <th>Client</th>
+            <th class="text-right">Total</th>
+            <th class="text-right">Payé</th>
+            <th class="text-right">Reste</th>
+            <th>Statut</th>
+            <th class="text-right"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let inv of r.data"
+            class="invoices-table__row"
+            tabindex="0"
+            role="button"
+            [attr.aria-label]="'Voir la facture ' + inv.number"
+            (click)="open(inv)"
+            (keyup.enter)="open(inv)"
+          >
+            <td>
+              <div class="person__name">{{ inv.number }}</div>
+              <div class="person__sub">{{ inv.date | date: 'dd/MM/yyyy HH:mm' }}<ng-container *ngIf="inv.sale_number"> · {{ inv.sale_number }}</ng-container></div>
+            </td>
+            <td *ngIf="!context.selectedId()">{{ inv.store?.name }}</td>
+            <td>
+              <div>{{ inv.customer }}</div>
+              <div class="person__sub" *ngIf="inv.seller">par {{ inv.seller }}</div>
+            </td>
+            <td class="text-right num">{{ money(inv.amount_total) }}</td>
+            <td class="text-right num">{{ inv.status === 'cancelled' ? '—' : money(inv.amount_paid) }}</td>
+            <td class="text-right num" [class.is-due]="inv.balance > 0">{{ inv.balance > 0 ? money(inv.balance) : '—' }}</td>
+            <td><span class="badge pay pay--{{ inv.status }}">{{ statusLabels[inv.status] }}</span></td>
+            <td class="text-right">
+              <button
+                type="button"
+                class="btn btn--primary btn--sm"
+                *ngIf="inv.balance > 0 && inv.status !== 'cancelled'"
+                (click)="open(inv, true); $event.stopPropagation()"
+                [attr.aria-label]="'Encaisser la facture ' + inv.number"
+              >
+                <i class="bi bi-cash-coin"></i> Encaisser
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card pagination-card" *ngIf="r.meta.last_page > 1">
+      <div class="pagination">
+        <button type="button" class="icon-btn" [disabled]="r.meta.current_page === 1" (click)="goToPage(r.meta.current_page - 1)" aria-label="Page précédente">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <span class="pagination__label">Page {{ r.meta.current_page }} / {{ r.meta.last_page }}</span>
+        <button type="button" class="icon-btn" [disabled]="r.meta.current_page === r.meta.last_page" (click)="goToPage(r.meta.current_page + 1)" aria-label="Page suivante">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </ng-container>
+</ng-container>
+
+<app-invoice-detail
+  *ngIf="selected() as sel"
+  [invoiceId]="sel.id"
+  [startWithPayment]="sel.pay"
+  (changed)="reload()"
+  (closed)="closeDetail()"
+/>

@@ -1,0 +1,18 @@
+<div class="sidebar-backdrop" [class.is-visible]="layout.isMobileSidebarOpen()" (click)="layout.closeMobileSidebar()">
+</div>
+
+<aside class="sidebar" [class.is-collapsed]="layout.isSidebarCollapsed()"
+  [class.is-open]="layout.isMobileSidebarOpen()">
+  <div class="sidebar__brand">
+    <span class="sidebar__brand-icon"><i class="bi bi-stars"></i></span>
+    <span class="sidebar__brand-name">Komkom</span>
+  </div>
+
+  <nav class="sidebar__nav">
+    <a *ngFor="let item of navItems()" class="sidebar__link" [routerLink]="item.route" routerLinkActive="is-active"
+      [routerLinkActiveOptions]="{ exact: item.exact }" (click)="onNavigate()">
+      <i class="bi" [ngClass]="item.icon"></i>
+      <span class="sidebar__link-label">{{ item.label }}</span>
+    </a>
+  </nav>
+</aside>

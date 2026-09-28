@@ -1,0 +1,156 @@
+<div class="page-header card">
+  <span class="page-header__icon"><i class="bi bi-person-vcard"></i></span>
+  <div class="page-header__body">
+    <h2 class="page-header__title">Fournisseurs — {{ context.selectedStore()?.name || 'Toutes les boutiques' }}</h2>
+    <p class="page-header__desc">Vos fournisseurs, leurs coordonnées et tout ce que vous leur avez acheté.</p>
+  </div>
+  <button type="button" class="btn btn--primary page-header__cta" (click)="formSupplier.set(null)">
+    <i class="bi bi-plus-lg"></i> Nouveau fournisseur
+  </button>
+</div>
+
+<app-store-blocked *ngIf="context.selectedIsBlocked()" />
+
+<ng-container *ngIf="!context.selectedIsBlocked()">
+  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+  <div class="state-message text-center text-muted" *ngIf="isLoading() && !result()">Chargement...</div>
+
+  <ng-container *ngIf="result() as r">
+    <div class="kpi-grid supplier-kpis" [class.is-refreshing]="isLoading()">
+      <div class="card kpi">
+        <div class="kpi__label"><i class="bi bi-person-vcard"></i> Fournisseurs</div>
+        <div class="kpi__value">{{ formatNumber(r.summary.count) }}</div>
+        <div class="kpi__foot"><span class="kpi__hint">{{ formatNumber(r.summary.active) }} livré(s) ces 90 derniers jours</span></div>
+      </div>
+      <div class="card kpi">
+        <div class="kpi__label"><i class="bi bi-box-arrow-in-down"></i> Total acheté</div>
+        <div class="kpi__value">{{ money(r.summary.received_total) }}</div>
+        <div class="kpi__foot"><span class="kpi__hint">Approvisionnements reçus, depuis le début</span></div>
+      </div>
+      <div class="card kpi" [class.kpi--attention]="r.summary.pending_count > 0">
+        <div class="kpi__label"><i class="bi bi-hourglass-split"></i> Livraisons attendues</div>
+        <div class="kpi__value">{{ formatNumber(r.summary.pending_count) }}</div>
+        <div class="kpi__foot">
+          <span class="kpi__hint" *ngIf="r.summary.pending_count > 0">{{ money(r.summary.pending_amount) }} à réceptionner</span>
+          <a class="kpi__link" *ngIf="r.summary.pending_count > 0" [routerLink]="context.base() + '/procurements'">Voir les approvisionnements</a>
+          <span class="kpi__hint" *ngIf="r.summary.pending_count === 0">Rien en attente</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card toolbar-card">
+      <div class="table-card__toolbar">
+        <div class="toolbar-filters">
+          <div class="search">
+            <i class="bi bi-search"></i>
+            <input type="text" placeholder="Nom, téléphone ou e-mail..." [(ngModel)]="search" (keyup.enter)="load()" aria-label="Rechercher un fournisseur" />
+          </div>
+          <select class="filter-select" [(ngModel)]="sort" (ngModelChange)="load()" aria-label="Trier les fournisseurs">
+            <option value="name">Par nom</option>
+            <option value="purchases">Plus gros achats</option>
+            <option value="recent">Livrés récemment</option>
+          </select>
+          <button type="button" class="btn btn--ghost" *ngIf="search" (click)="resetSearch()">
+            <i class="bi bi-x-circle"></i> Réinitialiser
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card empty-state" *ngIf="r.data.length === 0">
+      <i class="bi bi-person-vcard empty-state__icon"></i>
+      <ng-container *ngIf="search; else noSupplier">
+        <p>Aucun fournisseur ne correspond à « {{ search }} ».</p>
+        <button type="button" class="btn btn--ghost" (click)="resetSearch()">Effacer la recherche</button>
+      </ng-container>
+      <ng-template #noSupplier>
+        <p>Aucun fournisseur enregistré pour l'instant.</p>
+        <button type="button" class="btn btn--primary" (click)="formSupplier.set(null)"><i class="bi bi-plus-lg"></i> Ajouter un fournisseur</button>
+      </ng-template>
+    </div>
+
+    <div class="card table-card" *ngIf="r.data.length > 0" [class.is-refreshing]="isLoading()">
+      <table class="table suppliers-table">
+        <thead>
+          <tr>
+            <th>Fournisseur</th>
+            <th>Contact</th>
+            <th *ngIf="!context.selectedId()">Boutique</th>
+            <th class="text-right">Total acheté</th>
+            <th>Dernière livraison</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let s of r.data"
+            class="suppliers-table__row"
+            tabindex="0"
+            (click)="fileId.set(s.id)"
+            (keydown.enter)="fileId.set(s.id)"
+            [attr.aria-label]="'Ouvrir la fiche de ' + s.name"
+          >
+            <td>
+              <div class="person__name">{{ s.name }}</div>
+              <div class="person__sub" *ngIf="s.address">{{ s.address }}</div>
+            </td>
+            <td>
+              <div><a [href]="'tel:' + s.phone" (click)="$event.stopPropagation()">{{ s.phone }}</a></div>
+              <div class="person__sub" *ngIf="s.email">{{ s.email }}</div>
+            </td>
+            <td *ngIf="!context.selectedId()">{{ s.store?.name }}</td>
+            <td class="text-right">
+              <strong class="num">{{ money(s.received_total) }}</strong>
+              <div class="person__sub">{{ formatNumber(s.received_count) }} livraison(s)</div>
+            </td>
+            <td>
+              <ng-container *ngIf="s.last_supply_at; else never">
+                <span>{{ s.last_supply_at | date: 'dd/MM/yyyy' }}</span>
+                <span class="badge badge--muted" *ngIf="isInactive(s)" title="Aucune livraison depuis plus de 90 jours">Inactif</span>
+              </ng-container>
+              <ng-template #never><span class="text-muted">Jamais livré</span></ng-template>
+              <div *ngIf="s.pending_count > 0">
+                <span class="badge supply-status supply-status--pending">{{ s.pending_count }} en attente</span>
+              </div>
+            </td>
+            <td class="text-right">
+              <div class="table-actions">
+                <a
+                  class="icon-btn icon-btn--primary"
+                  title="Nouvel approvisionnement"
+                  [attr.aria-label]="'Nouvel approvisionnement chez ' + s.name"
+                  [routerLink]="context.base() + '/procurements/new'"
+                  [queryParams]="{ store: s.store?.id, supplier: s.id }"
+                  (click)="$event.stopPropagation()"
+                >
+                  <i class="bi bi-truck"></i>
+                </a>
+                <button type="button" class="icon-btn" title="Modifier" [attr.aria-label]="'Modifier ' + s.name" (click)="edit(s, $event)">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button type="button" class="icon-btn icon-btn--danger" title="Supprimer" [attr.aria-label]="'Supprimer ' + s.name" (click)="askDelete(s, $event)">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+</ng-container>
+
+<app-supplier-file
+  *ngIf="fileId() as id"
+  [supplierId]="id"
+  (edit)="edit($event)"
+  (remove)="askDelete($event)"
+  (closed)="fileId.set(null)"
+/>
+
+<app-supplier-form
+  *ngIf="formSupplier() !== undefined"
+  [supplier]="formSupplier() ?? null"
+  (saved)="onSaved($event)"
+  (closed)="formSupplier.set(undefined)"
+/>

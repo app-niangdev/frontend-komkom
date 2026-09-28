@@ -1,0 +1,214 @@
+<div class="page-header card">
+  <span class="page-header__icon"><i class="bi bi-wallet2"></i></span>
+  <div>
+    <h2 class="page-header__title">{{ context.isSeller() ? 'Mes encaissements' : 'Paiements' }} — {{ context.selectedStore()?.name || 'Toutes les boutiques' }}</h2>
+    <p class="page-header__desc">
+      {{ context.isSeller() ? 'L\'argent que vous avez encaissé' : 'L\'argent réellement encaissé' }}, compté le jour où il est reçu : un reste dû réglé des semaines après la vente compte le jour du règlement.
+    </p>
+  </div>
+</div>
+
+<div class="card toolbar-card">
+  <app-period-filter [options]="periods" initial="today" (rangeChange)="onRange($event)" />
+  <p class="dashboard-caption" *ngIf="result()"><i class="bi bi-calendar3"></i> {{ periodLabel() }}</p>
+</div>
+
+<app-store-blocked *ngIf="context.selectedIsBlocked()" />
+
+<ng-container *ngIf="!context.selectedIsBlocked()">
+  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+  <div class="state-message text-center text-muted" *ngIf="isLoading() && !result()">Chargement...</div>
+
+  <ng-container *ngIf="result() as r">
+    <div class="notice" *ngIf="r.excluded_stores.length > 0" role="status">
+      <i class="bi bi-info-circle"></i>
+      {{ r.excluded_stores.length }} boutique(s) sans abonnement en cours non incluse(s).
+    </div>
+
+    <!-- Synthèse -->
+    <div class="pay-hero" [class.is-refreshing]="isLoading()">
+      <section class="card pay-total">
+        <span class="pay-total__label"><i class="bi bi-cash-stack"></i> Encaissé</span>
+        <strong class="pay-total__value">{{ money(r.summary.total.value) }}</strong>
+        <span class="pay-total__sub">{{ formatNumber(r.summary.count) }} paiement(s)</span>
+        <span class="pay-total__delta" *ngIf="r.summary.total.previous === 0 && r.summary.total.value > 0">
+          Rien encaissé {{ r.period.days === 1 ? 'la veille' : 'sur la période précédente' }}
+        </span>
+        <span class="pay-total__delta" *ngIf="r.summary.total.previous > 0 && delta() as d"
+          [class.is-good]="d.good && d.direction !== 'flat'" [class.is-bad]="!d.good" [class.is-flat]="d.direction === 'flat'"
+          [title]="'Période précédente : ' + previousLabel()">
+          <i class="bi" [class.bi-arrow-up-right]="d.direction === 'up'" [class.bi-arrow-down-right]="d.direction === 'down'" [class.bi-dash]="d.direction === 'flat'"></i>
+          {{ d.text }} vs {{ r.period.days === 1 ? 'la veille' : 'la période précédente' }} ({{ money(r.summary.total.previous) }})
+        </span>
+      </section>
+
+      <button type="button" class="card pay-origin" [class.is-selected]="origin === 'at_sale'" [attr.aria-pressed]="origin === 'at_sale'" (click)="toggleOrigin('at_sale')">
+        <span class="pay-origin__label"><i class="bi bi-cart-check"></i> Payé à la vente</span>
+        <strong>{{ money(r.summary.at_sale) }}</strong>
+        <span class="pay-origin__sub">Ventes de la période réglées sur place</span>
+      </button>
+
+      <button type="button" class="card pay-origin pay-origin--debt" [class.is-selected]="origin === 'debt'" [attr.aria-pressed]="origin === 'debt'" (click)="toggleOrigin('debt')">
+        <span class="pay-origin__label"><i class="bi bi-arrow-repeat"></i> Règlements de dettes</span>
+        <strong>{{ money(r.summary.debt) }}</strong>
+        <span class="pay-origin__sub">
+          {{ r.summary.debt_count > 0 ? formatNumber(r.summary.debt_count) + ' paiement(s) de ' + formatNumber(r.summary.debt_customers) + ' client(s) sur des ventes antérieures' : 'Aucun reste dû réglé sur la période' }}
+        </span>
+      </button>
+    </div>
+
+    <div class="pay-grid" [class.is-refreshing]="isLoading()">
+      <!-- Par moyen de paiement -->
+      <section class="card chart-card">
+        <header class="chart-card__header"><h3>Par moyen de paiement</h3></header>
+        <p class="chart-card__sub">Les espèces sont ce qui doit se trouver en caisse.</p>
+        <ul class="methods">
+          <li *ngFor="let m of byType()">
+            <button type="button" class="method" [class.is-selected]="type === m.value" [class.is-empty]="m.amount === 0" [attr.aria-pressed]="type === m.value" (click)="toggleType(m.value)">
+              <span class="method__name"><i class="bi {{ m.icon }}"></i> {{ m.label }}</span>
+              <span class="method__bar"><span [style.width.%]="m.share"></span></span>
+              <span class="method__amount">{{ money(m.amount) }}</span>
+              <span class="method__meta">{{ m.count }} · {{ m.share }} %</span>
+            </button>
+          </li>
+        </ul>
+
+        <ng-container *ngIf="r.by_cashier.length > 0 && !context.isSeller()">
+          <h4 class="sub-heading">Par personne ayant encaissé</h4>
+          <ul class="cashiers">
+            <li *ngFor="let c of r.by_cashier">
+              <span class="cashiers__name">{{ c.name }}</span>
+              <span class="cashiers__bar"><span [style.width.%]="(c.total / cashierMax()) * 100"></span></span>
+              <strong class="cashiers__amount">{{ money(c.total) }}</strong>
+            </li>
+          </ul>
+        </ng-container>
+      </section>
+
+      <!-- Évolution (périodes de plusieurs jours) -->
+      <section class="card chart-card" *ngIf="r.period.days > 1; else dayHint">
+        <header class="chart-card__header">
+          <h3>Encaissements par {{ r.period.granularity === 'day' ? 'jour' : r.period.granularity === 'week' ? 'semaine' : 'mois' }}</h3>
+          <span class="chart-card__total">{{ money(r.summary.total.value) }}</span>
+        </header>
+        <p class="chart-card__sub">Montants reçus, en {{ r.currency }}</p>
+        <app-time-series-chart
+          kind="column"
+          label="Encaissé"
+          [points]="r.series"
+          [granularity]="r.period.granularity"
+          [formatValue]="moneyFormatter()"
+          [loading]="isLoading()"
+        />
+      </section>
+      <ng-template #dayHint>
+        <section class="card chart-card day-hint">
+          <header class="chart-card__header"><h3>Comment c'est compté</h3></header>
+          <ul>
+            <li><i class="bi bi-check2"></i><span>Chaque paiement compte le <strong>jour où il est reçu</strong>, pas le jour de la vente.</span></li>
+            <li><i class="bi bi-check2"></i><span>Un client qui règle aujourd'hui le reste d'un achat du mois dernier apparaît dans <strong>Règlements de dettes</strong>.</span></li>
+            <li><i class="bi bi-check2"></i><span>Les paiements des factures annulées ne sont pas comptés.</span></li>
+          </ul>
+        </section>
+      </ng-template>
+    </div>
+
+    <!-- Liste -->
+    <div class="card toolbar-card">
+      <div class="table-card__toolbar">
+        <div class="toolbar-filters">
+          <div class="search">
+            <i class="bi bi-search"></i>
+            <input type="text" placeholder="Client, téléphone, n° de facture ou de vente..." [(ngModel)]="search" (keyup.enter)="applyFilters()" aria-label="Rechercher un paiement" />
+          </div>
+          <select class="filter-select" [(ngModel)]="type" (ngModelChange)="applyFilters()" aria-label="Filtrer par moyen de paiement">
+            <option value="">Tous les moyens</option>
+            <option *ngFor="let m of methods" [value]="m.value">{{ m.label }}</option>
+          </select>
+          <select class="filter-select" [(ngModel)]="origin" (ngModelChange)="applyFilters()" aria-label="Filtrer par origine">
+            <option value="">Toutes les origines</option>
+            <option value="at_sale">Payé à la vente</option>
+            <option value="debt">Règlements de dettes</option>
+          </select>
+          <button type="button" class="btn btn--ghost" *ngIf="hasFilters()" (click)="resetFilters()"><i class="bi bi-x-circle"></i> Réinitialiser</button>
+        </div>
+        <div class="export-group" role="group" aria-label="Exporter la liste">
+          <button type="button" class="btn btn--ghost" (click)="exportFile('csv')" [disabled]="!!isExporting() || r.meta.total === 0" title="Tableur (Excel)">
+            <i class="bi bi-filetype-csv"></i> {{ isExporting() === 'csv' ? 'Export...' : 'CSV' }}
+          </button>
+          <button type="button" class="btn btn--ghost" (click)="exportFile('pdf')" [disabled]="!!isExporting()" title="Rapport imprimable">
+            <i class="bi bi-file-earmark-pdf"></i> {{ isExporting() === 'pdf' ? 'Génération...' : 'PDF' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="state-message text-center text-muted card" *ngIf="r.data.length === 0">
+      {{ hasFilters() ? 'Aucun paiement ne correspond à ces critères.' : 'Aucun paiement reçu sur la période.' }}
+    </div>
+
+    <div class="card table-card" *ngIf="r.data.length > 0" [class.is-refreshing]="isLoading()">
+      <table class="table payments-table">
+        <thead>
+          <tr>
+            <th>{{ r.period.days === 1 ? 'Heure' : 'Date' }}</th>
+            <th>Client</th>
+            <th>Facture</th>
+            <th>Origine</th>
+            <th>Moyen</th>
+            <th>Encaissé par</th>
+            <th class="text-right">Montant</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let p of r.data"
+            class="payments-table__row"
+            tabindex="0"
+            role="button"
+            [attr.aria-label]="'Voir la facture ' + p.invoice.number"
+            (click)="openInvoice.set(p.invoice.id)"
+            (keyup.enter)="openInvoice.set(p.invoice.id)"
+          >
+            <td class="nowrap">
+              <ng-container *ngIf="r.period.days === 1; else withDate">{{ p.recorded_at ? (p.recorded_at | date: 'HH:mm') : '—' }}</ng-container>
+              <ng-template #withDate>
+                <div>{{ formatIsoDate(p.date) }}</div>
+                <div class="person__sub" *ngIf="p.recorded_at">{{ p.recorded_at | date: 'HH:mm' }}</div>
+              </ng-template>
+            </td>
+            <td>
+              <div>{{ p.customer }}</div>
+              <div class="person__sub" *ngIf="p.customer_phone">{{ p.customer_phone }}</div>
+            </td>
+            <td>
+              <div class="person__name">{{ p.invoice.number }}</div>
+              <div class="person__sub">{{ p.sale_number }}<ng-container *ngIf="!context.selectedId() && p.store"> · {{ p.store.name }}</ng-container></div>
+            </td>
+            <td>
+              <span class="badge origin origin--{{ p.origin }}">{{ p.origin === 'debt' ? 'Règlement' : 'À la vente' }}</span>
+              <div class="person__sub" *ngIf="p.origin === 'debt'">vente du {{ formatIsoDate(p.invoice.date) }}</div>
+            </td>
+            <td>{{ typeLabels[p.type] || p.type }}</td>
+            <td class="text-muted">{{ p.cashier || '—' }}</td>
+            <td class="text-right num">
+              <strong>{{ money(p.amount) }}</strong>
+              <div class="person__sub" *ngIf="p.invoice.balance > 0">reste dû {{ money(p.invoice.balance) }}</div>
+              <div class="person__sub is-settled" *ngIf="p.invoice.balance === 0 && p.origin === 'debt'">facture soldée</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card pagination-card" *ngIf="r.meta.last_page > 1">
+      <div class="pagination">
+        <button type="button" class="icon-btn" [disabled]="r.meta.current_page === 1" (click)="goToPage(r.meta.current_page - 1)" aria-label="Page précédente"><i class="bi bi-chevron-left"></i></button>
+        <span class="pagination__label">Page {{ r.meta.current_page }} / {{ r.meta.last_page }} ({{ formatNumber(r.meta.total) }} paiements)</span>
+        <button type="button" class="icon-btn" [disabled]="r.meta.current_page === r.meta.last_page" (click)="goToPage(r.meta.current_page + 1)" aria-label="Page suivante"><i class="bi bi-chevron-right"></i></button>
+      </div>
+    </div>
+  </ng-container>
+</ng-container>
+
+<app-invoice-detail *ngIf="openInvoice() as id" [invoiceId]="id" (changed)="reload()" (closed)="openInvoice.set(null)" />

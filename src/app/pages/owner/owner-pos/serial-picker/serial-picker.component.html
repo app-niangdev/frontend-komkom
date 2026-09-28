@@ -1,0 +1,48 @@
+<div class="modal-backdrop" (click)="closed.emit()"></div>
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="serial-picker-title">
+  <div class="modal__header">
+    <h3 id="serial-picker-title">Numéros de série — {{ product().name }}</h3>
+    <button type="button" class="icon-btn" title="Fermer" (click)="closed.emit()"><i class="bi bi-x-lg"></i></button>
+  </div>
+
+  <p class="text-muted hint">Cochez les appareils vendus, ou scannez leur numéro puis Entrée.</p>
+
+  <div class="alert alert--error" *ngIf="error()">{{ error() }}</div>
+  <div class="state-message text-center text-muted" *ngIf="isLoading()">Chargement...</div>
+
+  <ng-container *ngIf="!isLoading() && !error()">
+    <div class="search serial-search">
+      <i class="bi bi-upc-scan"></i>
+      <input
+        type="text"
+        placeholder="Rechercher ou scanner un numéro..."
+        [(ngModel)]="filter"
+        (keydown.enter)="onEnter(); $event.preventDefault()"
+        (ngModelChange)="scanError.set(null)"
+        aria-label="Rechercher ou scanner un numéro de série"
+        autofocus
+      />
+    </div>
+    <p class="scan-error" *ngIf="scanError()" role="alert">{{ scanError() }}</p>
+
+    <p class="text-muted empty" *ngIf="available().length === 0">Aucun numéro de série disponible : ce produit est en rupture.</p>
+
+    <ul class="serial-list" *ngIf="available().length > 0">
+      <li *ngFor="let s of filtered()">
+        <label>
+          <input type="checkbox" [checked]="selected().has(s)" (change)="toggle(s)" />
+          <span class="mono">{{ s }}</span>
+        </label>
+      </li>
+      <li class="text-muted empty" *ngIf="filtered().length === 0">Aucun numéro ne correspond.</li>
+    </ul>
+  </ng-container>
+
+  <div class="modal__actions">
+    <span class="count">{{ selected().size }} sélectionné(s)</span>
+    <button type="button" class="btn btn--ghost" (click)="closed.emit()">Annuler</button>
+    <button type="button" class="btn btn--primary" (click)="confirm()" [disabled]="isLoading() || (selected().size === 0 && initial().length === 0)">
+      {{ selected().size === 0 && initial().length > 0 ? 'Retirer du panier' : 'Valider' }}
+    </button>
+  </div>
+</div>

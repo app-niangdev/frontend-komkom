@@ -1,0 +1,26 @@
+<div class="preset-group" role="group" aria-label="Période">
+  <button
+    type="button"
+    *ngFor="let p of presets()"
+    class="preset-group__option"
+    [class.is-selected]="preset() === p.key"
+    [attr.aria-pressed]="preset() === p.key"
+    (click)="select(p.key)"
+  >
+    {{ p.label }}
+  </button>
+</div>
+
+<form class="custom-range" *ngIf="preset() === 'custom'" (ngSubmit)="applyCustom()">
+  <label>
+    <span>Du</span>
+    <input type="date" class="custom-range__input" [(ngModel)]="customStart" name="customStart" required [max]="customEnd" />
+  </label>
+  <label>
+    <span>au</span>
+    <input type="date" class="custom-range__input" [(ngModel)]="customEnd" name="customEnd" required [min]="customStart" />
+  </label>
+  <button type="submit" class="custom-range__apply" [disabled]="!customStart || !customEnd || customStart > customEnd">
+    Appliquer
+  </button>
+</form>

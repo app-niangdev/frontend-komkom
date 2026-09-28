@@ -1,0 +1,142 @@
+<div class="page-header card">
+  <span class="page-header__icon"><i class="bi bi-people"></i></span>
+  <div>
+    <h2 class="page-header__title">Utilisateurs</h2>
+    <p class="page-header__desc">Tous les comptes de la plateforme : administrateurs, propriétaires, gestionnaires et vendeurs.</p>
+  </div>
+</div>
+
+<div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+
+<div class="card toolbar-card">
+  <div class="table-card__toolbar">
+    <div class="toolbar-filters">
+      <div class="search">
+        <i class="bi bi-search"></i>
+        <input type="text" placeholder="Nom, prénom ou email..." [(ngModel)]="filters.search" (keyup.enter)="applyFilters()" />
+      </div>
+
+      <select class="filter-select" [(ngModel)]="filters.role_id" (ngModelChange)="applyFilters()" aria-label="Filtrer par rôle">
+        <option [ngValue]="null">Tous les rôles</option>
+        <option *ngFor="let role of roles()" [ngValue]="role.id">{{ roleLabels[role.name] }}</option>
+      </select>
+
+      <select class="filter-select" [(ngModel)]="filters.company_id" (ngModelChange)="applyFilters()" aria-label="Filtrer par entreprise">
+        <option [ngValue]="null">Toutes les entreprises</option>
+        <option *ngFor="let company of companies()" [ngValue]="company.id">{{ company.name }}</option>
+      </select>
+
+      <select class="filter-select" [(ngModel)]="filters.status" (ngModelChange)="applyFilters()" aria-label="Filtrer par statut">
+        <option value="">Tous les statuts</option>
+        <option value="1">Actifs</option>
+        <option value="0">Désactivés</option>
+      </select>
+
+      <button type="button" class="btn btn--ghost" *ngIf="hasActiveFilters()" (click)="resetFilters()">
+        <i class="bi bi-x-circle"></i> Réinitialiser
+      </button>
+    </div>
+
+    <button type="button" class="btn btn--primary" (click)="openCreateForm()">
+      <i class="bi bi-plus-lg"></i> Nouvel utilisateur
+    </button>
+  </div>
+</div>
+
+<div class="state-message text-center text-muted" *ngIf="isLoading()">Chargement...</div>
+<div class="state-message text-center text-muted" *ngIf="!isLoading() && users().length === 0 && !errorMessage()">
+  Aucun utilisateur trouvé.
+</div>
+
+<div class="card table-card" *ngIf="!isLoading() && users().length > 0">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Utilisateur</th>
+        <th>Rôle</th>
+        <th>Entreprise / boutique</th>
+        <th>Téléphone</th>
+        <th>Statut</th>
+        <th class="text-right">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let user of users()">
+        <td>
+          <div class="person">
+            <span class="person__avatar">
+              <img *ngIf="user.image_url" [src]="user.image_url" [alt]="user.full_name" />
+              <span *ngIf="!user.image_url">{{ initialsOf(user) }}</span>
+            </span>
+            <div>
+              <div class="person__name">{{ user.full_name }}<span class="text-muted" *ngIf="isSelf(user)"> (vous)</span></div>
+              <div class="person__sub">{{ user.email }}</div>
+            </div>
+          </div>
+        </td>
+        <td>
+          <span class="badge badge--{{ user.role.name | lowercase }}">{{ roleLabels[user.role.name] }}</span>
+        </td>
+        <td>
+          <ng-container *ngIf="companyNameOf(user) as companyName; else noCompany">
+            <div>{{ companyName }}</div>
+            <div class="person__sub" *ngIf="storeOf(user) as store"><i class="bi bi-shop"></i> {{ store.name }}</div>
+          </ng-container>
+          <ng-template #noCompany><span class="text-muted">—</span></ng-template>
+        </td>
+        <td>{{ user.phone_number_one }}</td>
+        <td>
+          <span class="badge" [class.badge--success]="user.status" [class.badge--muted]="!user.status">
+            {{ user.status ? 'Actif' : 'Désactivé' }}
+          </span>
+        </td>
+        <td class="text-right">
+          <div class="table-actions">
+            <button type="button" class="icon-btn" title="Modifier" (click)="openEditForm(user)">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button
+              type="button"
+              class="icon-btn"
+              [title]="user.status ? 'Désactiver' : 'Réactiver'"
+              [disabled]="isSelf(user)"
+              (click)="toggleStatus(user)"
+            >
+              <i class="bi" [class.bi-toggle-on]="user.status" [class.bi-toggle-off]="!user.status"></i>
+            </button>
+            <button
+              type="button"
+              class="icon-btn icon-btn--danger"
+              [title]="user.role.name === 'Owner' ? 'Supprimer via son entreprise' : 'Supprimer'"
+              [disabled]="isSelf(user) || user.role.name === 'Owner'"
+              (click)="askDelete(user)"
+            >
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card pagination-card" *ngIf="lastPage() > 1">
+  <div class="pagination">
+    <button type="button" class="icon-btn" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">
+      <i class="bi bi-chevron-left"></i>
+    </button>
+    <span class="pagination__label">Page {{ currentPage() }} / {{ lastPage() }} ({{ total() }} utilisateurs)</span>
+    <button type="button" class="icon-btn" [disabled]="currentPage() === lastPage()" (click)="goToPage(currentPage() + 1)">
+      <i class="bi bi-chevron-right"></i>
+    </button>
+  </div>
+</div>
+
+<app-user-form
+  *ngIf="isFormOpen()"
+  [user]="editingUser()"
+  [roles]="roles()"
+  [companies]="companies()"
+  (saved)="onSaved($event)"
+  (closed)="isFormOpen.set(false)"
+/>

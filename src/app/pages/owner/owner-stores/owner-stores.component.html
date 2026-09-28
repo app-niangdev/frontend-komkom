@@ -1,0 +1,86 @@
+<div class="page-header card">
+  <span class="page-header__icon"><i class="bi bi-shop"></i></span>
+  <div>
+    <h2 class="page-header__title">Mes boutiques</h2>
+    <p class="page-header__desc">Vue d'ensemble de vos boutiques. Entrez dans une boutique pour voir ses données en détail.</p>
+  </div>
+</div>
+
+<div class="card toolbar-card">
+  <app-period-filter (rangeChange)="onRange($event)" />
+  <p class="dashboard-caption" *ngIf="range() as r">
+    <i class="bi bi-calendar3"></i> Chiffres du {{ formatIsoDate(r.start) }} au {{ formatIsoDate(r.end) }}
+    · {{ money(totals().revenue) }} de chiffre d'affaires, {{ formatNumber(totals().sales) }} vente(s) au total
+  </p>
+</div>
+
+<div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+<div class="state-message text-center text-muted" *ngIf="isLoading() && stores().length === 0">Chargement...</div>
+<div class="state-message text-center text-muted" *ngIf="!isLoading() && stores().length === 0 && !errorMessage()">
+  Aucune boutique pour votre entreprise.
+</div>
+
+<div class="store-grid" [class.is-refreshing]="isLoading()">
+  <article class="card store-card" *ngFor="let store of stores()" [class.store-card--blocked]="isBlocked(store)">
+    <header class="store-card__header">
+      <div class="entity-card__logo" [style.color]="store.primary_color">
+        <img *ngIf="store.logo_url" [src]="store.logo_url" [alt]="store.name" />
+        <span *ngIf="!store.logo_url">{{ store.name.charAt(0) | uppercase }}</span>
+      </div>
+      <div class="store-card__title">
+        <h3>{{ store.name }}</h3>
+        <p class="text-muted">{{ store.address }}</p>
+      </div>
+      <span class="badge badge--state-{{ store.subscription.state }}" [title]="describeStatus(store.subscription)">
+        {{ stateLabels[store.subscription.state] }}
+      </span>
+    </header>
+
+    <ng-container *ngIf="!isBlocked(store); else blocked">
+      <dl class="store-card__kpis">
+        <div>
+          <dt>Chiffre d'affaires</dt>
+          <dd>{{ money(store.sales_revenue) }}</dd>
+        </div>
+        <div>
+          <dt>Ventes</dt>
+          <dd>{{ formatNumber(store.sales_count) }}</dd>
+        </div>
+        <div>
+          <dt>Reste à encaisser</dt>
+          <dd>{{ money(store.receivables) }}</dd>
+        </div>
+      </dl>
+
+      <ul class="store-card__facts">
+        <li><i class="bi bi-box-seam"></i> {{ store.products_count }} produit(s)</li>
+        <li [class.is-alert]="store.low_stock_count > 0">
+          <i class="bi" [class.bi-exclamation-triangle]="store.low_stock_count > 0" [class.bi-check2]="store.low_stock_count === 0"></i>
+          {{ store.low_stock_count }} en stock bas
+        </li>
+        <li><i class="bi bi-people"></i> {{ store.team_count }} membre(s) d'équipe</li>
+        <li *ngIf="store.subscription.state === 'expiring'" class="is-alert">
+          <i class="bi bi-hourglass-split"></i> Abonnement : {{ describeStatus(store.subscription) }}
+        </li>
+      </ul>
+
+      <app-storefront-link [storefront]="store.storefront" />
+
+      <footer class="store-card__actions">
+        <button type="button" class="btn btn--primary" (click)="open(store, 'dashboard')">
+          <i class="bi bi-speedometer2"></i> Tableau de bord
+        </button>
+        <button type="button" class="btn btn--ghost" (click)="open(store, 'sales')">
+          <i class="bi bi-cart-check"></i> Ventes
+        </button>
+      </footer>
+    </ng-container>
+
+    <ng-template #blocked>
+      <p class="store-card__blocked">
+        <i class="bi bi-lock"></i>
+        Données inaccessibles : abonnement {{ describeStatus(store.subscription) }}. Contactez l'administrateur pour le renouveler.
+      </p>
+    </ng-template>
+  </article>
+</div>

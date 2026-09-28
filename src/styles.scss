@@ -1,0 +1,159 @@
+/* You can add global styles to this file, and also import other style files */
+@use 'styles/tokens' as t;
+@import 'sweetalert2/dist/sweetalert2.min.css';
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: t.$page-bg;
+  color: t.$text-primary;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+
+.card {
+  background: t.$card-bg;
+  border: 1px solid t.$border-color;
+  border-radius: t.$radius-lg;
+  box-shadow: t.$shadow-sm;
+  padding: 1.5rem;
+}
+
+/* ——— Thème SweetAlert2 aux couleurs KomKom ——— */
+.swal2-icon {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+body:not(.swal2-toast-shown) .swal2-container.swal2-backdrop-show {
+  background: rgba(26, 31, 53, 0.5) !important;
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+.kk-swal {
+  border-radius: #{t.$radius-lg} !important;
+  padding: 22px 22px 18px !important;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  border: 1px solid #{t.$border-color};
+  box-shadow: t.$shadow-md !important;
+}
+
+.kk-swal__title {
+  color: #{t.$text-primary} !important;
+  font-size: 1.12rem !important;
+  font-weight: 700 !important;
+  margin-bottom: 6px !important;
+}
+
+.kk-swal__html {
+  color: #{t.$text-secondary} !important;
+  font-size: 0.92rem !important;
+  line-height: 1.5 !important;
+  margin-top: 4px !important;
+}
+
+.kk-swal__icon {
+  margin: 8px auto 12px !important;
+  width: 56px !important;
+  height: 56px !important;
+  border-width: 2px !important;
+}
+
+.kk-swal__icon .swal2-icon-content {
+  font-size: 1.6rem !important;
+}
+
+.kk-swal__actions {
+  gap: 8px !important;
+  margin-top: 14px !important;
+}
+
+.kk-swal__btn {
+  border: 1px solid transparent !important;
+  border-radius: 9px !important;
+  padding: 9px 18px !important;
+  font-size: 0.88rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: background 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease !important;
+}
+
+.kk-swal__btn:focus {
+  box-shadow: 0 0 0 3px rgba(91, 79, 229, 0.18) !important;
+  outline: none !important;
+}
+
+.kk-swal__btn--primary {
+  background: #{t.$accent} !important;
+  color: #ffffff !important;
+}
+.kk-swal__btn--primary:hover {
+  background: #{t.$accent-hover} !important;
+  transform: translateY(-1px);
+}
+
+.kk-swal__btn--danger {
+  background: #{t.$danger} !important;
+  color: #ffffff !important;
+}
+.kk-swal__btn--danger:hover {
+  background: #b91c1c !important;
+  transform: translateY(-1px);
+}
+
+.kk-swal__btn--ghost {
+  background: #{t.$card-bg} !important;
+  color: #{t.$text-primary} !important;
+  border-color: #{t.$border-color} !important;
+}
+.kk-swal__btn--ghost:hover {
+  background: #{t.$page-bg} !important;
+}
+
+.kk-swal__toast {
+  border-radius: 11px !important;
+  padding: 10px 14px !important;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  border: 1px solid #{t.$border-color} !important;
+  box-shadow: t.$shadow-md !important;
+}
+
+.kk-swal__toast .swal2-title {
+  color: #{t.$text-primary} !important;
+  font-size: 0.88rem !important;
+  font-weight: 600 !important;
+}
+
+/* Liste des boutiques dans l'alerte d'abonnement (SweetAlert, hors encapsulation) */
+.subscription-alert-list {
+  margin: 0.5rem 0 0.9rem;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+
+  li {
+    padding: 0.45rem 0.7rem;
+    border-radius: 8px;
+    background: rgba(217, 119, 6, 0.08);
+    margin-bottom: 0.35rem;
+  }
+}

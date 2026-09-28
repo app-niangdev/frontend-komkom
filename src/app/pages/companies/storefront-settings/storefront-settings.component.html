@@ -1,0 +1,78 @@
+<div class="modal-backdrop" (click)="closed.emit()"></div>
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="sf-title">
+  <div class="modal__header">
+    <h3 id="sf-title">Vitrine — {{ store().name }}</h3>
+    <button type="button" class="icon-btn" title="Fermer" aria-label="Fermer" (click)="closed.emit()"><i class="bi bi-x-lg"></i></button>
+  </div>
+
+  <p class="sf-intro text-muted">
+    Site public listant les produits en stock de la boutique, avec ses contacts, ses couleurs et un panier
+    envoyé par WhatsApp.
+  </p>
+
+  <div class="alert alert--error" *ngIf="errorMessage()" role="alert">{{ errorMessage() }}</div>
+  <div class="state-message text-center text-muted" *ngIf="isLoading()">Chargement...</div>
+
+  <form *ngIf="!isLoading()" (ngSubmit)="submit()">
+    <!-- Numéro qui recevra les commandes -->
+    <div class="sf-whatsapp" [class.is-invalid]="!store().storefront.whatsapp">
+      <i class="bi bi-whatsapp"></i>
+      <div>
+        <span class="sf-whatsapp__label">Commandes WhatsApp reçues sur</span>
+        <strong *ngIf="store().storefront.whatsapp">{{ formatWhatsapp(store().storefront.whatsapp) }}</strong>
+        <strong *ngIf="!store().storefront.whatsapp">Numéro invalide : « {{ store().phone_one || 'vide' }} »</strong>
+        <span class="sf-whatsapp__hint">Téléphone principal de la boutique{{ store().storefront.whatsapp ? '' : ' : corrigez-le via « Modifier » avant d\'activer la vitrine' }}.</span>
+      </div>
+    </div>
+
+    <label class="check-field sf-toggle">
+      <input type="checkbox" [(ngModel)]="enabled" name="enabled" />
+      <span>
+        <strong>Activer la vitrine publique</strong>
+        <span class="text-muted d-block">Seuls les produits en stock sont affichés, sans quantité exacte ni prix d'achat.</span>
+      </span>
+    </label>
+
+    <div class="field">
+      <label class="field__label" for="sf_slug">Lien de la vitrine *</label>
+      <div class="sf-slug">
+        <span class="sf-slug__prefix" [title]="baseUrl() + '/'">{{ baseUrl() }}/</span>
+        <input
+          id="sf_slug"
+          type="text"
+          class="field__input mono"
+          [ngModel]="slug"
+          (ngModelChange)="onSlugInput($event)"
+          name="slug"
+          maxlength="60"
+          autocomplete="off"
+          spellcheck="false"
+          aria-describedby="sf_slug_hint"
+        />
+      </div>
+      <span class="form-hint-inline" id="sf_slug_hint" [class.sf-error]="slugError">
+        {{ slugError || 'Lettres minuscules, chiffres et tirets. Évitez de le changer une fois partagé.' }}
+        <button type="button" class="sf-link-btn" *ngIf="suggested && cleanSlug !== suggested" (click)="useSuggestion()">Proposition automatique</button>
+      </span>
+    </div>
+
+    <div class="sf-preview">
+      <span class="text-muted">Aperçu :</span>
+      <code>{{ previewUrl }}</code>
+      <button type="button" class="icon-btn" title="Copier le lien" aria-label="Copier le lien" (click)="copyPreview()" [disabled]="!!slugError">
+        <i class="bi bi-clipboard"></i>
+      </button>
+    </div>
+
+    <ul class="sf-issues" *ngIf="enabled && store().storefront.issues.length">
+      <li *ngFor="let issue of store().storefront.issues"><i class="bi bi-exclamation-triangle"></i> {{ issue }} La vitrine restera invisible tant que ce n'est pas réglé.</li>
+    </ul>
+
+    <div class="modal__actions">
+      <button type="button" class="btn btn--ghost" (click)="closed.emit()">Annuler</button>
+      <button type="submit" class="btn btn--primary" [disabled]="isSubmitting() || !!slugError || blockedByPhone">
+        {{ isSubmitting() ? 'Enregistrement...' : 'Enregistrer' }}
+      </button>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,126 @@
+<div class="modal-backdrop" (click)="closed.emit()"></div>
+<div class="modal modal--xl" role="dialog" aria-modal="true" aria-labelledby="customer-file-title">
+  <div class="modal__header">
+    <h3 id="customer-file-title">{{ file()?.name || 'Fiche client' }}</h3>
+    <button type="button" class="icon-btn" title="Fermer" (click)="closed.emit()"><i class="bi bi-x-lg"></i></button>
+  </div>
+
+  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+  <div class="state-message text-center text-muted" *ngIf="!file() && !errorMessage()">Chargement...</div>
+
+  <ng-container *ngIf="file() as f">
+    <!-- Coordonnées -->
+    <div class="contact">
+      <span class="contact__avatar" aria-hidden="true">{{ f.name.charAt(0) | uppercase }}</span>
+      <div class="contact__info">
+        <a class="contact__line" [href]="'tel:' + phoneDigits(f.phone)"><i class="bi bi-telephone"></i> {{ f.phone }}</a>
+        <a class="contact__line" *ngIf="f.email" [href]="'mailto:' + f.email"><i class="bi bi-envelope"></i> {{ f.email }}</a>
+        <span class="contact__line"><i class="bi bi-geo-alt"></i> {{ f.address }}</span>
+        <span class="contact__line text-muted">
+          <i class="bi bi-shop"></i> {{ f.store?.name }}<ng-container *ngIf="f.created_at"> · client depuis le {{ formatIsoDate(f.created_at) }}</ng-container>
+        </span>
+      </div>
+      <button type="button" class="btn btn--ghost contact__edit" (click)="edit.emit()">
+        <i class="bi bi-pencil"></i> Modifier
+      </button>
+    </div>
+
+    <!-- Indicateurs -->
+    <dl class="file-kpis">
+      <div>
+        <dt>Achats validés</dt>
+        <dd>{{ money(f.total_purchases) }}</dd>
+        <span>{{ formatNumber(f.sales_count) }} vente(s)</span>
+      </div>
+      <div>
+        <dt>Panier moyen</dt>
+        <dd>{{ money(f.average_basket) }}</dd>
+      </div>
+      <div [class.is-due]="f.balance_due > 0">
+        <dt>Reste dû</dt>
+        <dd>{{ money(f.balance_due) }}</dd>
+        <span>{{ f.open_invoices.length }} facture(s) non soldée(s)</span>
+      </div>
+      <div>
+        <dt>Dernier achat</dt>
+        <dd>{{ f.last_purchase_at ? formatIsoDate(f.last_purchase_at) : '—' }}</dd>
+        <span *ngIf="f.first_purchase_at">1er achat : {{ formatIsoDate(f.first_purchase_at) }}</span>
+      </div>
+    </dl>
+
+    <!-- Factures non soldées -->
+    <ng-container *ngIf="f.open_invoices.length > 0">
+      <h4 class="section-title"><i class="bi bi-hourglass-split"></i> Factures non soldées</h4>
+      <div class="table-card detail-table">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Facture</th>
+              <th>Date</th>
+              <th class="text-right">Total</th>
+              <th class="text-right">Payé</th>
+              <th class="text-right">Reste</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let inv of f.open_invoices">
+              <td>{{ inv.number }}</td>
+              <td>
+                {{ formatIsoDate(inv.date) }}
+                <span class="age" [class.age--old]="inv.age_days > 30">il y a {{ inv.age_days }} j</span>
+              </td>
+              <td class="text-right num">{{ money(inv.amount_total) }}</td>
+              <td class="text-right num">{{ money(inv.amount_paid) }}</td>
+              <td class="text-right num"><span class="due">{{ money(inv.balance) }}</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+    <!-- Historique -->
+    <h4 class="section-title"><i class="bi bi-clock-history"></i> Derniers achats</h4>
+    <p class="text-muted empty" *ngIf="f.sales.length === 0">Ce client n'a encore rien acheté.</p>
+    <div class="table-card detail-table" *ngIf="f.sales.length > 0">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Vente</th>
+            <th class="text-right">Montant</th>
+            <th>Paiement</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let s of f.sales"
+            class="history-row"
+            tabindex="0"
+            role="button"
+            [attr.aria-label]="'Voir la vente ' + s.sale_number"
+            (click)="openedSaleId.set(s.id)"
+            (keyup.enter)="openedSaleId.set(s.id)"
+          >
+            <td>
+              <div class="person__name">{{ s.sale_number }}</div>
+              <div class="person__sub">{{ s.date | date: 'dd/MM/yyyy HH:mm' }}</div>
+            </td>
+            <td class="text-right num">
+              {{ money(s.total_amount) }}
+              <div class="person__sub" *ngIf="s.balance > 0">Reste {{ money(s.balance) }}</div>
+            </td>
+            <td><span class="badge pay pay--{{ s.payment_status }}">{{ paymentLabels[s.payment_status] }}</span></td>
+            <td><span class="badge status status--{{ s.status }}">{{ saleStatusLabels[s.status] }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="text-muted history-note" *ngIf="f.sales.length >= 20">20 dernières ventes affichées.</p>
+  </ng-container>
+
+  <div class="modal__actions">
+    <button type="button" class="btn btn--ghost" (click)="closed.emit()">Fermer</button>
+  </div>
+</div>
+
+<app-owner-sale-detail *ngIf="openedSaleId() as id" class="stacked" [saleId]="id" (closed)="openedSaleId.set(null)" />

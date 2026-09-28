@@ -1,0 +1,277 @@
+<div class="page-header card">
+  <span class="page-header__icon"><i class="bi bi-plus-circle"></i></span>
+  <div>
+    <h2 class="page-header__title">Nouvelle vente{{ context.selectedStore() ? ' — ' + context.selectedStore()!.name : '' }}</h2>
+    <p class="page-header__desc">Ajoutez les articles, identifiez le client si besoin, puis encaissez. Le stock et la facture sont mis à jour immédiatement.</p>
+  </div>
+  <a class="btn btn--ghost page-header__cta" [routerLink]="context.base() + '/invoices'"><i class="bi bi-receipt-cutoff"></i> Factures</a>
+</div>
+
+<app-store-blocked *ngIf="context.selectedIsBlocked()" />
+
+<div class="card state-message text-center" *ngIf="context.loaded() && !storeId()">
+  <i class="bi bi-shop"></i> Choisissez la boutique où vendre dans le sélecteur en haut de page.
+</div>
+
+<div class="pos" *ngIf="storeId() && !context.selectedIsBlocked()">
+  <!-- Catalogue -->
+  <section class="pos__catalog">
+    <div class="card pos__search-card">
+      <div class="search pos__search">
+        <i class="bi bi-search"></i>
+        <input
+          type="text"
+          placeholder="Rechercher un produit (ou scanner puis Entrée)..."
+          [(ngModel)]="search"
+          (ngModelChange)="onSearch()"
+          (keydown.enter)="onSearchEnter()"
+          aria-label="Rechercher un produit"
+        />
+      </div>
+      <div class="chips" role="group" aria-label="Catégories" *ngIf="categories().length > 0">
+        <button type="button" class="chip" [class.is-active]="categoryId() === null" [attr.aria-pressed]="categoryId() === null" (click)="selectCategory(null)">Tout</button>
+        <button
+          type="button"
+          class="chip"
+          *ngFor="let c of categories()"
+          [class.is-active]="categoryId() === c.id"
+          [attr.aria-pressed]="categoryId() === c.id"
+          (click)="selectCategory(c.id)"
+        >
+          {{ c.name }}
+        </button>
+      </div>
+    </div>
+
+    <div class="alert alert--error" *ngIf="loadError()">{{ loadError() }}</div>
+    <div class="state-message text-center text-muted card" *ngIf="!isLoading() && products().length === 0 && !loadError()">
+      Aucun produit ne correspond.
+    </div>
+
+    <div class="product-grid" [class.is-refreshing]="isLoading()">
+      <button
+        type="button"
+        class="product"
+        *ngFor="let p of products()"
+        [class.product--out]="remaining(p) <= 0"
+        [disabled]="remaining(p) <= 0"
+        (click)="add(p)"
+        [attr.aria-label]="'Ajouter ' + p.name + ' au panier'"
+      >
+        <span class="product__media">
+          <img *ngIf="p.image_url" [src]="p.image_url" alt="" loading="lazy" />
+          <i *ngIf="!p.image_url" class="bi bi-box-seam"></i>
+          <span class="product__sn" *ngIf="p.require_serial_number" title="Vendu avec numéro de série"><i class="bi bi-upc"></i></span>
+        </span>
+        <span class="product__name">{{ p.name }}</span>
+        <span class="product__price">{{ money(price(p)) }}<small *ngIf="p.units.length > 1"> / {{ p.units[0].name }}</small></span>
+        <span class="product__stock" [class.is-low]="p.stock_state === 'low'" [class.is-out]="remaining(p) <= 0">
+          {{ remaining(p) <= 0 ? 'Rupture' : formatNumber(remaining(p)) + ' ' + p.base_unit + ' en stock' }}
+        </span>
+      </button>
+    </div>
+
+    <div class="pos__pages" *ngIf="lastPage() > 1">
+      <button type="button" class="icon-btn" [disabled]="page() === 1" (click)="goToPage(page() - 1)" aria-label="Page précédente"><i class="bi bi-chevron-left"></i></button>
+      <span>Page {{ page() }} / {{ lastPage() }}</span>
+      <button type="button" class="icon-btn" [disabled]="page() === lastPage()" (click)="goToPage(page() + 1)" aria-label="Page suivante"><i class="bi bi-chevron-right"></i></button>
+    </div>
+  </section>
+
+  <!-- Panier et encaissement -->
+  <aside class="card pos__cart" aria-label="Panier" [class.has-lines]="lines().length > 0">
+    <header class="cart__head">
+      <h3>
+        <i class="bi bi-cart3"></i> Panier
+        <span class="cart__count" *ngIf="lines().length">{{ formatNumber(itemCount()) }} article(s) · {{ lines().length }} ligne(s)</span>
+      </h3>
+      <button type="button" class="link-btn link-btn--danger" *ngIf="lines().length > 0" (click)="clearCart()">Vider</button>
+    </header>
+
+    <p class="cart__empty text-muted" *ngIf="lines().length === 0">
+      <i class="bi bi-hand-index"></i> Touchez un produit pour l'ajouter.
+    </p>
+
+    <!-- Articles : seule zone qui défile, le reste du panier reste visible -->
+    <ul class="cart__lines" *ngIf="lines().length > 0" aria-label="Articles du panier">
+      <li class="line" *ngFor="let l of lines(); trackBy: trackLine" [attr.data-line]="lineKey(l)" [class.is-flash]="flashKey() === lineKey(l)">
+        <div class="line__top">
+          <span class="line__name" [title]="l.product.name">{{ l.product.name }}</span>
+          <strong class="line__sub">{{ money(l.quantity * l.unitPrice) }}</strong>
+          <button type="button" class="line__remove" title="Retirer" [attr.aria-label]="'Retirer ' + l.product.name" (click)="remove(l)"><i class="bi bi-x-lg"></i></button>
+        </div>
+
+        <div class="line__controls">
+          <ng-container *ngIf="!l.product.require_serial_number; else snQty">
+            <div class="stepper">
+              <button type="button" (click)="setQuantity(l, l.quantity - 1)" aria-label="Diminuer la quantité"><i class="bi bi-dash"></i></button>
+              <input
+                type="number"
+                [step]="usesMeasurements() ? 'any' : 1"
+                min="0"
+                [ngModel]="l.quantity"
+                (change)="setQuantity(l, $any($event.target).valueAsNumber)"
+                [attr.aria-label]="'Quantité de ' + l.product.name"
+              />
+              <button type="button" (click)="setQuantity(l, l.quantity + 1)" aria-label="Augmenter la quantité"><i class="bi bi-plus"></i></button>
+            </div>
+            <select
+              class="line__unit"
+              *ngIf="l.product.units.length > 1; else unitLabel"
+              [ngModel]="l.unit.id"
+              (ngModelChange)="setUnit(l, $event)"
+              [attr.aria-label]="'Unité de vente de ' + l.product.name"
+            >
+              <option *ngFor="let u of l.product.units" [ngValue]="u.id">{{ u.name }}</option>
+            </select>
+            <ng-template #unitLabel><span class="line__unit-label">{{ l.unit.name }}</span></ng-template>
+          </ng-container>
+          <ng-template #snQty>
+            <button type="button" class="sn-btn" (click)="editSerials(l)" [title]="l.serials.join(', ')"><i class="bi bi-upc"></i> {{ l.quantity }} n° de série</button>
+          </ng-template>
+
+          <label class="line__price" [title]="l.unitPrice !== l.unit.price ? 'Prix catalogue : ' + money(l.unit.price) : 'Prix unitaire'">
+            <span class="line__times" aria-hidden="true">×</span>
+            <span class="sr-only">Prix unitaire de {{ l.product.name }}</span>
+            <input type="number" min="0" step="1" [class.is-edited]="l.unitPrice !== l.unit.price" [ngModel]="l.unitPrice" (change)="setPrice(l, $any($event.target).valueAsNumber)" />
+          </label>
+        </div>
+      </li>
+    </ul>
+
+    <div class="cart__checkout" *ngIf="lines().length > 0">
+      <div class="cart__options">
+        <!-- Client -->
+        <div class="cart__section">
+          <span class="cart__label" id="pos_customer_label">Client</span>
+          <div class="segmented" role="radiogroup" aria-labelledby="pos_customer_label">
+            <button type="button" role="radio" [attr.aria-checked]="customerMode() === 'anonymous'" [class.is-active]="customerMode() === 'anonymous'" (click)="setCustomerMode('anonymous')">Sans client</button>
+            <button type="button" role="radio" [attr.aria-checked]="customerMode() === 'existing'" [class.is-active]="customerMode() === 'existing'" (click)="setCustomerMode('existing')">Client connu</button>
+            <button type="button" role="radio" [attr.aria-checked]="customerMode() === 'new'" [class.is-active]="customerMode() === 'new'" (click)="setCustomerMode('new')">Nouveau</button>
+          </div>
+
+          <div class="customer-pick" *ngIf="customerMode() === 'existing'">
+            <div class="search">
+              <i class="bi bi-person-search"></i>
+              <input type="text" placeholder="Nom ou téléphone..." [(ngModel)]="customerSearch" (ngModelChange)="onCustomerSearch()" aria-label="Rechercher un client" />
+            </div>
+            <ul class="customer-results" *ngIf="!customer() && customerResults().length > 0">
+              <li *ngFor="let c of customerResults()">
+                <button type="button" (click)="pickCustomer(c)">
+                  <span>{{ c.name }} <span class="text-muted">· {{ c.phone }}</span></span>
+                  <span class="due" *ngIf="c.balance_due > 0">doit {{ money(c.balance_due) }}</span>
+                </button>
+              </li>
+            </ul>
+            <p class="text-muted small" *ngIf="!customer() && customerResults().length === 0">Aucun client trouvé.</p>
+            <p class="customer-chosen" *ngIf="customer() as c">
+              <i class="bi bi-person-check"></i> {{ c.name }} · {{ c.phone }}
+              <span class="due" *ngIf="c.balance_due > 0"> — doit déjà {{ money(c.balance_due) }}</span>
+            </p>
+          </div>
+
+          <div class="customer-new" *ngIf="customerMode() === 'new'">
+            <input class="field__input" type="text" placeholder="Nom du client *" [(ngModel)]="newCustomer.name" aria-label="Nom du nouveau client" />
+            <input class="field__input" type="tel" placeholder="Téléphone *" [(ngModel)]="newCustomer.phone" aria-label="Téléphone du nouveau client" />
+          </div>
+        </div>
+
+        <!-- Paiement -->
+        <div class="cart__section">
+          <span class="cart__label" id="pos_method_label">Paiement</span>
+          <div class="methods" role="radiogroup" aria-labelledby="pos_method_label">
+            <button
+              type="button"
+              *ngFor="let m of methods"
+              role="radio"
+              class="method"
+              [attr.aria-checked]="paymentType === m.value"
+              [class.is-active]="paymentType === m.value"
+              [title]="m.label"
+              (click)="paymentType = m.value"
+            >
+              <i class="bi {{ m.icon }}"></i> <span>{{ m.label }}</span>
+            </button>
+          </div>
+
+          <div class="pay-grid">
+            <label class="pay-field">
+              <span>Remise</span>
+              <input id="pos_discount" type="number" min="0" step="1" [(ngModel)]="discount" placeholder="0" />
+            </label>
+            <label class="pay-field" *ngIf="customerMode() === 'anonymous' && paymentType === 'cash'">
+              <span>Somme reçue</span>
+              <input id="pos_cash" type="number" min="0" step="1" [(ngModel)]="cashGiven" [placeholder]="formatNumber(total())" />
+            </label>
+            <label class="pay-field" *ngIf="customerMode() !== 'anonymous'">
+              <span>
+                Payé maintenant
+                <button type="button" class="link-btn" (click)="setPaidNow(total())">Tout</button>
+                <button type="button" class="link-btn" (click)="setPaidNow(0)">Rien</button>
+              </span>
+              <input id="pos_paid" type="number" min="0" [max]="total()" step="1" [ngModel]="amountPaid()" (ngModelChange)="onPaidNowChange($event)" />
+            </label>
+          </div>
+          <p class="change" *ngIf="change() > 0">Monnaie à rendre : <strong>{{ money(change()) }}</strong></p>
+          <p class="credit" *ngIf="customerMode() !== 'anonymous' && total() - amountPaid() > 0">
+            <i class="bi bi-hourglass-split"></i> Reste dû sur la facture : <strong>{{ money(total() - amountPaid()) }}</strong>
+          </p>
+        </div>
+      </div>
+
+      <!-- Toujours visible : total et encaissement -->
+      <footer class="cart__footer">
+        <dl class="cart__totals">
+          <div *ngIf="discountValue() > 0"><dt>Sous-total</dt><dd>{{ money(subtotal()) }}</dd></div>
+          <div *ngIf="discountValue() > 0"><dt>Remise</dt><dd>− {{ money(discountValue()) }}</dd></div>
+          <div class="cart__total"><dt>Total</dt><dd>{{ money(total()) }}</dd></div>
+        </dl>
+        <div class="alert alert--error" *ngIf="submitError()" role="alert">{{ submitError() }}</div>
+        <button type="button" class="btn btn--primary cart__submit" [disabled]="!!blocker() || isSubmitting()" (click)="checkout()">
+          <i class="bi bi-check2-circle"></i>
+          {{ isSubmitting() ? 'Encaissement...' : amountPaid() > 0 ? 'Encaisser ' + money(amountPaid()) : 'Enregistrer à crédit' }}
+        </button>
+        <p class="cart__blocker text-muted" *ngIf="blocker() as b">{{ b }}</p>
+      </footer>
+    </div>
+  </aside>
+</div>
+
+<!-- Mobile : le panier est sous le catalogue, cette barre y mène -->
+<button type="button" class="cart-bar" *ngIf="lines().length > 0 && !done()" (click)="scrollToCart()">
+  <span class="cart-bar__count"><i class="bi bi-cart3"></i> {{ formatNumber(itemCount()) }}</span>
+  <span class="cart-bar__total">{{ money(total()) }}</span>
+  <span class="cart-bar__go">Encaisser <i class="bi bi-chevron-down"></i></span>
+</button>
+
+<!-- Numéros de série -->
+<app-serial-picker
+  *ngIf="serialProduct() as p"
+  [storeId]="storeId()!"
+  [product]="p"
+  [initial]="serialsInCart(p)"
+  (picked)="onSerialsPicked($event)"
+  (closed)="serialProduct.set(null)"
+/>
+
+<!-- Vente enregistrée -->
+<ng-container *ngIf="done() as d">
+  <div class="modal-backdrop"></div>
+  <div class="modal done" role="dialog" aria-modal="true" aria-labelledby="pos-done-title">
+    <span class="done__icon" [class.done__icon--credit]="d.balance > 0"><i class="bi" [class.bi-check-lg]="d.balance === 0" [class.bi-hourglass-split]="d.balance > 0"></i></span>
+    <h3 id="pos-done-title">{{ d.balance > 0 ? 'Vente enregistrée' : 'Vente encaissée' }}</h3>
+    <p class="text-muted">{{ d.sale_number }} · facture {{ d.invoice_number }}</p>
+    <dl class="done__figures">
+      <div><dt>Total</dt><dd>{{ money(d.total_amount) }}</dd></div>
+      <div><dt>Payé</dt><dd>{{ money(d.amount_paid) }}</dd></div>
+      <div *ngIf="d.balance > 0" class="done__due"><dt>Reste dû</dt><dd>{{ money(d.balance) }}</dd></div>
+      <div *ngIf="change() > 0"><dt>Monnaie rendue</dt><dd>{{ money(change()) }}</dd></div>
+    </dl>
+    <div class="done__actions">
+      <button type="button" class="btn btn--ghost" (click)="printTicket()" [disabled]="!doneInvoice()"><i class="bi bi-printer"></i> Imprimer le ticket</button>
+      <button type="button" class="btn btn--ghost" (click)="viewInvoice()"><i class="bi bi-receipt"></i> Voir la facture</button>
+      <button type="button" class="btn btn--primary" (click)="newSale()" autofocus><i class="bi bi-plus-lg"></i> Nouvelle vente</button>
+    </div>
+  </div>
+  <app-invoice-document *ngIf="doneInvoice() as inv" [invoice]="inv" [currency]="currency()" kind="ticket" />
+</ng-container>

@@ -1,0 +1,37 @@
+// Design tokens — basés sur les maquettes KomKom
+
+// Layout
+$sidebar-width: 260px;
+$sidebar-width-collapsed: 76px;
+$navbar-height: 64px;
+
+// Sidebar (dark)
+$sidebar-bg: #1a1f35;
+$sidebar-border: rgba(255, 255, 255, 0.06);
+$sidebar-hover: rgba(255, 255, 255, 0.06);
+$sidebar-text-muted: #9297b3;
+
+// Accent
+$accent: #5b4fe5;
+$accent-hover: #4c3fe0;
+
+// Surfaces
+$page-bg: #f5f6fa;
+$card-bg: #ffffff;
+$border-color: #e8e9f0;
+
+// Text
+$text-primary: #1a1f35;
+$text-secondary: #6b7086;
+$text-muted: #9297b3;
+
+// Status
+$success: #16a34a;
+$danger: #dc2626;
+$warning: #d97706;
+
+// Radius / shadow
+$radius-md: 10px;
+$radius-lg: 14px;
+$shadow-sm: 0 1px 2px rgba(16, 19, 35, 0.04);
+$shadow-md: 0 4px 16px rgba(16, 19, 35, 0.06);

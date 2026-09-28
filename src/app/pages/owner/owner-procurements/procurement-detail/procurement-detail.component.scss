@@ -1,0 +1,207 @@
+@use '../../../../../styles/tokens' as t;
+
+.modal__header h3 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.modal__header-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.timeline {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline__step {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  padding: 0.7rem 0.85rem;
+  border: 1px dashed t.$border-color;
+  border-radius: t.$radius-md;
+  font-size: 0.84rem;
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  &.is-done {
+    border-style: solid;
+    border-color: rgba(22, 163, 74, 0.3);
+    background: rgba(22, 163, 74, 0.04);
+
+    .timeline__dot {
+      background: rgba(22, 163, 74, 0.14);
+      color: #15803d;
+    }
+  }
+
+  &.is-cancelled {
+    border-style: solid;
+    background: t.$page-bg;
+  }
+}
+
+.timeline__dot {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(217, 119, 6, 0.14);
+  color: #b45309;
+}
+
+.supply-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem 1.25rem;
+  margin-bottom: 1.25rem;
+  padding: 0.9rem 1rem;
+  border-radius: t.$radius-md;
+  background: t.$page-bg;
+  font-size: 0.86rem;
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    align-items: flex-start;
+    min-width: 0;
+  }
+
+  a {
+    color: inherit;
+  }
+}
+
+.supply-meta__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: t.$text-muted;
+}
+
+.detail-table {
+  border: 1px solid t.$border-color;
+  border-radius: t.$radius-md;
+  margin-bottom: 0;
+
+  th,
+  td {
+    padding: 0.6rem 0.9rem;
+  }
+
+  tfoot td {
+    border-top: 1px solid t.$border-color;
+    font-weight: 600;
+  }
+}
+
+.grand-total {
+  font-size: 1rem;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.serial-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.3rem;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: t.$accent;
+  cursor: pointer;
+}
+
+.serial-row {
+  display: none;
+
+  &.is-open {
+    display: table-row;
+  }
+
+  td {
+    padding-top: 0 !important;
+  }
+}
+
+.serial-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    padding: 0.15rem 0.5rem;
+    border-radius: 6px;
+    background: t.$page-bg;
+    border: 1px solid t.$border-color;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.74rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .timeline,
+  .supply-meta {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Impression du bon d'approvisionnement : uniquement la modale, tous les n° de série visibles
+@media print {
+  :host-context(body.is-printing-supply) {
+    .no-print {
+      display: none !important;
+    }
+
+    .serial-row {
+      display: table-row;
+    }
+  }
+
+  ::ng-deep body.is-printing-supply * {
+    visibility: hidden;
+  }
+
+  ::ng-deep body.is-printing-supply .supply-detail,
+  ::ng-deep body.is-printing-supply .supply-detail * {
+    visibility: visible;
+  }
+
+  ::ng-deep body.is-printing-supply .supply-detail {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: none;
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+    box-shadow: none;
+  }
+}

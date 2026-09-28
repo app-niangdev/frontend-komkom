@@ -1,0 +1,83 @@
+<div class="modal-backdrop" (click)="closed.emit()"></div>
+<div class="modal modal--xl" role="dialog" aria-modal="true">
+  <div class="modal__header">
+    <h3>Abonnements — {{ store().store_name }}</h3>
+    <button type="button" class="icon-btn" title="Fermer" (click)="closed.emit()"><i class="bi bi-x-lg"></i></button>
+  </div>
+
+  <div class="status-summary" *ngIf="status() as s">
+    <div>
+      <span class="status-summary__label">État</span>
+      <span class="badge badge--state-{{ s.state }}">{{ stateLabels[s.state] }}</span>
+    </div>
+    <div>
+      <span class="status-summary__label">Couvert jusqu'au</span>
+      <strong>{{ formatIsoDate(s.ends_at) }}</strong>
+    </div>
+    <div>
+      <span class="status-summary__label">Échéance</span>
+      <strong>{{ remainingLabel(s) }}</strong>
+    </div>
+    <div>
+      <span class="status-summary__label">Entreprise</span>
+      <strong>{{ s.company_name || '—' }}</strong>
+    </div>
+    <button type="button" class="btn btn--primary status-summary__cta" (click)="openCreate()">
+      <i class="bi bi-arrow-repeat"></i> Renouveler
+    </button>
+  </div>
+
+  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+  <div class="state-message text-center text-muted" *ngIf="isLoading()">Chargement...</div>
+  <div class="state-message text-center text-muted" *ngIf="!isLoading() && subscriptions().length === 0 && !errorMessage()">
+    Aucun abonnement enregistré pour cette boutique.
+  </div>
+
+  <div class="table-card history-table" *ngIf="!isLoading() && subscriptions().length > 0">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Période</th>
+          <th>Formule</th>
+          <th class="text-right">Montant</th>
+          <th>Saisi par</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let sub of subscriptions()" [class.is-past]="periodTag(sub) === 'past'">
+          <td>
+            <div>{{ formatIsoDate(sub.starts_at) }} → {{ formatIsoDate(sub.ends_at) }}</div>
+            <span class="period-tag period-tag--{{ periodTag(sub) }}">
+              {{ periodTag(sub) === 'current' ? 'En cours' : periodTag(sub) === 'upcoming' ? 'À venir' : 'Terminé' }}
+            </span>
+          </td>
+          <td>
+            <div>{{ sub.plan }}</div>
+            <div class="person__sub" *ngIf="sub.notes" [title]="sub.notes">{{ sub.notes | slice: 0 : 40 }}{{ sub.notes.length > 40 ? '…' : '' }}</div>
+          </td>
+          <td class="text-right">{{ +sub.amount | number: '1.0-2' : 'fr' }} {{ sub.currency }}</td>
+          <td>{{ sub.creator?.full_name || 'Automatique' }}</td>
+          <td class="text-right">
+            <div class="table-actions">
+              <button type="button" class="icon-btn" title="Modifier" (click)="openEdit(sub)">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button type="button" class="icon-btn icon-btn--danger" title="Supprimer" (click)="askDelete(sub)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<app-subscription-form
+  *ngIf="isFormOpen() && status()"
+  [store]="status()!"
+  [subscription]="editing()"
+  (saved)="onSaved($event)"
+  (closed)="isFormOpen.set(false)"
+/>

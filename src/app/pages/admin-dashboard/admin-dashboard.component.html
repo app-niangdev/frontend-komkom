@@ -1,0 +1,175 @@
+<div class="page-header card">
+  <span class="page-header__icon"><i class="bi bi-graph-up"></i></span>
+  <div>
+    <h2 class="page-header__title">Statistiques</h2>
+    <p class="page-header__desc">Activité de la plateforme sur la période choisie, comparée à la période précédente de même durée.</p>
+  </div>
+</div>
+
+<!-- Filtres : une seule ligne, au-dessus de tout ce qu'ils filtrent -->
+<div class="card toolbar-card filters">
+  <div class="filters__row">
+    <div class="preset-group" role="group" aria-label="Période">
+      <button
+        type="button"
+        *ngFor="let p of presets"
+        class="preset-group__option"
+        [class.is-selected]="preset() === p.key"
+        [attr.aria-pressed]="preset() === p.key"
+        (click)="selectPreset(p.key)"
+      >
+        {{ p.label }}
+      </button>
+    </div>
+
+    <select class="filter-select" [(ngModel)]="companyId" (ngModelChange)="load()" aria-label="Filtrer par entreprise">
+      <option [ngValue]="null">Toutes les entreprises</option>
+      <option *ngFor="let company of companies()" [ngValue]="company.id">{{ company.name }}</option>
+    </select>
+  </div>
+
+  <form class="custom-range" *ngIf="preset() === 'custom'" (ngSubmit)="applyCustomRange()">
+    <label>
+      <span>Du</span>
+      <input type="date" class="field__input" [(ngModel)]="customStart" name="customStart" required [max]="customEnd" />
+    </label>
+    <label>
+      <span>au</span>
+      <input type="date" class="field__input" [(ngModel)]="customEnd" name="customEnd" required [min]="customStart" />
+    </label>
+    <button type="submit" class="btn btn--primary" [disabled]="!customStart || !customEnd || customStart > customEnd">
+      Appliquer
+    </button>
+  </form>
+
+  <p class="filters__caption" *ngIf="stats() as s">
+    <i class="bi bi-calendar3"></i>
+    Du {{ formatIsoDate(s.period.start) }} au {{ formatIsoDate(s.period.end) }} ({{ s.period.days }} jours)
+    · comparé au {{ formatIsoDate(s.period.previous_start) }} – {{ formatIsoDate(s.period.previous_end) }}
+  </p>
+</div>
+
+<div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+<div class="state-message text-center text-muted" *ngIf="isLoading() && !stats()">Chargement...</div>
+
+<ng-container *ngIf="stats() as s">
+  <!-- Indicateurs clés -->
+  <div class="kpi-grid" [class.is-refreshing]="isLoading()">
+    <div class="card kpi" *ngFor="let tile of kpiTiles()">
+      <div class="kpi__label"><i class="bi {{ tile.icon }}"></i> {{ tile.label }}</div>
+      <div class="kpi__value">{{ tile.value }}</div>
+      <div class="kpi__foot">
+        <span
+          *ngIf="tile.delta as d"
+          class="kpi__delta kpi__delta--{{ d.direction }}"
+        >
+          <i class="bi" [class.bi-arrow-up-right]="d.direction === 'up'" [class.bi-arrow-down-right]="d.direction === 'down'" [class.bi-dash]="d.direction === 'flat'"></i>
+          {{ d.text }}
+        </span>
+        <span *ngIf="!tile.delta" class="kpi__delta kpi__delta--flat">Aucune activité</span>
+        <span class="kpi__hint" *ngIf="tile.hint">{{ tile.hint }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Séries temporelles : une mesure par graphique (jamais deux échelles sur un même axe) -->
+  <div class="chart-grid">
+    <section class="card chart-card">
+      <header class="chart-card__header">
+        <h3>Revenus des abonnements</h3>
+        <span class="chart-card__total">{{ moneyFormatter()(s.kpis.subscription_revenue.value) }}</span>
+      </header>
+      <p class="chart-card__sub">Montants saisis par {{ s.period.granularity === 'day' ? 'jour' : s.period.granularity === 'week' ? 'semaine' : 'mois' }}, en {{ s.currency }}</p>
+      <app-time-series-chart
+        kind="column"
+        label="Revenus des abonnements"
+        [points]="s.series.subscription_revenue"
+        [granularity]="s.period.granularity"
+        [formatValue]="moneyFormatter()"
+        [loading]="isLoading()"
+      />
+    </section>
+
+    <section class="card chart-card">
+      <header class="chart-card__header">
+        <h3>Chiffre d'affaires des boutiques</h3>
+        <span class="chart-card__total">{{ moneyFormatter()(s.kpis.sales_revenue.value) }}</span>
+      </header>
+      <p class="chart-card__sub">Ventes validées par {{ s.period.granularity === 'day' ? 'jour' : s.period.granularity === 'week' ? 'semaine' : 'mois' }}, en {{ s.currency }}</p>
+      <app-time-series-chart
+        kind="area"
+        label="Chiffre d'affaires des boutiques"
+        [points]="s.series.sales_revenue"
+        [granularity]="s.period.granularity"
+        [formatValue]="moneyFormatter()"
+        [loading]="isLoading()"
+      />
+    </section>
+  </div>
+
+  <div class="chart-grid" [class.is-refreshing]="isLoading()">
+    <!-- Classement des entreprises -->
+    <section class="card chart-card">
+      <header class="chart-card__header">
+        <h3>Top entreprises</h3>
+      </header>
+      <p class="chart-card__sub">Chiffre d'affaires sur la période</p>
+
+      <div class="state-message text-center text-muted" *ngIf="s.top_companies.length === 0">
+        Aucune vente validée sur la période.
+      </div>
+
+      <ol class="ranking" *ngIf="s.top_companies.length > 0">
+        <li *ngFor="let c of s.top_companies; let i = index" class="ranking__row">
+          <div class="ranking__head">
+            <span class="ranking__name"><span class="ranking__rank">{{ i + 1 }}</span>{{ c.name }}</span>
+            <span class="ranking__value">{{ moneyFormatter()(c.revenue) }}</span>
+          </div>
+          <div class="ranking__track" [title]="c.name + ' : ' + moneyFormatter()(c.revenue)">
+            <div class="ranking__bar" [style.width.%]="(c.revenue / topMax()) * 100"></div>
+          </div>
+          <span class="ranking__meta">{{ formatNumber(c.sales_count) }} vente(s)</span>
+        </li>
+      </ol>
+    </section>
+
+    <!-- Abonnements : photographie actuelle -->
+    <section class="card chart-card">
+      <header class="chart-card__header">
+        <h3>État des abonnements</h3>
+        <a routerLink="/admin/subscriptions" class="chart-card__link">Gérer <i class="bi bi-arrow-right"></i></a>
+      </header>
+      <p class="chart-card__sub">Aujourd'hui, sur {{ statesTotal() }} boutique{{ statesTotal() > 1 ? 's' : '' }} — indépendant de la période</p>
+
+      <div class="status-bar" *ngIf="statesTotal() > 0" role="img" [attr.aria-label]="'Répartition des abonnements'">
+        <ng-container *ngFor="let state of stateOrder">
+          <span
+            *ngIf="s.subscription_states.counts[state] > 0"
+            class="status-bar__segment status-bar__segment--{{ state }}"
+            [style.flex-grow]="s.subscription_states.counts[state]"
+            [title]="stateLabels[state] + ' : ' + s.subscription_states.counts[state]"
+          ></span>
+        </ng-container>
+      </div>
+
+      <ul class="status-legend">
+        <li *ngFor="let state of stateOrder" class="status-legend__item">
+          <i class="bi {{ stateIcons[state] }} status-legend__icon status-legend__icon--{{ state }}"></i>
+          <span class="status-legend__label">{{ stateLabels[state] }}</span>
+          <strong>{{ s.subscription_states.counts[state] }}</strong>
+        </li>
+      </ul>
+
+      <div class="attention" *ngIf="s.subscription_states.attention.length > 0">
+        <h4>À traiter en priorité</h4>
+        <ul>
+          <li *ngFor="let a of s.subscription_states.attention">
+            <span class="badge badge--state-{{ a.state }}">{{ stateLabels[a.state] }}</span>
+            <span class="attention__store">{{ a.store_name }}<span class="text-muted" *ngIf="a.company_name"> · {{ a.company_name }}</span></span>
+            <span class="attention__when">{{ describeStatus(a) }}</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+  </div>
+</ng-container>

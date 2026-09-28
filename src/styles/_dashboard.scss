@@ -1,0 +1,236 @@
+@use 'tokens' as t;
+
+// Blocs communs aux tableaux de bord (admin, propriétaire) : indicateurs, cartes graphiques, classement.
+
+.is-refreshing {
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+.dashboard-caption {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.85rem 0 0;
+  font-size: 0.8rem;
+  color: t.$text-muted;
+}
+
+// --- Indicateurs -----------------------------------------------------------
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.kpi__label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: t.$text-secondary;
+
+  i {
+    color: t.$accent;
+  }
+}
+
+.kpi__value {
+  font-size: 1.55rem;
+  font-weight: 700;
+  line-height: 1.15;
+  color: t.$text-primary;
+  overflow-wrap: anywhere;
+}
+
+.kpi__foot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.76rem;
+}
+
+.kpi__delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 700;
+
+  &--up {
+    color: #006300;
+  }
+
+  &--down {
+    color: t.$danger;
+  }
+
+  &--flat {
+    color: t.$text-muted;
+    font-weight: 600;
+  }
+
+  // Sens « bon / mauvais » explicite (ex. une hausse des dépenses n'est pas bonne)
+  &--good {
+    color: #006300;
+  }
+
+  &--bad {
+    color: t.$danger;
+  }
+}
+
+.kpi__hint {
+  color: t.$text-muted;
+}
+
+// --- Cartes graphiques -------------------------------------------------------
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.chart-card {
+  min-width: 0;
+}
+
+.chart-card__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+
+  h3 {
+    margin: 0;
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: t.$text-primary;
+  }
+}
+
+.chart-card__total {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: t.$text-primary;
+  white-space: nowrap;
+}
+
+.chart-card__sub {
+  margin: 0.2rem 0 1rem;
+  font-size: 0.78rem;
+  color: t.$text-muted;
+}
+
+.chart-card__link {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: t.$accent;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// --- Classement --------------------------------------------------------------
+
+.ranking {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ranking__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.3rem;
+  font-size: 0.85rem;
+}
+
+.ranking__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: t.$text-primary;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ranking__rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: t.$page-bg;
+  font-size: 0.72rem;
+  color: t.$text-secondary;
+  flex-shrink: 0;
+}
+
+.ranking__value {
+  font-weight: 700;
+  color: t.$text-primary;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.ranking__track {
+  height: 10px;
+  border-radius: 4px;
+  background: #eef3fb;
+}
+
+.ranking__bar {
+  height: 100%;
+  min-width: 4px;
+  border-radius: 0 4px 4px 0;
+  background: #2a78d6;
+}
+
+.ranking__meta {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.74rem;
+  color: t.$text-muted;
+}
+
+@media (max-width: 991.98px) {
+  .chart-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .kpi__value {
+    font-size: 1.2rem;
+  }
+
+  .kpi__hint {
+    display: none; // le détail reste dans les graphiques et leur tableau
+  }
+}

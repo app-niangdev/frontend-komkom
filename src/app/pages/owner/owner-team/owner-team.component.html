@@ -1,0 +1,128 @@
+<div class="page-header card">
+  <span class="page-header__icon"><i class="bi bi-people"></i></span>
+  <div>
+    <h2 class="page-header__title">Équipe — {{ context.selectedStore()?.name || 'Toutes les boutiques' }}</h2>
+    <p class="page-header__desc" *ngIf="!context.isManager()">Gestionnaires et vendeurs de vos boutiques : ajout, mutation vers une autre boutique, désactivation.</p>
+    <p class="page-header__desc" *ngIf="context.isManager()">Vendeurs de votre boutique : ajout, modification, activation. Les gestionnaires sont visibles en consultation.</p>
+  </div>
+</div>
+
+<app-store-blocked *ngIf="context.selectedIsBlocked()" />
+
+<ng-container *ngIf="!context.selectedIsBlocked()">
+  <div class="card toolbar-card">
+    <div class="table-card__toolbar">
+      <div class="toolbar-filters">
+        <div class="search">
+          <i class="bi bi-search"></i>
+          <input type="text" placeholder="Nom, email, téléphone..." [(ngModel)]="search" (keyup.enter)="load()" aria-label="Rechercher un membre" />
+        </div>
+        <select class="filter-select" [(ngModel)]="role" (ngModelChange)="load()" aria-label="Filtrer par rôle">
+          <option value="">Tous les rôles</option>
+          <option value="Manager">Gestionnaires</option>
+          <option value="Seller">Vendeurs</option>
+        </select>
+        <select class="filter-select" [(ngModel)]="status" (ngModelChange)="load()" aria-label="Filtrer par statut">
+          <option value="">Tous les statuts</option>
+          <option value="1">Actifs</option>
+          <option value="0">Désactivés</option>
+        </select>
+        <button type="button" class="btn btn--ghost" *ngIf="hasFilters()" (click)="resetFilters()">
+          <i class="bi bi-x-circle"></i> Réinitialiser
+        </button>
+      </div>
+      <button type="button" class="btn btn--primary" (click)="openCreate()">
+        <i class="bi bi-person-plus"></i> {{ context.isManager() ? 'Ajouter un vendeur' : 'Ajouter un membre' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+  <div class="state-message text-center text-muted" *ngIf="isLoading() && members().length === 0">Chargement...</div>
+
+  <p class="dashboard-caption team-caption" *ngIf="!isLoading() || members().length > 0">
+    <i class="bi bi-people"></i>
+    {{ counts().managers }} gestionnaire(s) · {{ counts().sellers }} vendeur(s)
+    <span *ngIf="counts().inactive > 0"> · {{ counts().inactive }} désactivé(s)</span>
+  </p>
+
+  <div class="state-message text-center text-muted card" *ngIf="!isLoading() && members().length === 0 && !errorMessage()">
+    {{ hasFilters() ? 'Aucun membre ne correspond à ces critères.' : 'Aucun membre dans cette équipe pour le moment.' }}
+  </div>
+
+  <div class="card table-card" *ngIf="members().length > 0" [class.is-refreshing]="isLoading()">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Membre</th>
+          <th>Rôle</th>
+          <th>Boutique</th>
+          <th>Téléphone</th>
+          <th>Statut</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let m of members()">
+          <td>
+            <div class="person">
+              <span class="person__avatar">
+                <img *ngIf="m.image_url" [src]="m.image_url" [alt]="m.full_name" />
+                <span *ngIf="!m.image_url">{{ initials(m) }}</span>
+              </span>
+              <div>
+                <div class="person__name">{{ m.full_name }}</div>
+                <div class="person__sub">{{ m.email }}</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge badge--{{ m.role | lowercase }}">{{ roleLabels[m.role] }}</span></td>
+          <td>{{ m.store?.name || '—' }}</td>
+          <td>{{ m.phone_number_one }}</td>
+          <td>
+            <span class="badge" [class.badge--success]="m.status" [class.badge--muted]="!m.status">
+              {{ m.status ? 'Actif' : 'Désactivé' }}
+            </span>
+          </td>
+          <td class="text-right">
+            <span class="text-muted" *ngIf="!m.can_manage" title="Consultation seule">
+              <i class="bi bi-lock"></i>
+            </span>
+            <div class="table-actions" *ngIf="m.can_manage">
+              <button type="button" class="icon-btn" title="Modifier" [attr.aria-label]="'Modifier ' + m.full_name" (click)="openEdit(m)">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button
+                type="button"
+                class="icon-btn"
+                [class.icon-btn--danger]="m.status"
+                [title]="m.status ? 'Désactiver' : 'Réactiver'"
+                [attr.aria-label]="(m.status ? 'Désactiver ' : 'Réactiver ') + m.full_name"
+                (click)="toggle(m)"
+              >
+                <i class="bi" [class.bi-toggle-on]="m.status" [class.bi-toggle-off]="!m.status"></i>
+              </button>
+              <button
+                type="button"
+                class="icon-btn icon-btn--danger"
+                [disabled]="!m.can_delete"
+                [title]="m.can_delete ? 'Supprimer' : 'Suppression impossible : ' + m.sales_count + ' vente(s) enregistrée(s). Désactivez plutôt le compte.'"
+                [attr.aria-label]="'Supprimer ' + m.full_name"
+                (click)="remove(m)"
+              >
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</ng-container>
+
+<app-team-member-form
+  *ngIf="isFormOpen()"
+  [member]="editing()"
+  (saved)="onSaved($event)"
+  (closed)="isFormOpen.set(false)"
+/>

@@ -1,0 +1,75 @@
+@use '../../../../styles/tokens' as t;
+
+.shell {
+  display: flex;
+  min-height: 100vh;
+  background: t.$page-bg;
+}
+
+.shell__main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.shell__content {
+  flex: 1;
+  padding: 1.5rem;
+}
+
+/* Rappel d'échéance d'abonnement */
+.subscription-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 1rem 1.5rem 0;
+  padding: 0.7rem 1rem;
+  border-radius: t.$radius-md;
+  background: rgba(217, 119, 6, 0.1);
+  border: 1px solid rgba(217, 119, 6, 0.3);
+  color: #92400e;
+  font-size: 0.85rem;
+
+  > i {
+    font-size: 1.05rem;
+    color: t.$warning;
+  }
+
+  span {
+    flex: 1;
+  }
+
+  &--critical {
+    background: rgba(220, 38, 38, 0.07);
+    border-color: rgba(220, 38, 38, 0.3);
+    color: #991b1b;
+
+    > i {
+      color: t.$danger;
+    }
+  }
+}
+
+.subscription-banner__close {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0.2rem;
+  opacity: 0.7;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .subscription-banner {
+    margin: 0.75rem 1rem 0;
+  }
+
+  .shell__content {
+    padding: 1rem;
+  }
+}

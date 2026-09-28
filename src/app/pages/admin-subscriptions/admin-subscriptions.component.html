@@ -1,0 +1,126 @@
+<div class="page-header card">
+  <span class="page-header__icon"><i class="bi bi-credit-card-2-front"></i></span>
+  <div>
+    <h2 class="page-header__title">Abonnements</h2>
+    <p class="page-header__desc">
+      Suivez l'échéance de chaque boutique et renouvelez-la. Une boutique sans abonnement en cours est inaccessible à ses utilisateurs.
+    </p>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <button
+    type="button"
+    *ngFor="let state of stateOrder"
+    class="card stat-card stat-card--{{ state }}"
+    [class.is-selected]="filters.state === state"
+    [attr.aria-pressed]="filters.state === state"
+    (click)="toggleState(state)"
+  >
+    <span class="stat-card__icon"><i class="bi {{ stateIcons[state] }}"></i></span>
+    <span>
+      <span class="stat-card__value">{{ counts()[state] }}</span>
+      <span class="stat-card__label">{{ stateLabels[state] }}</span>
+    </span>
+  </button>
+</div>
+
+<div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+
+<div class="card toolbar-card">
+  <div class="table-card__toolbar">
+    <div class="toolbar-filters">
+      <div class="search">
+        <i class="bi bi-search"></i>
+        <input type="text" placeholder="Boutique ou entreprise..." [(ngModel)]="filters.search" (keyup.enter)="applyFilters()" />
+      </div>
+
+      <select class="filter-select" [(ngModel)]="filters.company_id" (ngModelChange)="applyFilters()" aria-label="Filtrer par entreprise">
+        <option [ngValue]="null">Toutes les entreprises</option>
+        <option *ngFor="let company of companies()" [ngValue]="company.id">{{ company.name }}</option>
+      </select>
+
+      <select class="filter-select" [(ngModel)]="filters.state" (ngModelChange)="applyFilters()" aria-label="Filtrer par état">
+        <option value="">Tous les états</option>
+        <option *ngFor="let state of stateOrder" [value]="state">{{ stateLabels[state] }}</option>
+      </select>
+
+      <button type="button" class="btn btn--ghost" *ngIf="hasActiveFilters()" (click)="resetFilters()">
+        <i class="bi bi-x-circle"></i> Réinitialiser
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="state-message text-center text-muted" *ngIf="isLoading()">Chargement...</div>
+<div class="state-message text-center text-muted" *ngIf="!isLoading() && rows().length === 0 && !errorMessage()">
+  Aucune boutique ne correspond à ces critères.
+</div>
+
+<div class="card table-card" *ngIf="!isLoading() && rows().length > 0">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Boutique</th>
+        <th>État</th>
+        <th>Formule en cours</th>
+        <th>Couvert jusqu'au</th>
+        <th>Échéance</th>
+        <th class="text-right">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let row of rows()">
+        <td>
+          <div class="person__name">
+            {{ row.store_name }}
+            <span class="badge badge--muted" *ngIf="!row.store_active" title="Boutique désactivée manuellement">désactivée</span>
+          </div>
+          <div class="person__sub">{{ row.company_name || '—' }}</div>
+        </td>
+        <td><span class="badge badge--state-{{ row.state }}">{{ stateLabels[row.state] }}</span></td>
+        <td>{{ row.plan || '—' }}</td>
+        <td>{{ formatIsoDate(row.ends_at) }}</td>
+        <td>
+          <span class="remaining remaining--{{ row.state }}">{{ remainingLabel(row) }}</span>
+        </td>
+        <td class="text-right">
+          <div class="table-actions">
+            <button type="button" class="icon-btn" title="Historique" (click)="historyStore.set(row)">
+              <i class="bi bi-clock-history"></i>
+            </button>
+            <button type="button" class="icon-btn icon-btn--primary" title="Renouveler" (click)="renewStore.set(row)">
+              <i class="bi bi-arrow-repeat"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card pagination-card" *ngIf="lastPage() > 1">
+  <div class="pagination">
+    <button type="button" class="icon-btn" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">
+      <i class="bi bi-chevron-left"></i>
+    </button>
+    <span class="pagination__label">Page {{ currentPage() }} / {{ lastPage() }} ({{ total() }} boutiques)</span>
+    <button type="button" class="icon-btn" [disabled]="currentPage() === lastPage()" (click)="goToPage(currentPage() + 1)">
+      <i class="bi bi-chevron-right"></i>
+    </button>
+  </div>
+</div>
+
+<app-subscription-history
+  *ngIf="historyStore() as store"
+  [store]="store"
+  (changed)="load(currentPage())"
+  (closed)="historyStore.set(null)"
+/>
+
+<app-subscription-form
+  *ngIf="renewStore() as store"
+  [store]="store"
+  (saved)="onRenewed($event)"
+  (closed)="renewStore.set(null)"
+/>

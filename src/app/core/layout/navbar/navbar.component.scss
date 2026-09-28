@@ -1,0 +1,189 @@
+@use '../../../../styles/tokens' as t;
+
+.navbar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  height: t.$navbar-height;
+  padding: 0 1.25rem;
+  background: t.$card-bg;
+  border-bottom: 1px solid t.$border-color;
+  z-index: 10;
+}
+
+.navbar__left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex: 1 1 auto;
+  min-width: 0; // le titre se tronque plutôt que de pousser le reste hors de l'écran
+}
+
+.navbar__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid t.$border-color;
+  border-radius: 8px;
+  background: t.$card-bg;
+  color: t.$text-secondary;
+  font-size: 1.05rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: t.$page-bg;
+    color: t.$text-primary;
+  }
+}
+
+.navbar__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: t.$text-primary;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.navbar__right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.navbar__profile {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.navbar__profile-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0.4rem 0.3rem 0.6rem;
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  cursor: pointer;
+
+  &:hover {
+    background: t.$page-bg;
+  }
+}
+
+.navbar__profile-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.2;
+}
+
+.navbar__profile-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: t.$text-primary;
+}
+
+.navbar__profile-role {
+  font-size: 0.72rem;
+  color: t.$text-muted;
+}
+
+.navbar__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: t.$accent;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.navbar__chevron {
+  font-size: 0.75rem;
+  color: t.$text-muted;
+  transition: transform 0.15s ease;
+
+  &.is-open {
+    transform: rotate(180deg);
+  }
+}
+
+.navbar__menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  min-width: 190px;
+  background: t.$card-bg;
+  border: 1px solid t.$border-color;
+  border-radius: t.$radius-md;
+  box-shadow: t.$shadow-md;
+  padding: 0.4rem;
+  z-index: 40;
+}
+
+.navbar__menu-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 0.6rem;
+  padding: 0.55rem 0.6rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: t.$text-secondary;
+  text-decoration: none;
+  cursor: pointer;
+  text-align: left;
+
+  i {
+    width: 1rem;
+    text-align: center;
+  }
+
+  &:hover {
+    background: t.$page-bg;
+    color: t.$text-primary;
+  }
+
+  &--danger:hover {
+    background: rgba(220, 38, 38, 0.08);
+    color: t.$danger;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .navbar {
+    padding: 0 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .navbar__left,
+  .navbar__right {
+    gap: 0.5rem;
+  }
+
+  .navbar__title {
+    font-size: 0.95rem;
+  }
+
+  .navbar__profile-info,
+  .navbar__chevron {
+    display: none;
+  }
+}

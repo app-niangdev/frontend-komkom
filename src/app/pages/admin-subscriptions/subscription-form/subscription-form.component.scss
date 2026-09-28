@@ -1,0 +1,53 @@
+@use '../../../../styles/tokens' as t;
+
+.store-recap {
+  display: flex;
+  gap: 0.65rem;
+  margin-bottom: 1.1rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: t.$radius-md;
+  background: t.$page-bg;
+  font-size: 0.87rem;
+
+  > i {
+    color: t.$accent;
+    font-size: 1.1rem;
+  }
+}
+
+.store-recap__sub {
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+}
+
+.duration-picker {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.duration-picker__option {
+  padding: 0.55rem 0.5rem;
+  border: 1px solid t.$border-color;
+  border-radius: t.$radius-md;
+  background: t.$card-bg;
+  color: t.$text-primary;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    border-color: t.$accent;
+  }
+
+  &.is-selected {
+    border-color: t.$accent;
+    background: rgba(91, 79, 229, 0.1);
+    color: t.$accent;
+  }
+}
+
+textarea.field__input {
+  resize: vertical;
+  font-family: inherit;
+}

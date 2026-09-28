@@ -1,0 +1,170 @@
+@use '../../../../styles/tokens' as t;
+
+.page-header__cta {
+  margin-left: auto;
+  align-self: center;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.serial-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.serial-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 1rem 1.25rem;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: t.$text-primary;
+
+  strong {
+    font-size: 1.4rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &:hover {
+    border-color: rgba(91, 79, 229, 0.45);
+  }
+
+  &.is-selected {
+    border-color: t.$accent;
+    box-shadow: 0 0 0 1px t.$accent;
+  }
+}
+
+.serial-tile__label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: t.$text-secondary;
+}
+
+.serial-tile--in_stock strong {
+  color: t.$success;
+}
+
+.serial-tile--pending strong {
+  color: t.$warning;
+}
+
+.badge.sn {
+  &--in_stock {
+    background: rgba(22, 163, 74, 0.12);
+    color: t.$success;
+  }
+
+  &--sold {
+    background: rgba(107, 112, 134, 0.14);
+    color: t.$text-secondary;
+  }
+
+  &--pending {
+    background: rgba(217, 119, 6, 0.14);
+    color: t.$warning;
+  }
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.02em;
+}
+
+.serial {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: t.$text-primary;
+  cursor: pointer;
+
+  i {
+    font-size: 0.75rem;
+    color: t.$text-muted;
+    opacity: 0;
+  }
+
+  &:hover i,
+  &:focus-visible i {
+    opacity: 1;
+  }
+}
+
+.product-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.4rem 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(91, 79, 229, 0.1);
+  color: t.$accent;
+  font-size: 0.82rem;
+  font-weight: 600;
+
+  button {
+    display: inline-flex;
+    border: none;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+  }
+}
+
+.serial-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0 0 0.9rem;
+  padding: 0.8rem 1rem;
+  border-radius: t.$radius-md;
+  background: t.$page-bg;
+  font-size: 0.86rem;
+
+  div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  dt {
+    color: t.$text-secondary;
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 600;
+  }
+}
+
+.hint {
+  margin-bottom: 0.8rem;
+  font-size: 0.82rem;
+}
+
+form .field__label {
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+@media (max-width: 575.98px) {
+  .serial-summary {
+    grid-template-columns: 1fr;
+  }
+}

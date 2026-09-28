@@ -1,0 +1,108 @@
+<div #doc class="doc" [class.doc--a4]="kind() === 'invoice'" [class.doc--ticket]="kind() !== 'invoice'" [style.--doc-accent]="invoice().issuer.color || '#1f2937'">
+  <ng-container *ngIf="invoice() as inv">
+    <!-- En-tête : boutique émettrice -->
+    <header class="doc__issuer">
+      <img *ngIf="inv.issuer.logo_url" class="doc__logo" [src]="inv.issuer.logo_url" alt="" />
+      <div class="doc__issuer-text">
+        <strong class="doc__store">{{ inv.issuer.name }}</strong>
+        <span *ngIf="inv.issuer.company && inv.issuer.company !== inv.issuer.name">{{ inv.issuer.company }}</span>
+        <em *ngIf="inv.issuer.slogan && kind() === 'invoice'">{{ inv.issuer.slogan }}</em>
+        <span *ngIf="inv.issuer.address">{{ inv.issuer.address }}</span>
+        <span *ngIf="inv.issuer.phones.length">Tél. {{ inv.issuer.phones.join(' / ') }}</span>
+        <span *ngIf="inv.issuer.email && kind() === 'invoice'">{{ inv.issuer.email }}</span>
+      </div>
+      <div class="doc__heading" *ngIf="kind() === 'invoice'">
+        <h1>Facture</h1>
+        <dl>
+          <div><dt>N°</dt><dd>{{ inv.number }}</dd></div>
+          <div><dt>Date</dt><dd>{{ inv.date | date: 'dd/MM/yyyy' }}</dd></div>
+          <div *ngIf="inv.sale.number"><dt>Vente</dt><dd>{{ inv.sale.number }}</dd></div>
+        </dl>
+      </div>
+    </header>
+
+    <!-- Ticket / reçu : références compactes -->
+    <div class="doc__refs" *ngIf="kind() !== 'invoice'">
+      <p class="doc__kind">{{ kind() === 'ticket' ? 'Ticket de caisse' : 'Reçu de paiement' }}</p>
+      <p>{{ kind() === 'ticket' ? (inv.sale.number || inv.number) : inv.number }}</p>
+      <p>{{ (kind() === 'receipt' ? (payment()?.recorded_at || inv.date) : inv.date) | date: 'dd/MM/yyyy HH:mm' }}</p>
+      <p *ngIf="inv.seller && kind() === 'ticket'">Vendeur : {{ inv.seller }}</p>
+      <p *ngIf="kind() === 'receipt' && payment()?.user">Encaissé par : {{ payment()?.user }}</p>
+    </div>
+
+    <section class="doc__customer" *ngIf="kind() === 'invoice' || inv.customer_id">
+      <span class="doc__label">{{ kind() === 'invoice' ? 'Facturé à' : 'Client' }}</span>
+      <strong>{{ inv.customer }}</strong>
+      <span *ngIf="inv.customer_phone">{{ inv.customer_phone }}</span>
+    </section>
+
+    <p class="doc__cancelled" *ngIf="inv.status === 'cancelled'">FACTURE ANNULÉE</p>
+
+    <!-- Reçu de paiement -->
+    <ng-container *ngIf="kind() === 'receipt'; else lines">
+      <div class="doc__receipt" *ngIf="payment() as p">
+        <span class="doc__label">Montant reçu</span>
+        <strong class="doc__receipt-amount">{{ money(p.amount) }}</strong>
+        <span>{{ paymentTypes[p.type] || p.type }} · le {{ formatIsoDate(p.date) }}</span>
+      </div>
+      <dl class="doc__totals">
+        <div><dt>Facture {{ inv.number }}</dt><dd>{{ money(inv.amount_total) }}</dd></div>
+        <div *ngIf="receiptFigures().paidBefore > 0"><dt>Déjà payé</dt><dd>{{ money(receiptFigures().paidBefore) }}</dd></div>
+        <div><dt>Payé à ce jour</dt><dd>{{ money(receiptFigures().paidAfter) }}</dd></div>
+        <div class="doc__total"><dt>{{ receiptFigures().remaining > 0 ? 'Reste à payer' : 'Facture soldée' }}</dt><dd>{{ receiptFigures().remaining > 0 ? money(receiptFigures().remaining) : '✓' }}</dd></div>
+      </dl>
+    </ng-container>
+
+    <!-- Facture et ticket : articles -->
+    <ng-template #lines>
+      <table class="doc__table" *ngIf="kind() === 'invoice'">
+        <thead>
+          <tr>
+            <th>Désignation</th>
+            <th class="num">Qté</th>
+            <th class="num">Prix unitaire</th>
+            <th class="num">Montant</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of inv.items">
+            <td>
+              {{ item.product }}
+              <small *ngIf="item.serial_numbers.length">N° série : {{ item.serial_numbers.join(', ') }}</small>
+            </td>
+            <td class="num">{{ formatNumber(item.quantity) }} {{ item.unit }}</td>
+            <td class="num">{{ money(item.unit_price) }}</td>
+            <td class="num">{{ money(item.subtotal) }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <ul class="doc__ticket-lines" *ngIf="kind() === 'ticket'">
+        <li *ngFor="let item of inv.items">
+          <span class="doc__ticket-name">{{ item.product }}</span>
+          <span class="doc__ticket-calc">{{ formatNumber(item.quantity) }} {{ item.unit }} × {{ formatNumber(item.unit_price) }}</span>
+          <span class="doc__ticket-sub">{{ formatNumber(item.subtotal) }}</span>
+          <small *ngIf="item.serial_numbers.length">S/N {{ item.serial_numbers.join(', ') }}</small>
+        </li>
+      </ul>
+
+      <dl class="doc__totals">
+        <div *ngIf="inv.sale.discount > 0"><dt>Sous-total</dt><dd>{{ money(inv.sale.gross_amount) }}</dd></div>
+        <div *ngIf="inv.sale.discount > 0"><dt>Remise</dt><dd>− {{ money(inv.sale.discount) }}</dd></div>
+        <div class="doc__total"><dt>Total</dt><dd>{{ money(inv.amount_total) }}</dd></div>
+        <ng-container *ngIf="inv.status !== 'cancelled'">
+          <div *ngFor="let p of inv.payments">
+            <dt>{{ paymentTypes[p.type] || p.type }}<ng-container *ngIf="kind() === 'invoice'"> · {{ formatIsoDate(p.date) }}</ng-container></dt>
+            <dd>{{ money(p.amount) }}</dd>
+          </div>
+          <div class="doc__due" *ngIf="inv.balance > 0"><dt>Reste à payer</dt><dd>{{ money(inv.balance) }}</dd></div>
+        </ng-container>
+      </dl>
+    </ng-template>
+
+    <footer class="doc__footer">
+      <p *ngIf="kind() === 'invoice' && inv.seller">Vendeur : {{ inv.seller }}</p>
+      <p>Merci de votre confiance.</p>
+    </footer>
+  </ng-container>
+</div>

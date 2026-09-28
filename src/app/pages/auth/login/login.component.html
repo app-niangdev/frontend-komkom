@@ -1,0 +1,113 @@
+<div class="auth-form">
+  <p class="auth-form__eyebrow">Espace KomKom</p>
+  <h2 class="auth-form__title">Bon retour parmi nous</h2>
+  <p class="auth-form__desc">Connectez-vous pour accéder à votre caisse, votre stock et vos ventes.</p>
+
+  <div class="alert alert--success" *ngIf="notice()" role="status"><i class="bi bi-check-circle"></i> {{ notice() }}</div>
+  <div class="alert alert--error" *ngIf="errorMessage()" role="alert">
+    <i class="bi bi-exclamation-circle"></i> {{ errorMessage() }}
+  </div>
+
+  <div class="subscription-expired" *ngIf="subscriptionNotice.expired() as expired" role="alert">
+    <div class="subscription-expired__header">
+      <i class="bi bi-calendar-x"></i>
+      <div>
+        <strong>{{ expired.message }}</strong>
+        <p>L'accès est suspendu jusqu'au renouvellement de l'abonnement.</p>
+      </div>
+    </div>
+
+    <dl class="subscription-expired__item" *ngFor="let sub of expired.subscriptions">
+      <div>
+        <dt>Boutique</dt>
+        <dd>{{ sub.store_name }}<span *ngIf="sub.company_name"> — {{ sub.company_name }}</span></dd>
+      </div>
+      <div *ngIf="sub.plan">
+        <dt>Formule</dt>
+        <dd>{{ sub.plan }}</dd>
+      </div>
+      <div *ngIf="sub.starts_at && sub.ends_at">
+        <dt>Période</dt>
+        <dd>du {{ formatDate(sub.starts_at) }} au {{ formatDate(sub.ends_at) }}</dd>
+      </div>
+      <div>
+        <dt>Statut</dt>
+        <dd class="subscription-expired__status">{{ statusLabel(sub) }}</dd>
+      </div>
+    </dl>
+
+    <p class="subscription-expired__help">
+      Contactez votre administrateur ou le propriétaire de l'entreprise pour renouveler l'abonnement.
+    </p>
+  </div>
+
+  <form (ngSubmit)="onSubmit()">
+    <div class="field">
+      <label class="field__label" for="email">Adresse e-mail</label>
+      <input
+        id="email"
+        type="email"
+        name="email"
+        class="field__input"
+        placeholder="vous@entreprise.com"
+        [(ngModel)]="email"
+        autocomplete="username"
+        autofocus
+        required
+      />
+    </div>
+
+    <div class="field">
+      <div class="field__row">
+        <label class="field__label" for="password">Mot de passe</label>
+        <a routerLink="/auth/forgot-password" class="field__link">Mot de passe oublié ?</a>
+      </div>
+      <div class="field__password">
+        <input
+          id="password"
+          [type]="isPasswordVisible() ? 'text' : 'password'"
+          name="password"
+          class="field__input"
+          placeholder="••••••••"
+          [(ngModel)]="password"
+          autocomplete="current-password"
+          (keyup)="detectCapsLock($event)"
+          (keydown)="detectCapsLock($event)"
+          (blur)="capsLockOn.set(false)"
+          required
+        />
+        <button
+          type="button"
+          class="field__password-toggle"
+          [attr.aria-label]="isPasswordVisible() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+          (click)="togglePasswordVisibility()"
+        >
+          <i class="bi" [class.bi-eye]="!isPasswordVisible()" [class.bi-eye-slash]="isPasswordVisible()"></i>
+        </button>
+      </div>
+      <p class="field__hint field__hint--warning" *ngIf="capsLockOn()">
+        <i class="bi bi-capslock-fill"></i> Verrouillage des majuscules activé
+      </p>
+    </div>
+
+    <label class="checkbox">
+      <input type="checkbox" name="rememberMe" [(ngModel)]="rememberMe" />
+      <span>Se souvenir de moi</span>
+    </label>
+
+    <button type="submit" class="btn-primary" [disabled]="isSubmitting()">
+      <span class="spinner" *ngIf="isSubmitting()" aria-hidden="true"></span>
+      {{ isSubmitting() ? 'Connexion en cours…' : 'Se connecter' }}
+    </button>
+
+    <p class="auth-form__secure">
+      <i class="bi bi-shield-lock"></i>
+      Connexion sécurisée. Un code de vérification peut vous être envoyé par e-mail.
+    </p>
+
+    <p class="auth-form__footer">
+      Pas encore de compte ? Votre accès est créé par le propriétaire de votre entreprise
+      ou par l'équipe KomKom.
+    </p>
+  </form>
+</div>

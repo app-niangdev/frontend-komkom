@@ -1,0 +1,71 @@
+@use '../../../../styles/tokens' as t;
+
+.page-header__cta {
+  margin-left: auto;
+  align-self: center;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.invoice-kpis {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  .kpi__hint {
+    display: block;
+  }
+}
+
+.kpi--due .kpi__value {
+  color: t.$danger;
+}
+
+.kpi__link {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: t.$accent;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.is-due {
+  color: t.$danger;
+  font-weight: 600;
+}
+
+.invoices-table__row {
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: t.$page-bg;
+    outline: none;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+@media (max-width: 767.98px) {
+  .invoice-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .page-header__cta {
+    margin-left: 0;
+  }
+}

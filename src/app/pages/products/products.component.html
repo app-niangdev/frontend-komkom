@@ -1,0 +1,202 @@
+<div class="page-header card">
+  <span class="page-header__icon"><i class="bi bi-box-seam-fill"></i></span>
+  <div>
+    <h2 class="page-header__title">Produits</h2>
+    <p class="page-header__desc">Gérez votre catalogue : références, prix et disponibilité.</p>
+  </div>
+</div>
+
+<div class="alert alert--error" *ngIf="errorMessage() && !isFormOpen()">{{ errorMessage() }}</div>
+
+<div class="card toolbar-card">
+  <div class="table-card__toolbar">
+    <div class="search">
+      <i class="bi bi-search"></i>
+      <input
+        type="text"
+        placeholder="Rechercher un produit..."
+        [(ngModel)]="search"
+        (keyup.enter)="onSearch()"
+      />
+    </div>
+    <button type="button" class="btn btn--primary" (click)="openCreateForm()">
+      <i class="bi bi-plus-lg"></i> Ajouter un produit
+    </button>
+  </div>
+</div>
+
+<div class="state-message text-center text-muted" *ngIf="isLoading()">Chargement...</div>
+<div class="state-message text-center text-muted" *ngIf="!isLoading() && products().length === 0">
+  Aucun produit trouvé.
+</div>
+
+<div class="product-grid" *ngIf="!isLoading() && products().length > 0">
+  <div class="product-card" *ngFor="let product of products()">
+    <div class="product-card__image">
+      <img *ngIf="product.image_url" [src]="product.image_url" [alt]="product.name" />
+      <i *ngIf="!product.image_url" class="bi bi-box-seam-fill product-card__placeholder"></i>
+
+      <button
+        type="button"
+        class="status-toggle status-toggle--floating"
+        [class.status-toggle--on]="product.available"
+        (click)="toggleAvailability(product)"
+        [title]="product.available ? 'Marquer indisponible' : 'Marquer disponible'"
+      >
+        <span class="status-toggle__dot"></span>
+        {{ product.available ? 'Disponible' : 'Indisponible' }}
+      </button>
+    </div>
+
+    <div class="product-card__body">
+      <span class="product-card__category">{{ categoryName(product.category_id) }}</span>
+      <h3 class="product-card__name">{{ product.name }}</h3>
+      <p class="product-card__description" *ngIf="product.description">{{ product.description }}</p>
+      <div class="product-card__footer">
+        <span class="product-card__price">{{ formatPrice(product.unit_price) }} FCFA</span>
+        <div class="table-actions">
+          <button type="button" class="icon-btn" title="Modifier" (click)="openEditForm(product)">
+            <i class="bi bi-pencil"></i>
+          </button>
+          <button type="button" class="icon-btn icon-btn--danger" title="Supprimer" (click)="askDelete(product)">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card pagination-card" *ngIf="lastPage() > 1">
+  <div class="pagination">
+    <button type="button" class="icon-btn" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">
+      <i class="bi bi-chevron-left"></i>
+    </button>
+    <span class="pagination__label">Page {{ currentPage() }} / {{ lastPage() }} ({{ total() }} produits)</span>
+    <button
+      type="button"
+      class="icon-btn"
+      [disabled]="currentPage() === lastPage()"
+      (click)="goToPage(currentPage() + 1)"
+    >
+      <i class="bi bi-chevron-right"></i>
+    </button>
+  </div>
+</div>
+
+<div class="modal-backdrop" *ngIf="isFormOpen()" (click)="closeForm()"></div>
+<div class="modal" *ngIf="isFormOpen()">
+  <div class="modal__header">
+    <h3>{{ editingProductId() ? 'Modifier le produit' : 'Ajouter un produit' }}</h3>
+    <button type="button" class="icon-btn" (click)="closeForm()"><i class="bi bi-x-lg"></i></button>
+  </div>
+
+  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+
+  <form (ngSubmit)="submitForm()">
+    <div class="field">
+      <label class="field__label" for="name">Nom *</label>
+      <input id="name" type="text" class="field__input" [(ngModel)]="form.name" name="name" required />
+    </div>
+
+    <div class="field">
+      <label class="field__label" for="category">Catégorie *</label>
+      <select id="category" class="field__input" [(ngModel)]="form.category_id" name="category_id" required>
+        <option [ngValue]="null" disabled>Sélectionner une catégorie</option>
+        <option *ngFor="let category of categories()" [ngValue]="category.id">{{ category.name }}</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label class="field__label" for="unit_price">Prix unitaire (FCFA) *</label>
+      <input
+        id="unit_price"
+        type="number"
+        min="0"
+        step="1"
+        class="field__input"
+        [(ngModel)]="form.unit_price"
+        name="unit_price"
+        required
+      />
+    </div>
+
+    <div class="field field--full">
+      <label class="field__label">Image</label>
+
+      <div class="image-source-tabs">
+        <button
+          type="button"
+          class="image-source-tabs__btn"
+          [class.image-source-tabs__btn--active]="imageSource() === 'upload'"
+          (click)="setImageSource('upload')"
+        >
+          <i class="bi bi-upload"></i> Téléverser
+        </button>
+        <button
+          type="button"
+          class="image-source-tabs__btn"
+          [class.image-source-tabs__btn--active]="imageSource() === 'url'"
+          (click)="setImageSource('url')"
+        >
+          <i class="bi bi-link-45deg"></i> Lien URL
+        </button>
+      </div>
+
+      <div class="logo-field" *ngIf="imageSource() === 'upload'">
+        <div class="logo-field__preview">
+          <img *ngIf="imagePreviewUrl()" [src]="imagePreviewUrl()" alt="Aperçu de l'image" />
+          <i class="bi bi-image" *ngIf="!imagePreviewUrl()"></i>
+        </div>
+        <div class="logo-field__controls">
+          <label for="image_file" class="btn btn--ghost logo-field__upload-btn">
+            <i class="bi bi-upload"></i> Choisir une image
+          </label>
+          <input
+            id="image_file"
+            type="file"
+            accept="image/*"
+            class="logo-field__input"
+            (change)="onImageSelected($event)"
+          />
+          <button
+            type="button"
+            class="logo-field__remove"
+            *ngIf="imagePreviewUrl()"
+            (click)="onRemoveImage()"
+          >
+            <i class="bi bi-trash"></i> Retirer
+          </button>
+        </div>
+      </div>
+
+      <input
+        *ngIf="imageSource() === 'url'"
+        id="image_url"
+        type="text"
+        class="field__input"
+        placeholder="https://exemple.com/image.jpg"
+        [(ngModel)]="form.image_url"
+        name="image_url"
+      />
+    </div>
+
+    <div class="field">
+      <label class="field__label" for="description">Description</label>
+      <textarea
+        id="description"
+        class="field__input"
+        rows="3"
+        [(ngModel)]="form.description"
+        name="description"
+      ></textarea>
+    </div>
+
+    <div class="modal__actions">
+      <button type="button" class="btn btn--ghost" (click)="closeForm()">Annuler</button>
+      <button type="submit" class="btn btn--primary" [disabled]="isSubmitting()">
+        {{ isSubmitting() ? 'Enregistrement...' : 'Enregistrer' }}
+      </button>
+    </div>
+  </form>
+</div>

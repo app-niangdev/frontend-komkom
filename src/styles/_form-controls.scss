@@ -1,0 +1,77 @@
+@use 'tokens' as t;
+
+@mixin field-label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: t.$text-primary;
+}
+
+@mixin text-input {
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid t.$border-color;
+  border-radius: t.$radius-md;
+  font-size: 0.9rem;
+  color: t.$text-primary;
+  background: t.$card-bg;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &::placeholder {
+    color: t.$text-muted;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: t.$accent;
+    box-shadow: 0 0 0 3px rgba(91, 79, 229, 0.15);
+  }
+}
+
+@mixin btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: t.$radius-md;
+  background: t.$accent;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: t.$accent-hover;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+@mixin btn-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid t.$border-color;
+  border-radius: t.$radius-md;
+  background: t.$card-bg;
+  color: t.$text-primary;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: t.$page-bg;
+  }
+}

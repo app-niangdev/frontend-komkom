@@ -1,0 +1,168 @@
+<div class="modal-backdrop" (click)="closed.emit()"></div>
+<div class="modal modal--wide" role="dialog" aria-modal="true" aria-labelledby="company-form-title">
+  <div class="modal__header">
+    <h3 id="company-form-title">{{ company() ? "Modifier l'entreprise" : 'Nouvelle entreprise' }}</h3>
+    <button type="button" class="icon-btn" title="Fermer" (click)="closed.emit()"><i class="bi bi-x-lg"></i></button>
+  </div>
+
+  <!-- En-tête du stepper -->
+  <ol class="stepper" aria-label="Étapes">
+    <li
+      *ngFor="let s of steps; let i = index; let last = last"
+      class="stepper__item"
+      [class.is-current]="step() === i"
+      [class.is-done]="i < step()"
+    >
+      <button
+        type="button"
+        class="stepper__button"
+        [disabled]="!canReach(i) || step() === i"
+        [attr.aria-current]="step() === i ? 'step' : null"
+        (click)="goTo(i)"
+      >
+        <span class="stepper__bullet">
+          <i class="bi bi-check-lg" *ngIf="i < step(); else number"></i>
+          <ng-template #number>{{ i + 1 }}</ng-template>
+        </span>
+        <span class="stepper__title">{{ s.title }}</span>
+      </button>
+      <span class="stepper__line" *ngIf="!last" aria-hidden="true"></span>
+    </li>
+  </ol>
+
+  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+
+  <form #companyForm="ngForm" (ngSubmit)="onSubmit()" novalidate>
+    <!-- Étape 1 : entreprise -->
+    <div ngModelGroup="company" #companyGroup="ngModelGroup" class="form-grid" [hidden]="step() !== 0">
+      <div class="field">
+        <label class="field__label" for="name">Raison sociale *</label>
+        <input id="name" type="text" class="field__input" [(ngModel)]="form.name" name="name" required maxlength="255" />
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="short_name">Nom abrégé *</label>
+        <input id="short_name" type="text" class="field__input" [(ngModel)]="form.short_name" name="short_name" required maxlength="50" />
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="email_company">Email de l'entreprise *</label>
+        <input id="email_company" type="email" class="field__input" [(ngModel)]="form.email_company" name="email_company" required email />
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="slogan">Slogan</label>
+        <input id="slogan" type="text" class="field__input" [(ngModel)]="form.slogan" name="slogan" maxlength="255" />
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="phone_one">Téléphone principal *</label>
+        <input id="phone_one" type="tel" class="field__input" [(ngModel)]="form.phone_one" name="phone_one" required maxlength="20" />
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="phone_two">Téléphone secondaire</label>
+        <input id="phone_two" type="tel" class="field__input" [(ngModel)]="form.phone_two" name="phone_two" maxlength="20" />
+      </div>
+
+      <div class="field field--full">
+        <label class="field__label" for="head_office_address">Adresse du siège *</label>
+        <input id="head_office_address" type="text" class="field__input" [(ngModel)]="form.head_office_address" name="head_office_address" required maxlength="255" />
+      </div>
+    </div>
+
+    <!-- Étape 2 : propriétaire -->
+    <div ngModelGroup="owner" #ownerGroup="ngModelGroup" class="form-grid" [hidden]="step() !== 1">
+      <div class="field">
+        <label class="field__label" for="first_name">Prénom *</label>
+        <input id="first_name" type="text" class="field__input" [(ngModel)]="form.first_name" name="first_name" required maxlength="100" />
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="last_name">Nom *</label>
+        <input id="last_name" type="text" class="field__input" [(ngModel)]="form.last_name" name="last_name" required maxlength="100" />
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="email">Email de connexion *</label>
+        <input id="email" type="email" class="field__input" [(ngModel)]="form.email" name="email" required email />
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="gender">Genre *</label>
+        <select id="gender" class="field__input" [(ngModel)]="form.gender" name="gender" required>
+          <option value="male">Homme</option>
+          <option value="female">Femme</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="phone_number_one">Téléphone *</label>
+        <input id="phone_number_one" type="tel" class="field__input" [(ngModel)]="form.phone_number_one" name="phone_number_one" required maxlength="20" />
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="phone_number_two">Téléphone secondaire</label>
+        <input id="phone_number_two" type="tel" class="field__input" [(ngModel)]="form.phone_number_two" name="phone_number_two" maxlength="20" />
+      </div>
+
+      <div class="field field--full">
+        <label class="field__label" for="address">Adresse *</label>
+        <input id="address" type="text" class="field__input" [(ngModel)]="form.address" name="address" required maxlength="255" />
+      </div>
+    </div>
+
+    <!-- Étape 3 : récapitulatif -->
+    <div class="review" *ngIf="step() === reviewStep">
+      <section class="review__section">
+        <header>
+          <h4><i class="bi bi-building"></i> Entreprise</h4>
+          <button type="button" class="review__edit" (click)="goTo(0)"><i class="bi bi-pencil"></i> Modifier</button>
+        </header>
+        <dl>
+          <div><dt>Raison sociale</dt><dd>{{ form.name }}</dd></div>
+          <div><dt>Nom abrégé</dt><dd>{{ form.short_name }}</dd></div>
+          <div><dt>Email</dt><dd>{{ form.email_company }}</dd></div>
+          <div><dt>Slogan</dt><dd>{{ form.slogan || '—' }}</dd></div>
+          <div><dt>Téléphone</dt><dd>{{ form.phone_one }}<span *ngIf="form.phone_two"> · {{ form.phone_two }}</span></dd></div>
+          <div><dt>Siège</dt><dd>{{ form.head_office_address }}</dd></div>
+        </dl>
+      </section>
+
+      <section class="review__section">
+        <header>
+          <h4><i class="bi bi-person-badge"></i> Propriétaire</h4>
+          <button type="button" class="review__edit" (click)="goTo(1)"><i class="bi bi-pencil"></i> Modifier</button>
+        </header>
+        <dl>
+          <div><dt>Nom</dt><dd>{{ form.first_name }} {{ form.last_name }}</dd></div>
+          <div><dt>Genre</dt><dd>{{ genderLabel() }}</dd></div>
+          <div><dt>Email de connexion</dt><dd>{{ form.email }}</dd></div>
+          <div><dt>Téléphone</dt><dd>{{ form.phone_number_one }}<span *ngIf="form.phone_number_two"> · {{ form.phone_number_two }}</span></dd></div>
+          <div><dt>Adresse</dt><dd>{{ form.address }}</dd></div>
+        </dl>
+      </section>
+
+      <p class="text-muted form-hint" *ngIf="!company()">
+        <i class="bi bi-info-circle"></i> Une boutique par défaut (avec sa période d'essai) est créée avec l'entreprise. Le mot de passe initial du propriétaire est « password ».
+      </p>
+    </div>
+
+    <div class="modal__actions stepper-actions">
+      <button type="button" class="btn btn--ghost" *ngIf="step() === 0" (click)="closed.emit()">Annuler</button>
+      <button type="button" class="btn btn--ghost" *ngIf="step() > 0" (click)="previous()">
+        <i class="bi bi-arrow-left"></i> Précédent
+      </button>
+
+      <span class="stepper-actions__count">Étape {{ step() + 1 }} sur {{ steps.length }}</span>
+
+      <button type="submit" class="btn btn--primary" *ngIf="!isLastStep()">
+        Suivant <i class="bi bi-arrow-right"></i>
+      </button>
+      <button type="submit" class="btn btn--primary" *ngIf="isLastStep()" [disabled]="isSubmitting()">
+        <i class="bi bi-check-lg"></i>
+        {{ isSubmitting() ? 'Enregistrement...' : company() ? 'Enregistrer les modifications' : "Créer l'entreprise" }}
+      </button>
+    </div>
+  </form>
+</div>

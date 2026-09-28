@@ -1,0 +1,38 @@
+<div class="auth">
+  <aside class="auth__brand">
+    <div class="auth__brand-header">
+      <span class="auth__brand-logo"><i class="bi bi-stars"></i></span>
+      <span class="auth__brand-name">KomKom</span>
+    </div>
+
+    <div class="auth__pitch">
+      <p class="auth__pitch-eyebrow">Gestion de stock &amp; de ventes</p>
+      <h1 class="auth__pitch-title">Votre commerce,<br />sous contrôle en temps réel.</h1>
+      <p class="auth__pitch-desc">
+        Encaissez, suivez votre stock boutique par boutique et gardez un œil sur votre chiffre d'affaires,
+        où que vous soyez.
+      </p>
+
+      <ul class="auth__features">
+        <li *ngFor="let item of features">
+          <span class="auth__features-icon"><i class="bi" [ngClass]="item.icon"></i></span>
+          <div>
+            <strong>{{ item.title }}</strong>
+            <p>{{ item.desc }}</p>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <p class="auth__copyright">© {{ year }} KomKom. Tous droits réservés.</p>
+  </aside>
+
+  <main class="auth__panel">
+    <div class="auth__mobile-brand">
+      <span class="auth__brand-logo"><i class="bi bi-stars"></i></span>
+      <span class="auth__brand-name">KomKom</span>
+    </div>
+
+    <router-outlet></router-outlet>
+  </main>
+</div>

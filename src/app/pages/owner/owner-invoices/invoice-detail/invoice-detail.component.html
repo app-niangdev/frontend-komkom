@@ -1,0 +1,155 @@
+<div class="modal-backdrop" (click)="closed.emit()"></div>
+<div class="modal modal--xl" role="dialog" aria-modal="true" aria-labelledby="invoice-detail-title">
+  <div class="modal__header">
+    <h3 id="invoice-detail-title">Facture {{ invoice()?.number || '' }}</h3>
+    <button type="button" class="icon-btn" title="Fermer" (click)="closed.emit()"><i class="bi bi-x-lg"></i></button>
+  </div>
+
+  <div class="alert alert--error" *ngIf="loadError()">{{ loadError() }}</div>
+  <div class="state-message text-center text-muted" *ngIf="!invoice() && !loadError()">Chargement...</div>
+
+  <ng-container *ngIf="invoice() as inv">
+    <div class="sale-meta">
+      <div>
+        <span class="sale-meta__label">Date</span>
+        <strong>{{ inv.date | date: 'dd/MM/yyyy à HH:mm' }}</strong>
+      </div>
+      <div>
+        <span class="sale-meta__label">Client</span>
+        <strong>{{ inv.customer }}</strong>
+        <span class="text-muted" *ngIf="inv.customer_phone">{{ inv.customer_phone }}</span>
+      </div>
+      <div>
+        <span class="sale-meta__label">Statut</span>
+        <span class="badge pay pay--{{ inv.status }}">{{ statusLabels[inv.status] }}</span>
+      </div>
+      <div>
+        <span class="sale-meta__label">Vente</span>
+        <strong>{{ inv.sale.number || '—' }}</strong>
+      </div>
+      <div>
+        <span class="sale-meta__label">Vendeur</span>
+        <strong>{{ inv.seller || '—' }}</strong>
+      </div>
+      <div>
+        <span class="sale-meta__label">Boutique</span>
+        <strong>{{ inv.store?.name }}</strong>
+      </div>
+    </div>
+
+    <!-- Reste dû et encaissement -->
+    <div class="due-banner" *ngIf="canPay() && !showPayment()">
+      <div>
+        <span class="due-banner__label">Reste à payer</span>
+        <strong class="due-banner__value">{{ money(inv.balance) }}</strong>
+        <span class="text-muted"> sur {{ money(inv.amount_total) }}</span>
+      </div>
+      <button type="button" class="btn btn--primary" (click)="openPayment()"><i class="bi bi-cash-coin"></i> Encaisser un paiement</button>
+    </div>
+
+    <form class="pay-form" *ngIf="showPayment()" (ngSubmit)="submitPayment()" novalidate>
+      <h4 class="section-title">Encaisser un paiement</h4>
+      <div class="alert alert--error" *ngIf="paymentError()" role="alert">{{ paymentError() }}</div>
+      <div class="pay-form__grid">
+        <div class="field">
+          <label class="field__label" for="pay_amount">Montant reçu *</label>
+          <input id="pay_amount" name="amount" class="field__input num" type="number" min="1" [max]="inv.balance" step="1" [(ngModel)]="amount" required autofocus />
+          <div class="pay-form__shortcuts">
+            <button type="button" class="link-btn" (click)="amount = inv.balance">Tout le reste ({{ money(inv.balance) }})</button>
+            <button type="button" class="link-btn" *ngIf="inv.balance >= 2" (click)="amount = Math.round(inv.balance / 2)">La moitié</button>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field__label" for="pay_date">Date du paiement *</label>
+          <input id="pay_date" name="date" class="field__input" type="date" [max]="today" [(ngModel)]="paymentDate" required />
+        </div>
+      </div>
+      <div class="field">
+        <span class="field__label" id="pay_type_label">Moyen de paiement *</span>
+        <div class="method-group" role="radiogroup" aria-labelledby="pay_type_label">
+          <button
+            type="button"
+            *ngFor="let m of methods"
+            class="method"
+            role="radio"
+            [attr.aria-checked]="paymentType === m.value"
+            [class.is-active]="paymentType === m.value"
+            (click)="paymentType = m.value"
+          >
+            <i class="bi {{ m.icon }}"></i> {{ m.label }}
+          </button>
+        </div>
+      </div>
+      <p class="pay-form__after text-muted" *ngIf="amount && amount > 0 && amount <= inv.balance">
+        Après ce paiement : {{ amount >= inv.balance ? 'facture soldée' : 'reste ' + money(inv.balance - amount) }}.
+      </p>
+      <div class="modal__actions">
+        <button type="button" class="btn btn--ghost" (click)="showPayment.set(false)" [disabled]="isSubmitting()">Annuler</button>
+        <button type="submit" class="btn btn--primary" [disabled]="isSubmitting()">
+          <i class="bi bi-check-lg"></i> {{ isSubmitting() ? 'Enregistrement...' : 'Enregistrer le paiement' }}
+        </button>
+      </div>
+    </form>
+
+    <h4 class="section-title">Articles</h4>
+    <div class="table-card detail-table">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Produit</th>
+            <th class="text-right">Quantité</th>
+            <th class="text-right">Prix unitaire</th>
+            <th class="text-right">Sous-total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of inv.items">
+            <td>
+              <div>{{ item.product }}</div>
+              <div class="person__sub" *ngIf="item.serial_numbers.length > 0"><i class="bi bi-upc"></i> {{ item.serial_numbers.join(', ') }}</div>
+            </td>
+            <td class="text-right num">{{ formatNumber(item.quantity) }} {{ item.unit }}</td>
+            <td class="text-right num">{{ money(item.unit_price) }}</td>
+            <td class="text-right num">{{ money(item.subtotal) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <dl class="totals">
+      <div *ngIf="inv.sale.discount > 0"><dt>Sous-total</dt><dd>{{ money(inv.sale.gross_amount) }}</dd></div>
+      <div *ngIf="inv.sale.discount > 0"><dt>Remise</dt><dd>− {{ money(inv.sale.discount) }}</dd></div>
+      <div class="totals__main"><dt>Total</dt><dd>{{ money(inv.amount_total) }}</dd></div>
+      <div *ngIf="inv.status !== 'cancelled'"><dt>Payé</dt><dd>{{ money(inv.amount_paid) }}</dd></div>
+      <div class="totals__due" *ngIf="inv.balance > 0"><dt>Reste à payer</dt><dd>{{ money(inv.balance) }}</dd></div>
+    </dl>
+
+    <p class="cancelled-note" *ngIf="inv.status === 'cancelled'">
+      <i class="bi bi-x-circle"></i> Facture annulée : elle n'entre ni dans les encaissements ni dans le reste à encaisser.
+    </p>
+
+    <h4 class="section-title">Paiements reçus</h4>
+    <p class="text-muted empty" *ngIf="inv.payments.length === 0">Aucun paiement enregistré.</p>
+    <ul class="payments payments--receipts" *ngIf="inv.payments.length > 0">
+      <li *ngFor="let p of inv.payments">
+        <span class="payments__date">{{ formatIsoDate(p.date) }}</span>
+        <span class="payments__type">{{ paymentTypes[p.type] || p.type }}</span>
+        <span class="text-muted payments__user">{{ p.user }}</span>
+        <strong class="num">{{ money(p.amount) }}</strong>
+        <button type="button" class="icon-btn" title="Imprimer le reçu" [attr.aria-label]="'Imprimer le reçu du ' + formatIsoDate(p.date)" (click)="print('receipt', p.id)">
+          <i class="bi bi-printer"></i>
+        </button>
+      </li>
+    </ul>
+
+    <app-invoice-document [invoice]="inv" [currency]="currency()" [kind]="documentKind()" [paymentId]="receiptPaymentId()" />
+  </ng-container>
+
+  <div class="modal__actions" *ngIf="!showPayment()">
+    <button type="button" class="btn btn--ghost" (click)="closed.emit()">Fermer</button>
+    <ng-container *ngIf="invoice()">
+      <button type="button" class="btn btn--ghost" (click)="print('ticket')"><i class="bi bi-receipt"></i> Ticket</button>
+      <button type="button" class="btn btn--ghost" (click)="print('invoice')"><i class="bi bi-printer"></i> Facture A4</button>
+    </ng-container>
+  </div>
+</div>

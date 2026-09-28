@@ -1,0 +1,23 @@
+<div class="shell">
+  <app-sidebar></app-sidebar>
+
+  <div class="shell__main">
+    <app-navbar></app-navbar>
+    <div
+      class="subscription-banner"
+      *ngIf="subscriptionNotice.showBanner()"
+      [class.subscription-banner--critical]="isCritical(subscriptionNotice.alerts())"
+      role="status"
+    >
+      <i class="bi bi-exclamation-triangle"></i>
+      <span>{{ bannerText(subscriptionNotice.alerts()) }} Pensez à renouveler auprès de votre administrateur.</span>
+      <button type="button" class="subscription-banner__close" aria-label="Masquer" (click)="subscriptionNotice.dismissBanner()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <main class="shell__content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

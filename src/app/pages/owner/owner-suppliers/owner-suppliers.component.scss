@@ -1,0 +1,133 @@
+@use '../../../../styles/tokens' as t;
+
+.page-header__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.page-header__cta {
+  flex-shrink: 0;
+}
+
+.supplier-kpis {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  .kpi__value {
+    font-size: 1.3rem;
+    white-space: nowrap;
+  }
+
+  .kpi__hint {
+    display: block;
+  }
+}
+
+.kpi--attention {
+  box-shadow: inset 3px 0 0 #d97706;
+
+  .kpi__value {
+    color: #b45309;
+  }
+}
+
+.kpi__link {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: t.$accent;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: t.$text-secondary;
+
+  p {
+    margin: 0;
+  }
+}
+
+.empty-state__icon {
+  font-size: 2rem;
+  color: t.$text-muted;
+}
+
+.suppliers-table__row {
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: t.$page-bg;
+    outline: none;
+  }
+
+  a {
+    color: inherit;
+  }
+
+  .badge {
+    margin-left: 0.35rem;
+  }
+
+  .supply-status {
+    margin: 0.3rem 0 0;
+  }
+}
+
+a.icon-btn {
+  text-decoration: none;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (max-width: 991.98px) {
+  .supplier-kpis {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .page-header {
+    flex-wrap: wrap;
+  }
+
+  .page-header__cta {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .supplier-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  // La liste passe en cartes empilées
+  .suppliers-table {
+    thead {
+      display: none;
+    }
+
+    tr {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.35rem 0.75rem;
+      padding: 0.85rem 1rem;
+    }
+
+    td {
+      padding: 0 !important;
+      white-space: normal !important;
+      text-align: left !important;
+    }
+
+    td:last-child {
+      grid-column: 1 / -1;
+      justify-self: end;
+    }
+  }
+}

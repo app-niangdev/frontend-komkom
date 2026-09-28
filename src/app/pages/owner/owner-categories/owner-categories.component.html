@@ -1,0 +1,143 @@
+<div class="page-header card">
+  <span class="page-header__icon"><i class="bi bi-tags"></i></span>
+  <div>
+    <h2 class="page-header__title">Catégories — {{ context.selectedStore()?.name || 'Toutes les boutiques' }}</h2>
+    <p class="page-header__desc" *ngIf="!context.isSeller()">Regroupez vos produits pour les retrouver vite en caisse et suivre le stock par famille.</p>
+    <p class="page-header__desc" *ngIf="context.isSeller()">Familles de produits de la boutique ; cliquez sur le nombre de produits pour les voir.</p>
+  </div>
+  <!-- Vendeur : consultation seule -->
+  <button type="button" class="btn btn--primary page-header__cta" *ngIf="!context.isSeller()" (click)="openCreate()" [disabled]="!context.selectedId()"
+    [title]="context.selectedId() ? '' : 'Choisissez une boutique dans le sélecteur pour ajouter une catégorie'">
+    <i class="bi bi-plus-lg"></i> Nouvelle catégorie
+  </button>
+</div>
+
+<app-store-blocked *ngIf="context.selectedIsBlocked()" />
+
+<ng-container *ngIf="!context.selectedIsBlocked()">
+  <div class="cat-summary" *ngIf="result() as r">
+    <div class="card cat-tile">
+      <span class="cat-tile__label"><i class="bi bi-tags"></i> Catégories</span>
+      <strong>{{ formatNumber(r.summary.categories) }}</strong>
+    </div>
+    <div class="card cat-tile">
+      <span class="cat-tile__label"><i class="bi bi-box-seam"></i> Produits</span>
+      <strong>{{ formatNumber(r.summary.products) }}</strong>
+    </div>
+    <div class="card cat-tile" [class.cat-tile--warn]="r.summary.uncategorized > 0">
+      <span class="cat-tile__label"><i class="bi bi-question-circle"></i> Produits sans catégorie</span>
+      <strong>{{ formatNumber(r.summary.uncategorized) }}</strong>
+    </div>
+  </div>
+
+  <div class="card toolbar-card">
+    <div class="toolbar-filters">
+      <div class="search">
+        <i class="bi bi-search"></i>
+        <input type="text" placeholder="Rechercher une catégorie..." [(ngModel)]="search" (keyup.enter)="load()" aria-label="Rechercher une catégorie" />
+      </div>
+      <button type="button" class="btn btn--ghost" *ngIf="search" (click)="clearSearch()"><i class="bi bi-x-circle"></i> Réinitialiser</button>
+    </div>
+  </div>
+
+  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+  <div class="state-message text-center text-muted" *ngIf="isLoading() && !result()">Chargement...</div>
+
+  <ng-container *ngIf="result() as r">
+    <div class="state-message text-center text-muted card" *ngIf="r.data.length === 0">
+      <ng-container *ngIf="search; else noCategory">Aucune catégorie ne correspond à « {{ search }} ».</ng-container>
+      <ng-template #noCategory>
+        Aucune catégorie pour l'instant.
+        <button type="button" class="link-btn" *ngIf="context.selectedId() && !context.isSeller()" (click)="openCreate()">Créer la première</button>
+      </ng-template>
+    </div>
+
+    <ul class="cat-grid" *ngIf="r.data.length > 0" [class.is-refreshing]="isLoading()" aria-label="Catégories">
+      <li class="card cat-card" *ngFor="let c of r.data">
+        <div class="cat-card__head">
+          <span class="cat-card__icon" aria-hidden="true">{{ c.name.charAt(0) | uppercase }}</span>
+          <div class="cat-card__title">
+            <h3 [title]="c.name">{{ c.name }}</h3>
+            <span class="text-muted" *ngIf="!context.selectedId()">{{ c.store.name }}</span>
+          </div>
+          <div class="cat-card__actions" *ngIf="!context.isSeller()">
+            <button type="button" class="icon-btn" title="Modifier" [attr.aria-label]="'Modifier ' + c.name" (click)="openEdit(c)"><i class="bi bi-pencil"></i></button>
+            <button type="button" class="icon-btn icon-btn--danger" title="Supprimer" [attr.aria-label]="'Supprimer ' + c.name" (click)="remove(c)"><i class="bi bi-trash"></i></button>
+          </div>
+        </div>
+
+        <p class="cat-card__desc" [class.text-muted]="!c.description">{{ c.description || 'Pas de description' }}</p>
+
+        <div class="cat-card__foot">
+          <a class="cat-card__count" [routerLink]="context.base() + '/products'" [queryParams]="{ category: c.id }" *ngIf="c.products > 0; else emptyCat">
+            <strong>{{ formatNumber(c.products) }}</strong> produit(s) <i class="bi bi-arrow-right"></i>
+          </a>
+          <ng-template #emptyCat><span class="text-muted">Aucun produit</span></ng-template>
+          <span class="badge stock stock--out" *ngIf="c.out_of_stock > 0">{{ c.out_of_stock }} en rupture</span>
+          <span class="badge stock stock--low" *ngIf="c.low_stock > 0">{{ c.low_stock }} stock bas</span>
+        </div>
+      </li>
+    </ul>
+  </ng-container>
+</ng-container>
+
+<!-- Création / modification -->
+<ng-container *ngIf="editing() as e">
+  <div class="modal-backdrop" (click)="editing.set(null)"></div>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cat-form-title">
+    <div class="modal__header">
+      <h3 id="cat-form-title">{{ e === 'new' ? 'Nouvelle catégorie' : 'Modifier « ' + e.name + ' »' }}</h3>
+      <button type="button" class="icon-btn" title="Fermer" (click)="editing.set(null)"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <form (ngSubmit)="save()" novalidate>
+      <p class="text-muted form-store" *ngIf="e === 'new'"><i class="bi bi-shop"></i> {{ context.selectedStore()?.name }}</p>
+      <div class="alert alert--error" *ngIf="formError()" role="alert">{{ formError() }}</div>
+      <div class="field">
+        <label class="field__label" for="cat_name">Nom *</label>
+        <input id="cat_name" name="name" class="field__input" [(ngModel)]="formName" maxlength="100" required autocomplete="off" autofocus />
+      </div>
+      <div class="field">
+        <label class="field__label" for="cat_desc">Description</label>
+        <textarea id="cat_desc" name="description" class="field__input" rows="3" [(ngModel)]="formDescription" maxlength="255"></textarea>
+        <span class="form-hint-inline text-muted">{{ formDescription.length }} / 255</span>
+      </div>
+      <div class="modal__actions">
+        <button type="button" class="btn btn--ghost" (click)="editing.set(null)" [disabled]="isSaving()">Annuler</button>
+        <button type="submit" class="btn btn--primary" [disabled]="isSaving() || formName.trim().length < 2">
+          {{ isSaving() ? 'Enregistrement...' : e === 'new' ? 'Créer' : 'Enregistrer' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</ng-container>
+
+<!-- Suppression d'une catégorie non vide -->
+<ng-container *ngIf="deleting() as d">
+  <div class="modal-backdrop" (click)="deleting.set(null)"></div>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cat-delete-title">
+    <div class="modal__header">
+      <h3 id="cat-delete-title">Supprimer « {{ d.name }} »</h3>
+      <button type="button" class="icon-btn" title="Fermer" (click)="deleting.set(null)"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <p class="delete-intro">
+      Cette catégorie contient <strong>{{ d.products }} produit(s)</strong>. Les produits ne sont pas supprimés : choisissez où les ranger.
+    </p>
+    <div class="alert alert--error" *ngIf="deleteError()" role="alert">{{ deleteError() }}</div>
+    <div class="move-options" role="radiogroup" aria-label="Destination des produits">
+      <label class="move-option" *ngFor="let t of moveTargets()" [class.is-active]="moveTo === t.id">
+        <input type="radio" name="move_to" [checked]="moveTo === t.id" (change)="moveTo = t.id" />
+        <span>Déplacer vers <strong>{{ t.name }}</strong><span class="text-muted">&nbsp;({{ t.products }} produit(s))</span></span>
+      </label>
+      <label class="move-option" [class.is-active]="moveTo === 'none'">
+        <input type="radio" name="move_to" [checked]="moveTo === 'none'" (change)="moveTo = 'none'" />
+        <span>Les laisser <strong>sans catégorie</strong></span>
+      </label>
+    </div>
+    <div class="modal__actions">
+      <button type="button" class="btn btn--ghost" (click)="deleting.set(null)" [disabled]="isDeleting()">Annuler</button>
+      <button type="button" class="btn btn--danger" [disabled]="moveTo === null || isDeleting()" (click)="confirmDelete()">
+        <i class="bi bi-trash"></i> {{ isDeleting() ? 'Suppression...' : 'Supprimer la catégorie' }}
+      </button>
+    </div>
+  </div>
+</ng-container>

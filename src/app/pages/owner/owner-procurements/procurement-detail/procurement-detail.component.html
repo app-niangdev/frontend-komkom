@@ -1,0 +1,136 @@
+<div class="modal-backdrop no-print" (click)="closed.emit()"></div>
+<div class="modal modal--xl supply-detail" role="dialog" aria-modal="true" aria-labelledby="supply-detail-title">
+  <div class="modal__header">
+    <h3 id="supply-detail-title">
+      Approvisionnement {{ supply()?.order_number || '' }}
+      <span *ngIf="supply() as s" class="badge supply-status supply-status--{{ s.status }}">{{ statusLabels[s.status] }}</span>
+    </h3>
+    <div class="modal__header-actions no-print">
+      <button type="button" class="icon-btn" title="Imprimer le bon" aria-label="Imprimer le bon" (click)="print()" *ngIf="supply()">
+        <i class="bi bi-printer"></i>
+      </button>
+      <button type="button" class="icon-btn" title="Fermer" aria-label="Fermer" (click)="closed.emit()"><i class="bi bi-x-lg"></i></button>
+    </div>
+  </div>
+
+  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+  <div class="state-message text-center text-muted" *ngIf="!supply() && !errorMessage()">Chargement...</div>
+
+  <ng-container *ngIf="supply() as s">
+    <!-- Suivi : saisie → réception / annulation -->
+    <ol class="timeline" aria-label="Suivi de l'approvisionnement">
+      <li class="timeline__step is-done">
+        <span class="timeline__dot"><i class="bi bi-pencil-square"></i></span>
+        <div>
+          <strong>Saisi</strong>
+          <span class="text-muted">{{ s.date | date: 'dd/MM/yyyy à HH:mm' }}<ng-container *ngIf="s.user"> · {{ s.user }}</ng-container></span>
+        </div>
+      </li>
+      <li class="timeline__step" [class.is-done]="s.status === 'received'" [class.is-cancelled]="s.status === 'cancelled'">
+        <span class="timeline__dot">
+          <i class="bi" [class.bi-box-arrow-in-down]="s.status !== 'cancelled'" [class.bi-x-lg]="s.status === 'cancelled'"></i>
+        </span>
+        <div>
+          <ng-container [ngSwitch]="s.status">
+            <ng-container *ngSwitchCase="'received'">
+              <strong>Réceptionné — stock mis à jour</strong>
+              <span class="text-muted">{{ s.received_at | date: 'dd/MM/yyyy à HH:mm' }}<ng-container *ngIf="s.received_by"> · {{ s.received_by }}</ng-container></span>
+            </ng-container>
+            <ng-container *ngSwitchCase="'cancelled'">
+              <strong>Annulé</strong>
+              <span class="text-muted">{{ s.updated_at | date: 'dd/MM/yyyy à HH:mm' }} · stock non modifié</span>
+            </ng-container>
+            <ng-container *ngSwitchDefault>
+              <strong>En attente de réception</strong>
+              <span class="text-muted">Le stock sera augmenté à la réception.</span>
+            </ng-container>
+          </ng-container>
+        </div>
+      </li>
+    </ol>
+
+    <div class="supply-meta">
+      <div>
+        <span class="supply-meta__label">Boutique</span>
+        <strong>{{ s.store?.name }}</strong>
+      </div>
+      <div *ngIf="s.supplier as sup">
+        <span class="supply-meta__label">Fournisseur</span>
+        <strong>{{ sup.name }}</strong>
+        <span class="text-muted">
+          <a [href]="'tel:' + sup.phone">{{ sup.phone }}</a><ng-container *ngIf="sup.phone_two"> · {{ sup.phone_two }}</ng-container>
+        </span>
+        <span class="text-muted" *ngIf="sup.email">{{ sup.email }}</span>
+        <span class="text-muted" *ngIf="sup.address">{{ sup.address }}</span>
+      </div>
+      <div>
+        <span class="supply-meta__label">Contenu</span>
+        <strong>{{ s.lines.length }} produit(s)</strong>
+        <span class="text-muted">{{ formatNumber(unitsCount()) }} unité(s) au total</span>
+      </div>
+    </div>
+
+    <div class="table-card detail-table">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Produit</th>
+            <th class="text-right">Quantité</th>
+            <th class="text-right">Prix d'achat</th>
+            <th class="text-right">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngFor="let line of s.lines">
+            <tr>
+              <td>
+                <div [class.text-muted]="line.product_deleted">{{ line.product }}</div>
+                <div class="person__sub" *ngIf="line.current_stock !== null && !line.product_deleted">
+                  Stock actuel : {{ formatNumber(line.current_stock) }} {{ line.unit }}
+                </div>
+                <button
+                  type="button"
+                  class="serial-toggle no-print"
+                  *ngIf="line.serial_numbers.length > 0"
+                  (click)="toggleSerials(line.id)"
+                  [attr.aria-expanded]="openSerials().has(line.id)"
+                >
+                  <i class="bi bi-upc"></i> {{ line.serial_numbers.length }} n° de série
+                  <i class="bi" [class.bi-chevron-down]="!openSerials().has(line.id)" [class.bi-chevron-up]="openSerials().has(line.id)"></i>
+                </button>
+              </td>
+              <td class="text-right num">{{ line.quantity | number: '1.0-3' }} {{ line.unit }}</td>
+              <td class="text-right num">{{ money(line.purchase_price) }}</td>
+              <td class="text-right num"><strong>{{ money(line.total) }}</strong></td>
+            </tr>
+            <tr *ngIf="line.serial_numbers.length > 0" class="serial-row" [class.is-open]="openSerials().has(line.id)">
+              <td colspan="4">
+                <ul class="serial-chips">
+                  <li *ngFor="let sn of line.serial_numbers">{{ sn }}</li>
+                </ul>
+              </td>
+            </tr>
+          </ng-container>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3" class="text-right">Montant total</td>
+            <td class="text-right num"><strong class="grand-total">{{ money(s.total_amount) }}</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="modal__actions no-print" *ngIf="s.status === 'pending'">
+      <button type="button" class="btn btn--danger" [disabled]="busy()" (click)="cancel()">
+        <i class="bi bi-x-circle"></i> Annuler l'approvisionnement
+      </button>
+      <a class="btn btn--ghost" [routerLink]="[context.base() + '/procurements', s.id, 'edit']">
+        <i class="bi bi-pencil"></i> Modifier
+      </a>
+      <button type="button" class="btn btn--primary" [disabled]="busy()" (click)="receive()">
+        <i class="bi bi-box-arrow-in-down"></i> Réceptionner
+      </button>
+    </div>
+  </ng-container>
+</div>

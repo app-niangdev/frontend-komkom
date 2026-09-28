@@ -1,0 +1,85 @@
+<div class="modal-backdrop modal-backdrop--stacked" (click)="closed.emit()"></div>
+<div class="modal modal--stacked" role="dialog" aria-modal="true">
+  <div class="modal__header">
+    <h3>{{ subscription() ? "Modifier l'abonnement" : 'Nouvel abonnement' }}</h3>
+    <button type="button" class="icon-btn" title="Fermer" (click)="closed.emit()"><i class="bi bi-x-lg"></i></button>
+  </div>
+
+  <div class="store-recap">
+    <i class="bi bi-shop"></i>
+    <div>
+      <strong>{{ store().store_name }}</strong>
+      <span class="text-muted" *ngIf="store().company_name"> — {{ store().company_name }}</span>
+      <div class="text-muted store-recap__sub" *ngIf="!subscription() && store().ends_at">
+        Couverture actuelle jusqu'au {{ formatIsoDate(store().ends_at) }}
+      </div>
+    </div>
+  </div>
+
+  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+
+  <form #subForm="ngForm" (ngSubmit)="subForm.valid && submit()">
+    <div class="form-grid">
+      <div class="field field--full" *ngIf="!subscription()">
+        <span class="field__label">Durée</span>
+        <div class="duration-picker" role="group" aria-label="Durée de l'abonnement">
+          <button
+            type="button"
+            *ngFor="let d of durations"
+            class="duration-picker__option"
+            [class.is-selected]="selectedMonths() === d.months"
+            (click)="applyDuration(d)"
+          >
+            {{ d.months }} mois
+          </button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="starts_at">Début *</label>
+        <input id="starts_at" type="date" class="field__input" [ngModel]="form.starts_at" (ngModelChange)="onStartChange($event)" name="starts_at" required />
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="ends_at">Fin (incluse) *</label>
+        <input id="ends_at" type="date" class="field__input" [ngModel]="form.ends_at" (ngModelChange)="onEndChange($event)" name="ends_at" [min]="form.starts_at" required />
+      </div>
+
+      <p class="text-muted form-hint field--full" *ngIf="coveredDays() as days">
+        <i class="bi bi-calendar-range"></i> {{ days }} jour{{ days > 1 ? 's' : '' }} couvert{{ days > 1 ? 's' : '' }},
+        du {{ formatIsoDate(form.starts_at) }} au {{ formatIsoDate(form.ends_at) }}.
+      </p>
+
+      <div class="field field--full">
+        <label class="field__label" for="plan">Formule *</label>
+        <input id="plan" type="text" class="field__input" [(ngModel)]="form.plan" name="plan" required maxlength="100" list="plan-options" />
+        <datalist id="plan-options">
+          <option value="Essai"></option>
+          <option *ngFor="let d of durations" [value]="d.plan"></option>
+        </datalist>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="amount">Montant *</label>
+        <input id="amount" type="number" class="field__input" [(ngModel)]="form.amount" name="amount" required min="0" step="any" />
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="currency">Devise</label>
+        <input id="currency" type="text" class="field__input" [(ngModel)]="form.currency" name="currency" maxlength="3" minlength="3" required />
+      </div>
+
+      <div class="field field--full">
+        <label class="field__label" for="notes">Notes</label>
+        <textarea id="notes" rows="2" class="field__input" [(ngModel)]="form.notes" name="notes" maxlength="1000" placeholder="Référence de paiement, remarque..."></textarea>
+      </div>
+    </div>
+
+    <div class="modal__actions">
+      <button type="button" class="btn btn--ghost" (click)="closed.emit()">Annuler</button>
+      <button type="submit" class="btn btn--primary" [disabled]="isSubmitting() || subForm.invalid || !coveredDays()">
+        {{ isSubmitting() ? 'Enregistrement...' : 'Enregistrer' }}
+      </button>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,156 @@
+@use '../../../../styles/tokens' as t;
+
+.auth {
+  display: flex;
+  min-height: 100vh;
+  background: t.$page-bg;
+}
+
+.auth__brand {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 38%;
+  min-width: 380px;
+  padding: 2.5rem;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(91, 79, 229, 0.25), transparent 55%),
+    radial-gradient(circle at 85% 90%, rgba(91, 79, 229, 0.18), transparent 50%),
+    t.$sidebar-bg;
+  color: #fff;
+  overflow: hidden;
+}
+
+.auth__brand-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.auth__brand-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: t.$accent;
+  color: #fff;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.auth__brand-name {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.auth__brand-logo i {
+  font-size: 1.05rem;
+}
+
+.auth__pitch-eyebrow {
+  margin: 0 0 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #a5a0f5;
+}
+
+.auth__pitch-title {
+  margin: 0 0 1rem;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.auth__pitch-desc {
+  margin: 0 0 2rem;
+  max-width: 30rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.auth__features {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+  }
+
+  strong {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  p {
+    margin: 0.15rem 0 0;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.6);
+  }
+}
+
+.auth__features-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(91, 79, 229, 0.22);
+  color: #c4c0ff;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.auth__copyright {
+  margin: 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.auth__panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem;
+}
+
+.auth__mobile-brand {
+  display: none;
+}
+
+@media (max-width: 991.98px) {
+  .auth__brand {
+    display: none;
+  }
+
+  .auth__mobile-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    max-width: 26rem;
+    margin-bottom: 2rem;
+    color: t.$text-primary;
+  }
+
+  .auth__panel {
+    padding: 2rem 1.5rem;
+  }
+}

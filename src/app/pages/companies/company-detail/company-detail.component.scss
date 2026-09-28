@@ -1,0 +1,169 @@
+@use '../../../../styles/tokens' as t;
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: t.$text-secondary;
+  text-decoration: none;
+
+  &:hover {
+    color: t.$accent;
+  }
+}
+
+.company-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.company-hero__main {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.company-hero__logo {
+  width: 64px;
+  height: 64px;
+  font-size: 1.5rem;
+}
+
+.company-hero__title {
+  flex: 1;
+  min-width: 180px;
+
+  h2 {
+    margin: 0 0 0.15rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: t.$text-primary;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.85rem;
+  }
+}
+
+.company-hero__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem 1.5rem;
+  margin: 0;
+  padding-top: 1rem;
+  border-top: 1px solid t.$border-color;
+
+  dt {
+    margin-bottom: 0.2rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: t.$text-muted;
+  }
+
+  dd {
+    margin: 0;
+    font-size: 0.87rem;
+    color: t.$text-primary;
+    overflow-wrap: anywhere;
+  }
+}
+
+.d-block {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 0.78rem;
+}
+
+.swatches {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid t.$border-color;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  h3 {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: t.$text-primary;
+  }
+}
+
+.store-stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: t.$radius-md;
+  background: t.$page-bg;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: t.$text-secondary;
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+}
+
+.storefront-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 32px;
+  flex-wrap: wrap;
+
+  .badge {
+    gap: 0.3rem;
+  }
+
+  .icon-btn {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+.badge--warning {
+  background: rgba(217, 119, 6, 0.14);
+  color: t.$warning;
+}
+
+.storefront-row__link {
+  min-width: 0;
+  max-width: 55%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: t.$accent;
+}

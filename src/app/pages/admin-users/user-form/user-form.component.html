@@ -1,0 +1,124 @@
+<div class="modal-backdrop" (click)="closed.emit()"></div>
+<div class="modal modal--wide" role="dialog" aria-modal="true">
+  <div class="modal__header">
+    <h3>{{ user() ? "Modifier l'utilisateur" : 'Nouvel utilisateur' }}</h3>
+    <button type="button" class="icon-btn" title="Fermer" (click)="closed.emit()"><i class="bi bi-x-lg"></i></button>
+  </div>
+
+  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+
+  <form #userForm="ngForm" (ngSubmit)="userForm.valid && submit()">
+    <div class="form-grid">
+      <div class="form-section-title"><i class="bi bi-shield-lock"></i> Rôle et rattachement</div>
+
+      <div class="field" [class.field--full]="!needsStore()">
+        <label class="field__label" for="role_id">Rôle *</label>
+        <select
+          id="role_id"
+          class="field__input"
+          [(ngModel)]="form.role_id"
+          name="role_id"
+          required
+          [disabled]="!!user()"
+        >
+          <ng-container *ngIf="user(); else creatable">
+            <option [ngValue]="form.role_id">{{ roleLabels[user()!.role.name] }}</option>
+          </ng-container>
+          <ng-template #creatable>
+            <option *ngFor="let role of creatableRoles()" [ngValue]="role.id">{{ roleLabels[role.name] }}</option>
+          </ng-template>
+        </select>
+      </div>
+
+      <ng-container *ngIf="needsStore()">
+        <div class="field">
+          <label class="field__label" for="company_id">Entreprise *</label>
+          <select
+            id="company_id"
+            class="field__input"
+            [ngModel]="companyId"
+            (ngModelChange)="onCompanyChange($event)"
+            name="company_id"
+            required
+          >
+            <option [ngValue]="null" disabled>Choisir une entreprise</option>
+            <option *ngFor="let company of companies()" [ngValue]="company.id">{{ company.name }}</option>
+          </select>
+        </div>
+
+        <div class="field field--full">
+          <label class="field__label" for="store_id">Boutique *</label>
+          <select
+            id="store_id"
+            class="field__input"
+            [(ngModel)]="form.store_id"
+            name="store_id"
+            required
+            [disabled]="!companyId || isLoadingStores()"
+          >
+            <option [ngValue]="null" disabled>
+              {{ isLoadingStores() ? 'Chargement...' : companyId ? 'Choisir une boutique' : "Choisir d'abord une entreprise" }}
+            </option>
+            <option *ngFor="let store of stores()" [ngValue]="store.id">
+              {{ store.name }}{{ store.active ? '' : ' (désactivée)' }}
+            </option>
+          </select>
+        </div>
+      </ng-container>
+
+      <p class="text-muted form-hint field--full" *ngIf="user()">
+        <i class="bi bi-info-circle"></i> Le rôle d'un utilisateur existant ne peut pas être modifié.
+      </p>
+      <p class="text-muted form-hint field--full" *ngIf="!user()">
+        <i class="bi bi-info-circle"></i> Les propriétaires se créent depuis « Entreprises ». Mot de passe initial : « password ».
+      </p>
+
+      <div class="form-section-title"><i class="bi bi-person"></i> Identité</div>
+
+      <div class="field">
+        <label class="field__label" for="first_name">Prénom *</label>
+        <input id="first_name" type="text" class="field__input" [(ngModel)]="form.first_name" name="first_name" required maxlength="100" />
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="last_name">Nom *</label>
+        <input id="last_name" type="text" class="field__input" [(ngModel)]="form.last_name" name="last_name" required maxlength="100" />
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="email">Email *</label>
+        <input id="email" type="email" class="field__input" [(ngModel)]="form.email" name="email" required email />
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="gender">Genre *</label>
+        <select id="gender" class="field__input" [(ngModel)]="form.gender" name="gender" required>
+          <option value="male">Homme</option>
+          <option value="female">Femme</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="phone_number_one">Téléphone *</label>
+        <input id="phone_number_one" type="tel" class="field__input" [(ngModel)]="form.phone_number_one" name="phone_number_one" required maxlength="20" />
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="phone_number_two">Téléphone secondaire</label>
+        <input id="phone_number_two" type="tel" class="field__input" [(ngModel)]="form.phone_number_two" name="phone_number_two" maxlength="20" />
+      </div>
+
+      <div class="field field--full">
+        <label class="field__label" for="address">Adresse *</label>
+        <input id="address" type="text" class="field__input" [(ngModel)]="form.address" name="address" required maxlength="255" />
+      </div>
+    </div>
+
+    <div class="modal__actions">
+      <button type="button" class="btn btn--ghost" (click)="closed.emit()">Annuler</button>
+      <button type="submit" class="btn btn--primary" [disabled]="isSubmitting() || userForm.invalid">
+        {{ isSubmitting() ? 'Enregistrement...' : 'Enregistrer' }}
+      </button>
+    </div>
+  </form>
+</div>

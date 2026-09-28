@@ -1,0 +1,32 @@
+<header class="navbar">
+  <div class="navbar__left">
+    <button type="button" class="navbar__toggle" aria-label="Basculer la navigation" (click)="layout.toggleSidebar()">
+      <i class="bi bi-layout-sidebar-inset"></i>
+    </button>
+    <h1 class="navbar__title">{{ pageTitle() }}</h1>
+  </div>
+
+  <div class="navbar__right">
+    <!-- Propriétaire : boutique dont les données sont affichées ; gérant : sa boutique -->
+    <app-store-switcher *ngIf="storeContext.isOwner() || storeContext.isStoreStaff()" />
+
+    <div class="navbar__profile">
+      <button type="button" class="navbar__profile-trigger" (click)="toggleProfileMenu()">
+        <span class="navbar__profile-info">
+          <span class="navbar__profile-name">{{ authService.currentUser()?.full_name || 'Mon compte' }}</span>
+        </span>
+        <span class="navbar__avatar">{{ authService.currentUser()?.first_name?.charAt(0) || '' }}{{
+          authService.currentUser()?.last_name?.charAt(0) || '' }}</span>
+        <i class="bi bi-chevron-down navbar__chevron" [class.is-open]="isProfileMenuOpen()"></i>
+      </button>
+
+      <div class="navbar__menu" *ngIf="isProfileMenuOpen()">
+        <a class="navbar__menu-item" routerLink="/profile" (click)="isProfileMenuOpen.set(false)"><i
+            class="bi bi-person"></i> Mon profil</a>
+        <button type="button" class="navbar__menu-item navbar__menu-item--danger" (click)="logout()">
+          <i class="bi bi-box-arrow-right"></i> Déconnexion
+        </button>
+      </div>
+    </div>
+  </div>
+</header>

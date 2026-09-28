@@ -1,0 +1,148 @@
+<div class="page-header card">
+  <span class="page-header__icon"><i class="bi bi-upc-scan"></i></span>
+  <div>
+    <h2 class="page-header__title">IMEI / N° de série — {{ context.selectedStore()?.name || 'Toutes les boutiques' }}</h2>
+    <p class="page-header__desc">
+      Chaque appareil suivi individuellement : entrée par approvisionnement, vente et client. Les numéros se saisissent à l'approvisionnement.
+    </p>
+  </div>
+  <a class="btn btn--ghost page-header__cta" [routerLink]="context.base() + '/procurements/new'"><i class="bi bi-truck"></i> Approvisionner</a>
+</div>
+
+<app-store-blocked *ngIf="context.selectedIsBlocked()" />
+
+<ng-container *ngIf="!context.selectedIsBlocked()">
+  <div class="serial-summary" *ngIf="result() as r">
+    <button
+      type="button"
+      *ngFor="let s of statuses"
+      class="card serial-tile serial-tile--{{ s }}"
+      [class.is-selected]="status === s"
+      [attr.aria-pressed]="status === s"
+      (click)="toggleStatus(s)"
+    >
+      <span class="serial-tile__label">{{ statusLabels[s] }}</span>
+      <strong>{{ formatNumber(r.summary[s]) }}</strong>
+    </button>
+  </div>
+
+  <div class="card toolbar-card">
+    <div class="toolbar-filters">
+      <div class="search">
+        <i class="bi bi-search"></i>
+        <input type="text" placeholder="IMEI, numéro de série ou produit..." [(ngModel)]="search" (keyup.enter)="load(1)" aria-label="Rechercher un numéro de série" />
+      </div>
+      <select class="filter-select" [(ngModel)]="status" (ngModelChange)="load(1)" aria-label="Filtrer par statut">
+        <option value="">Tous les statuts</option>
+        <option *ngFor="let s of statuses" [value]="s">{{ statusLabels[s] }}</option>
+      </select>
+      <span class="product-chip" *ngIf="productId()">
+        <i class="bi bi-box-seam"></i> {{ productName() }}
+        <button type="button" (click)="clearProduct()" aria-label="Retirer le filtre produit"><i class="bi bi-x"></i></button>
+      </span>
+      <button type="button" class="btn btn--ghost" *ngIf="hasFilters()" (click)="resetFilters()"><i class="bi bi-x-circle"></i> Réinitialiser</button>
+    </div>
+  </div>
+
+  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+  <div class="state-message text-center text-muted" *ngIf="isLoading() && !result()">Chargement...</div>
+
+  <ng-container *ngIf="result() as r">
+    <div class="state-message text-center text-muted card" *ngIf="r.data.length === 0">
+      {{ hasFilters() || productId() ? 'Aucun numéro ne correspond.' : 'Aucun numéro de série enregistré : ils sont saisis lors de l\'approvisionnement des produits suivis par IMEI.' }}
+    </div>
+
+    <div class="card table-card" *ngIf="r.data.length > 0" [class.is-refreshing]="isLoading()">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>IMEI / N° de série</th>
+            <th>Produit</th>
+            <th>Entrée</th>
+            <th>Statut</th>
+            <th>Vente</th>
+            <th class="text-right"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let s of r.data">
+            <td>
+              <button type="button" class="serial" title="Copier le numéro" (click)="copy(s)">
+                <span class="mono">{{ s.serial_number }}</span> <i class="bi bi-copy"></i>
+              </button>
+            </td>
+            <td>
+              <div class="person__name">{{ s.product?.name || '—' }}</div>
+              <div class="person__sub" *ngIf="!context.selectedId() && s.store">{{ s.store.name }}</div>
+            </td>
+            <td>
+              <div>{{ s.entered_at ? (s.entered_at | date: 'dd/MM/yyyy') : '—' }}</div>
+              <div class="person__sub" *ngIf="s.supply">
+                {{ s.supply.order_number }}<ng-container *ngIf="s.supply.supplier"> · {{ s.supply.supplier }}</ng-container>
+              </div>
+            </td>
+            <td><span class="badge sn sn--{{ s.status }}">{{ statusLabels[s.status] }}</span></td>
+            <td>
+              <ng-container *ngIf="s.sale; else notSold">
+                <div>{{ s.sale.number }}</div>
+                <div class="person__sub">{{ s.sale.date | date: 'dd/MM/yyyy' }} · {{ s.sale.customer || 'Client anonyme' }}</div>
+              </ng-container>
+              <ng-template #notSold><span class="text-muted">—</span></ng-template>
+            </td>
+            <td class="text-right">
+              <button
+                type="button"
+                class="icon-btn"
+                *ngIf="s.status !== 'pending'; else fromSupply"
+                title="Corriger le numéro"
+                [attr.aria-label]="'Corriger le numéro ' + s.serial_number"
+                (click)="openEdit(s)"
+              >
+                <i class="bi bi-pencil"></i>
+              </button>
+              <ng-template #fromSupply>
+                <a class="icon-btn" *ngIf="s.supply" [routerLink]="[context.base() + '/procurements', s.supply.id, 'edit']" title="Corriger depuis l'approvisionnement en attente">
+                  <i class="bi bi-truck"></i>
+                </a>
+              </ng-template>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card pagination-card" *ngIf="r.meta.last_page > 1">
+      <div class="pagination">
+        <button type="button" class="icon-btn" [disabled]="r.meta.current_page === 1" (click)="goToPage(r.meta.current_page - 1)" aria-label="Page précédente"><i class="bi bi-chevron-left"></i></button>
+        <span class="pagination__label">Page {{ r.meta.current_page }} / {{ r.meta.last_page }} ({{ formatNumber(r.meta.total) }} numéros)</span>
+        <button type="button" class="icon-btn" [disabled]="r.meta.current_page === r.meta.last_page" (click)="goToPage(r.meta.current_page + 1)" aria-label="Page suivante"><i class="bi bi-chevron-right"></i></button>
+      </div>
+    </div>
+  </ng-container>
+</ng-container>
+
+<!-- Correction d'un numéro -->
+<ng-container *ngIf="editing() as s">
+  <div class="modal-backdrop" (click)="editing.set(null)"></div>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="serial-edit-title">
+    <div class="modal__header">
+      <h3 id="serial-edit-title">Corriger le numéro</h3>
+      <button type="button" class="icon-btn" title="Fermer" (click)="editing.set(null)"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <dl class="serial-facts">
+      <div><dt>Produit</dt><dd>{{ s.product?.name }}</dd></div>
+      <div><dt>Statut</dt><dd><span class="badge sn sn--{{ s.status }}">{{ statusLabels[s.status] }}</span></dd></div>
+      <div><dt>Numéro actuel</dt><dd class="mono">{{ s.serial_number }}</dd></div>
+    </dl>
+    <p class="text-muted hint" *ngIf="s.status === 'sold'">Appareil déjà vendu : la correction apparaîtra sur l'historique de la vente.</p>
+    <form (ngSubmit)="saveEdit()" novalidate>
+      <div class="alert alert--error" *ngIf="editError()" role="alert">{{ editError() }}</div>
+      <label class="field__label" for="sn_value">Nouveau numéro *</label>
+      <input id="sn_value" name="serial" class="field__input mono" [(ngModel)]="draft" maxlength="100" autocomplete="off" spellcheck="false" autofocus />
+      <div class="modal__actions">
+        <button type="button" class="btn btn--ghost" (click)="editing.set(null)" [disabled]="isSaving()">Annuler</button>
+        <button type="submit" class="btn btn--primary" [disabled]="isSaving() || !draft.trim()">{{ isSaving() ? 'Enregistrement...' : 'Enregistrer' }}</button>
+      </div>
+    </form>
+  </div>
+</ng-container>

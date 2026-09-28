@@ -1,0 +1,112 @@
+<div class="modal-backdrop" (click)="closed.emit()"></div>
+<div class="modal modal--xl" role="dialog" aria-modal="true" aria-labelledby="sale-detail-title">
+  <div class="modal__header">
+    <h3 id="sale-detail-title">Vente {{ sale()?.sale_number || '' }}</h3>
+    <button type="button" class="icon-btn" title="Fermer" (click)="closed.emit()"><i class="bi bi-x-lg"></i></button>
+  </div>
+
+  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+  <div class="state-message text-center text-muted" *ngIf="!sale() && !errorMessage()">Chargement...</div>
+
+  <ng-container *ngIf="sale() as s">
+    <div class="sale-meta">
+      <div>
+        <span class="sale-meta__label">Date</span>
+        <strong>{{ s.date | date: 'dd/MM/yyyy à HH:mm' }}</strong>
+      </div>
+      <div>
+        <span class="sale-meta__label">Boutique</span>
+        <strong>{{ s.store?.name }}</strong>
+      </div>
+      <div>
+        <span class="sale-meta__label">Client</span>
+        <strong>{{ s.customer }}</strong>
+        <span class="text-muted" *ngIf="s.customer_phone">{{ s.customer_phone }}</span>
+      </div>
+      <div>
+        <span class="sale-meta__label">Vendeur</span>
+        <strong>{{ s.seller || '—' }}</strong>
+      </div>
+      <div>
+        <span class="sale-meta__label">Statut</span>
+        <span class="badge status status--{{ s.status }}">{{ saleStatusLabels[s.status] }}</span>
+      </div>
+      <div>
+        <span class="sale-meta__label">Paiement</span>
+        <span class="badge pay pay--{{ s.payment_status }}">{{ paymentLabels[s.payment_status] }}</span>
+      </div>
+    </div>
+
+    <h4 class="section-title">Articles</h4>
+    <div class="table-card detail-table">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Produit</th>
+            <th class="text-right">Quantité</th>
+            <th class="text-right">Prix unitaire</th>
+            <th class="text-right">Sous-total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of s.items">
+            <td>
+              <div>{{ item.product }}</div>
+              <div class="person__sub" *ngIf="item.serial_numbers.length > 0">
+                <i class="bi bi-upc"></i> {{ item.serial_numbers.join(', ') }}
+              </div>
+            </td>
+            <td class="text-right num">{{ formatNumber(item.quantity) }} {{ item.unit }}</td>
+            <td class="text-right num">{{ money(item.unit_price) }}</td>
+            <td class="text-right num">{{ money(item.subtotal) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <dl class="totals">
+      <div *ngIf="s.discount > 0">
+        <dt>Montant brut</dt>
+        <dd>{{ money(s.gross_amount) }}</dd>
+      </div>
+      <div *ngIf="s.discount > 0">
+        <dt>Remise</dt>
+        <dd>− {{ money(s.discount) }}</dd>
+      </div>
+      <div class="totals__main">
+        <dt>Total</dt>
+        <dd>{{ money(s.total_amount) }}</dd>
+      </div>
+      <div *ngIf="s.invoice && s.status !== 'cancelled'">
+        <dt>Payé</dt>
+        <dd>{{ money(s.invoice.amount_paid) }}</dd>
+      </div>
+      <div *ngIf="s.status !== 'cancelled' && s.invoice && s.invoice.balance > 0" class="totals__due">
+        <dt>Reste à payer</dt>
+        <dd>{{ money(s.invoice.balance) }}</dd>
+      </div>
+    </dl>
+
+    <p class="cancelled-note" *ngIf="s.status === 'cancelled'">
+      <i class="bi bi-x-circle"></i> Vente annulée : elle n'entre ni dans le chiffre d'affaires ni dans le reste à encaisser.
+    </p>
+
+    <h4 class="section-title">
+      Paiements reçus
+      <span class="text-muted section-title__sub" *ngIf="s.invoice">· facture {{ s.invoice.number }}</span>
+    </h4>
+    <p class="text-muted empty" *ngIf="s.payments.length === 0">Aucun paiement enregistré.</p>
+    <ul class="payments" *ngIf="s.payments.length > 0">
+      <li *ngFor="let p of s.payments">
+        <span class="payments__date">{{ formatIsoDate(p.date) }}</span>
+        <span class="payments__type">{{ paymentTypes[p.type] || p.type }}</span>
+        <span class="text-muted payments__user">{{ p.user }}</span>
+        <strong class="num">{{ money(p.amount) }}</strong>
+      </li>
+    </ul>
+  </ng-container>
+
+  <div class="modal__actions">
+    <button type="button" class="btn btn--ghost" (click)="closed.emit()">Fermer</button>
+  </div>
+</div>

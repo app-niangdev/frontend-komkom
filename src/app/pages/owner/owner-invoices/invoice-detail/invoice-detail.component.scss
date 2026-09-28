@@ -1,0 +1,119 @@
+@use '../../../../../styles/tokens' as t;
+
+.due-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(220, 38, 38, 0.25);
+  border-radius: t.$radius-md;
+  background: rgba(220, 38, 38, 0.05);
+  font-size: 0.86rem;
+}
+
+.due-banner__label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: t.$danger;
+}
+
+.due-banner__value {
+  font-size: 1.25rem;
+  color: t.$danger;
+  font-variant-numeric: tabular-nums;
+}
+
+.pay-form {
+  margin-bottom: 0.5rem;
+  padding: 0.25rem 1rem 0.5rem;
+  border: 1px solid rgba(91, 79, 229, 0.3);
+  border-radius: t.$radius-md;
+  background: rgba(91, 79, 229, 0.03);
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: 0.8rem;
+  }
+}
+
+.pay-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 1rem;
+}
+
+.pay-form__shortcuts {
+  display: flex;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.pay-form__after {
+  font-size: 0.83rem;
+  margin-bottom: 0.25rem;
+}
+
+.link-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: t.$accent;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.method-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.method {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid t.$border-color;
+  border-radius: t.$radius-md;
+  background: t.$card-bg;
+  color: t.$text-primary;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    border-color: rgba(91, 79, 229, 0.45);
+  }
+
+  &.is-active {
+    border-color: t.$accent;
+    background: rgba(91, 79, 229, 0.08);
+    color: t.$accent;
+  }
+}
+
+.payments--receipts li {
+  grid-template-columns: 90px 110px 1fr auto auto;
+}
+
+@media (max-width: 575.98px) {
+  .pay-form__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .payments--receipts li {
+    grid-template-columns: 1fr auto auto;
+  }
+}

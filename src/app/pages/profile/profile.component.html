@@ -1,0 +1,129 @@
+<div class="state-message text-center text-muted" *ngIf="isLoading()">Chargement...</div>
+<div class="alert alert--error" *ngIf="loadError()">{{ loadError() }}</div>
+
+<div class="profile-layout" *ngIf="profile() as p">
+  <!-- Identité -->
+  <aside class="card profile-summary">
+    <div class="profile-summary__avatar">
+      <img *ngIf="p.user.image_url" [src]="p.user.image_url" [alt]="p.user.full_name" />
+      <span *ngIf="!p.user.image_url">{{ initials() }}</span>
+    </div>
+    <h2 class="profile-summary__name">{{ p.user.full_name }}</h2>
+    <span class="badge badge--{{ p.user.role.name | lowercase }}">{{ roleLabel() }}</span>
+
+    <dl class="profile-summary__info">
+      <div>
+        <dt><i class="bi bi-envelope"></i> Email</dt>
+        <dd>{{ p.user.email || '—' }}</dd>
+      </div>
+      <div *ngIf="p.company">
+        <dt><i class="bi bi-building"></i> Entreprise</dt>
+        <dd>{{ p.company.name }}</dd>
+      </div>
+      <div *ngIf="p.store">
+        <dt><i class="bi bi-shop"></i> Boutique</dt>
+        <dd>{{ p.store.name }}</dd>
+      </div>
+      <div *ngIf="p.stores_count !== null">
+        <dt><i class="bi bi-shop"></i> Boutiques</dt>
+        <dd>{{ p.stores_count }}</dd>
+      </div>
+      <div>
+        <dt><i class="bi bi-gender-ambiguous"></i> Genre</dt>
+        <dd>{{ p.user.gender === 'female' ? 'Femme' : p.user.gender === 'male' ? 'Homme' : '—' }}</dd>
+      </div>
+      <div *ngIf="p.member_since">
+        <dt><i class="bi bi-calendar-check"></i> Membre depuis</dt>
+        <dd>{{ formatIsoDate(p.member_since) }}</dd>
+      </div>
+    </dl>
+
+    <p class="profile-summary__hint">
+      <i class="bi bi-info-circle"></i> Pour modifier votre nom ou votre email, contactez votre administrateur.
+    </p>
+  </aside>
+
+  <div class="profile-forms">
+    <!-- Coordonnées -->
+    <section class="card profile-card">
+      <header class="profile-card__header">
+        <h3><i class="bi bi-telephone"></i> Mes coordonnées</h3>
+        <p>Numéros et adresse utilisés pour vous joindre.</p>
+      </header>
+
+      <div class="alert alert--error" *ngIf="contactsError()">{{ contactsError() }}</div>
+
+      <form #contactsForm="ngForm" (ngSubmit)="saveContacts(contactsForm)" novalidate>
+        <div class="form-grid">
+          <div class="field">
+            <label class="field__label" for="phone_number_one">Téléphone principal *</label>
+            <input id="phone_number_one" type="tel" class="field__input" [(ngModel)]="contacts.phone_number_one" name="phone_number_one" required maxlength="20" autocomplete="tel" />
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="phone_number_two">Téléphone secondaire</label>
+            <input id="phone_number_two" type="tel" class="field__input" [(ngModel)]="contacts.phone_number_two" name="phone_number_two" maxlength="20" />
+          </div>
+
+          <div class="field field--full">
+            <label class="field__label" for="address">Adresse *</label>
+            <input id="address" type="text" class="field__input" [(ngModel)]="contacts.address" name="address" required maxlength="255" autocomplete="street-address" />
+          </div>
+        </div>
+
+        <div class="profile-card__actions">
+          <button type="button" class="btn btn--ghost" *ngIf="contactsChanged()" (click)="resetContacts(contactsForm)">Annuler</button>
+          <button type="submit" class="btn btn--primary" [disabled]="!contactsChanged() || contactsForm.invalid || isSavingContacts()">
+            {{ isSavingContacts() ? 'Enregistrement...' : 'Enregistrer' }}
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Mot de passe -->
+    <section class="card profile-card">
+      <header class="profile-card__header">
+        <h3><i class="bi bi-shield-lock"></i> Mot de passe</h3>
+        <p>Après le changement, vous serez déconnecté de tous vos appareils.</p>
+      </header>
+
+      <div class="alert alert--error" *ngIf="passwordError()">{{ passwordError() }}</div>
+
+      <form (ngSubmit)="savePassword()" novalidate>
+        <div class="form-grid">
+          <div class="field field--full">
+            <label class="field__label" for="current_password">Mot de passe actuel *</label>
+            <input id="current_password" [type]="showPasswords() ? 'text' : 'password'" class="field__input" [(ngModel)]="currentPassword" name="current_password" required autocomplete="current-password" />
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="new_password">Nouveau mot de passe *</label>
+            <input id="new_password" [type]="showPasswords() ? 'text' : 'password'" class="field__input" [(ngModel)]="newPassword" name="new_password" required autocomplete="new-password" aria-describedby="password-rules" />
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="confirmation">Confirmer *</label>
+            <input id="confirmation" [type]="showPasswords() ? 'text' : 'password'" class="field__input" [(ngModel)]="confirmation" name="confirmation" required autocomplete="new-password" />
+          </div>
+        </div>
+
+        <ul class="password-rules" id="password-rules">
+          <li *ngFor="let rule of passwordRules()" [class.is-ok]="rule.ok">
+            <i class="bi" [class.bi-check-circle-fill]="rule.ok" [class.bi-circle]="!rule.ok"></i>
+            {{ rule.label }}
+          </li>
+        </ul>
+
+        <div class="profile-card__actions">
+          <label class="check-field show-toggle">
+            <input type="checkbox" [checked]="showPasswords()" (change)="showPasswords.set(!showPasswords())" />
+            Afficher les mots de passe
+          </label>
+          <button type="submit" class="btn btn--primary" [disabled]="!canSubmitPassword()">
+            {{ isSavingPassword() ? 'Modification...' : 'Changer le mot de passe' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>

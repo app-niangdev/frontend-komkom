@@ -1,0 +1,407 @@
+<a class="back-link" [routerLink]="context.base() + '/procurements'"><i class="bi bi-arrow-left"></i> Approvisionnements</a>
+
+<div class="page-header card">
+  <span class="page-header__icon">
+    <i class="bi" [class.bi-upc-scan]="scannerMode()" [class.bi-truck]="!scannerMode() && !isEdit" [class.bi-pencil-square]="!scannerMode() && isEdit"></i>
+  </span>
+  <div class="page-header__body">
+    <h2 class="page-header__title">
+      {{ isEdit ? 'Modifier ' + (orderNumber() || 'l\'approvisionnement') : scannerMode() ? 'Approvisionnement par scanner' : 'Nouvel approvisionnement' }}
+    </h2>
+    <p class="page-header__desc" *ngIf="!scannerMode()">
+      Saisissez la livraison du fournisseur. Enregistrez-la <strong>en attente</strong> si la marchandise n'est pas encore arrivée,
+      ou <strong>réceptionnez-la</strong> pour mettre le stock à jour tout de suite.
+    </p>
+    <p class="page-header__desc" *ngIf="scannerMode()">
+      Ajoutez les produits livrés, indiquez la quantité <strong>attendue</strong> puis scannez les IMEI / n° de série avec le lecteur :
+      chaque code va sur la ligne active, qui passe à la suivante une fois complète.
+    </p>
+  </div>
+  <button
+    type="button"
+    class="btn page-header__cta"
+    [class.btn--primary]="!scannerMode()"
+    [class.btn--ghost]="scannerMode()"
+    [attr.aria-pressed]="scannerMode()"
+    (click)="toggleScannerMode()"
+  >
+    <i class="bi" [class.bi-upc-scan]="!scannerMode()" [class.bi-keyboard]="scannerMode()"></i>
+    {{ scannerMode() ? 'Saisie classique' : 'Mode scanner' }}
+  </button>
+</div>
+
+<div class="alert alert--error" *ngIf="loadError()">
+  {{ loadError() }} <a [routerLink]="context.base() + '/procurements'">Retour à la liste</a>
+</div>
+<div class="state-message text-center text-muted" *ngIf="!isReady() && !loadError()">Chargement...</div>
+
+<div class="supply-form" *ngIf="isReady()">
+  <div class="supply-form__main">
+    <div class="alert alert--error" *ngIf="errorMessage()" role="alert">{{ errorMessage() }}</div>
+
+    <!-- 1. Boutique & fournisseur -->
+    <section class="card form-card">
+      <h3 class="form-card__title"><span class="step">1</span> Boutique et fournisseur</h3>
+      <div class="form-grid">
+        <div class="field">
+          <label class="field__label" for="sf_store">Boutique livrée *</label>
+          <select
+            id="sf_store"
+            class="field__input"
+            [ngModel]="storeId"
+            (ngModelChange)="changeStore($event)"
+            [disabled]="isEdit"
+            name="store"
+          >
+            <option [ngValue]="null" disabled>Choisir une boutique</option>
+            <option *ngFor="let s of stores()" [ngValue]="s.id">{{ s.name }}</option>
+          </select>
+          <span class="form-hint-inline text-muted" *ngIf="isEdit">La boutique d'un approvisionnement ne change pas.</span>
+        </div>
+        <div class="field">
+          <label class="field__label" for="sf_supplier">Fournisseur *</label>
+          <div class="field-with-action">
+            <select
+              id="sf_supplier"
+              class="field__input"
+              [(ngModel)]="supplierId"
+              (ngModelChange)="markDirty()"
+              [disabled]="!storeId"
+              name="supplier"
+            >
+              <option [ngValue]="null" disabled>{{ suppliers().length ? 'Choisir un fournisseur' : 'Aucun fournisseur' }}</option>
+              <option *ngFor="let s of suppliers()" [ngValue]="s.id">{{ s.name }}</option>
+            </select>
+            <button type="button" class="btn btn--ghost" [disabled]="!storeId" (click)="showSupplierForm.set(true)" title="Nouveau fournisseur">
+              <i class="bi bi-plus-lg"></i><span class="hide-sm"> Nouveau</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="supplier-card" *ngIf="supplier as s">
+        <i class="bi bi-person-vcard"></i>
+        <div>
+          <strong>{{ s.name }}</strong>
+          <span class="text-muted"> · {{ s.phone }}<ng-container *ngIf="s.email"> · {{ s.email }}</ng-container></span>
+          <div class="text-muted" *ngIf="s.received_count > 0">
+            {{ s.received_count }} livraison(s) reçue(s) pour {{ money(s.received_total) }} · dernière le {{ s.last_supply_at | date: 'dd/MM/yyyy' }}
+          </div>
+          <div class="text-muted" *ngIf="s.received_count === 0">Première livraison de ce fournisseur.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Poste de scan : reçoit les codes du lecteur, où que soit le curseur (hors champ de saisie) -->
+    <section class="card scan-station" *ngIf="scannerMode()" aria-label="Poste de scan">
+      <div class="scan-station__head">
+        <span class="scan-station__icon"><i class="bi bi-upc-scan"></i></span>
+        <div class="scan-station__title">
+          <strong>Lecteur code-barres</strong>
+          <span class="text-muted">{{ serialLines.length ? 'Prêt : scannez, même sans cliquer dans le champ.' : 'Ajoutez un produit suivi par n° de série pour scanner.' }}</span>
+        </div>
+        <button
+          type="button"
+          class="icon-btn"
+          (click)="toggleSound()"
+          [title]="soundOn ? 'Couper le bip' : 'Activer le bip'"
+          [attr.aria-label]="soundOn ? 'Couper le bip' : 'Activer le bip'"
+        >
+          <i class="bi" [class.bi-volume-up]="soundOn" [class.bi-volume-mute]="!soundOn"></i>
+        </button>
+      </div>
+
+      <div class="scan-station__fields">
+        <div class="field">
+          <label class="field__label" for="scan-line">Ligne active</label>
+          <select
+            id="scan-line"
+            class="field__input"
+            [ngModel]="activeScanId()"
+            (ngModelChange)="setActiveScanLine($event)"
+            [disabled]="serialLines.length === 0"
+            name="scanLine"
+          >
+            <option [ngValue]="null" disabled>{{ serialLines.length ? 'Choisir la ligne' : 'Aucun produit à n° de série' }}</option>
+            <option *ngFor="let l of serialLines" [ngValue]="l.product.id">
+              {{ l.product.name }} — {{ l.serials.length }}{{ l.expected ? '/' + l.expected : '' }}{{ isComplete(l) ? ' ✓' : '' }}
+            </option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field__label" for="scan-station">Code scanné</label>
+          <input
+            id="scan-station"
+            type="text"
+            class="field__input mono scan-station__input"
+            data-barcode-scan
+            [(ngModel)]="scanDraft"
+            name="scanDraft"
+            (keydown)="onScanKeydown($event)"
+            (paste)="onScanPaste($event)"
+            [disabled]="serialLines.length === 0"
+            placeholder="Scannez ou tapez puis Entrée"
+            autocomplete="off"
+            spellcheck="false"
+          />
+        </div>
+      </div>
+
+      <p class="scan-station__feedback" *ngIf="lastScan() as f" [class.is-ok]="f.ok" [class.is-error]="!f.ok" role="status" aria-live="polite">
+        <i class="bi" [class.bi-check-circle-fill]="f.ok" [class.bi-x-circle-fill]="!f.ok"></i> {{ f.text }}
+      </p>
+    </section>
+
+    <!-- 2. Produits -->
+    <section class="card form-card">
+      <div class="form-card__head">
+        <h3 class="form-card__title"><span class="step">2</span> Produits livrés</h3>
+        <button type="button" class="btn btn--ghost btn--sm" *ngIf="restockToAdd.length > 0" (click)="addRestock()">
+          <i class="bi bi-lightning-charge"></i> Ajouter les {{ restockToAdd.length }} produit(s) à réapprovisionner
+        </button>
+      </div>
+
+      <div class="product-picker" [class.is-disabled]="!storeId">
+        <div class="search product-picker__input">
+          <i class="bi bi-search"></i>
+          <input
+            type="text"
+            placeholder="{{ storeId ? 'Rechercher un produit à ajouter...' : 'Choisissez d\'abord la boutique' }}"
+            [(ngModel)]="productSearch"
+            (ngModelChange)="onSearch($event)"
+            (focus)="openSearch()"
+            (blur)="closeSearchSoon()"
+            (keydown)="onSearchKeydown($event)"
+            [disabled]="!storeId"
+            name="productSearch"
+            autocomplete="off"
+            role="combobox"
+            aria-label="Rechercher un produit"
+            aria-controls="product-results"
+            [attr.aria-expanded]="searchOpen()"
+          />
+          <span class="spinner" *ngIf="searching()" aria-hidden="true"></span>
+        </div>
+        <ul class="product-picker__results" id="product-results" role="listbox" *ngIf="searchOpen() && storeId">
+          <li class="product-picker__empty" *ngIf="!searching() && results().length === 0">
+            {{ productSearch ? 'Aucun produit ne correspond.' : 'Tapez le nom d\'un produit.' }}
+          </li>
+          <li
+            *ngFor="let p of results(); let i = index"
+            role="option"
+            class="product-picker__option"
+            [class.is-active]="i === activeResult"
+            [attr.aria-selected]="i === activeResult"
+            (mousedown)="$event.preventDefault()"
+            (click)="addProduct(p)"
+            (mouseenter)="activeResult = i"
+          >
+            <div class="product-picker__name">
+              {{ p.name }}
+              <span class="tag" *ngIf="p.require_serial_number"><i class="bi bi-upc"></i> N° de série</span>
+              <span class="tag tag--added" *ngIf="isInLines(p.id)"><i class="bi bi-check2"></i> Déjà ajouté</span>
+            </div>
+            <div class="product-picker__meta">
+              <span class="stock stock--{{ p.stock_state }}">Stock : {{ p.quantity | number: '1.0-3' }} {{ p.unit }}</span>
+              <span *ngIf="p.last_purchase_price !== null">Dernier achat : {{ money(p.last_purchase_price) }}</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="lines-empty" *ngIf="lines.length === 0">
+        <i class="bi bi-box-seam"></i>
+        <p>Aucun produit pour l'instant. Recherchez un produit ci-dessus{{ restockToAdd.length ? ' ou ajoutez ceux à réapprovisionner' : '' }}.</p>
+      </div>
+
+      <ul class="lines" *ngIf="lines.length > 0">
+        <li
+          *ngFor="let line of lines; let i = index"
+          class="line"
+          [class.is-highlight]="highlight() === line.product.id"
+          [class.is-scan-target]="scannerMode() && activeScanId() === line.product.id"
+          [class.has-issue]="lineIssue(line)"
+        >
+          <div class="line__head">
+            <div class="line__product">
+              <strong>{{ line.product.name }}</strong>
+              <span class="text-muted">
+                Stock {{ line.product.quantity | number: '1.0-3' }} → <strong class="stock-after">{{ line.product.quantity + quantityOf(line) | number: '1.0-3' }}</strong> {{ line.product.unit }} après réception
+              </span>
+            </div>
+            <button type="button" class="icon-btn icon-btn--danger" title="Retirer" [attr.aria-label]="'Retirer ' + line.product.name" (click)="removeLine(line)">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+
+          <div class="line__fields" [class.line__fields--4]="scannerMode() && line.product.require_serial_number">
+            <div class="field">
+              <label class="field__label" [for]="'qty-' + line.product.id">Quantité ({{ line.product.unit }})</label>
+              <input
+                *ngIf="!line.product.require_serial_number"
+                [id]="'qty-' + line.product.id"
+                type="number"
+                class="field__input num"
+                [(ngModel)]="line.quantity"
+                (ngModelChange)="markDirty()"
+                [name]="'qty-' + i"
+                min="0"
+                [step]="integerOnly(line) ? 1 : 'any'"
+                inputmode="decimal"
+              />
+              <div *ngIf="line.product.require_serial_number" class="field__input field__input--static num" [id]="'qty-' + line.product.id">
+                {{ line.serials.length }} <span class="text-muted">(= n° saisis)</span>
+              </div>
+            </div>
+            <div class="field" *ngIf="scannerMode() && line.product.require_serial_number">
+              <label class="field__label" [for]="'expected-' + line.product.id"title="Quantité annoncée sur le bon de livraison">Attendu</label>
+              <input
+                [id]="'expected-' + line.product.id"
+                type="number"
+                class="field__input num"
+                [ngModel]="line.expected"
+                (ngModelChange)="onExpectedChange(line, $event)"
+                (keydown)="onExpectedKeydown($event, line)"
+                [name]="'expected-' + i"
+                min="1"
+                step="1"
+                inputmode="numeric"
+                placeholder="Facultatif"
+              />
+            </div>
+            <div class="field">
+              <label class="field__label" [for]="'price-' + line.product.id">Prix d'achat unitaire</label>
+              <input
+                [id]="'price-' + line.product.id"
+                type="number"
+                class="field__input num"
+                [(ngModel)]="line.purchase_price"
+                (ngModelChange)="markDirty()"
+                [name]="'price-' + i"
+                min="0"
+                step="1"
+                inputmode="numeric"
+              />
+              <button
+                type="button"
+                class="last-price"
+                *ngIf="line.product.last_purchase_price !== null"
+                [class.is-different]="priceDiffers(line)"
+                (click)="line.purchase_price = line.product.last_purchase_price; markDirty()"
+                [title]="priceDiffers(line) ? 'Reprendre le dernier prix' : ''"
+              >
+                Dernier prix : {{ money(line.product.last_purchase_price!) }}
+              </button>
+            </div>
+            <div class="field line__total">
+              <span class="field__label">Total</span>
+              <strong class="num">{{ money(lineTotal(line)) }}</strong>
+            </div>
+          </div>
+
+          <!-- Numéros de série : un scanner code-barres tape le code puis Entrée -->
+          <div class="serials" *ngIf="line.product.require_serial_number">
+            <div class="scan-progress" *ngIf="scannerMode()">
+              <div class="scan-progress__text">
+                <strong class="num">{{ line.serials.length }}{{ line.expected ? ' / ' + line.expected : '' }}</strong>
+                <span class="text-muted">{{ line.expected ? 'scanné(s)' : 'scanné(s) — indiquez « Attendu » pour contrôler le compte' }}</span>
+                <span class="tag tag--added" *ngIf="isComplete(line)"><i class="bi bi-check2"></i> Complet</span>
+              </div>
+              <button
+                type="button"
+                class="btn btn--ghost btn--sm"
+                *ngIf="activeScanId() !== line.product.id"
+                (click)="setActiveScanLine(line.product.id)"
+              >
+                <i class="bi bi-upc-scan"></i> Scanner ici
+              </button>
+              <span class="scan-progress__active" *ngIf="activeScanId() === line.product.id"><i class="bi bi-broadcast"></i> Ligne active</span>
+              <div
+                class="scan-progress__bar"
+                *ngIf="line.expected"
+                role="progressbar"
+                [attr.aria-valuenow]="line.serials.length"
+                aria-valuemin="0"
+                [attr.aria-valuemax]="line.expected"
+                [attr.aria-label]="'N° scannés pour ' + line.product.name"
+              >
+                <span [style.width.%]="progress(line)" [class.is-complete]="isComplete(line)"></span>
+              </div>
+            </div>
+            <label class="field__label" [for]="'serial-' + line.product.id">
+              <i class="bi bi-upc-scan"></i> Numéros de série — scannez, tapez puis Entrée, ou collez une liste
+            </label>
+            <div class="serials__input">
+              <input
+                [id]="'serial-' + line.product.id"
+                type="text"
+                class="field__input mono"
+                [(ngModel)]="line.serialDraft"
+                [name]="'serial-' + i"
+                (keydown)="onSerialKeydown($event, line)"
+                (paste)="onSerialPaste($event, line)"
+                placeholder="Ex. 356789104563217"
+                autocomplete="off"
+              />
+              <button type="button" class="btn btn--ghost" [disabled]="!line.serialDraft.trim()" (click)="addSerials(line, line.serialDraft)">Ajouter</button>
+            </div>
+            <p class="serials__error" *ngIf="line.serialError" role="status">{{ line.serialError }}</p>
+            <ul class="serial-chips" *ngIf="line.serials.length > 0" [attr.aria-label]="'Numéros de série de ' + line.product.name">
+              <li *ngFor="let sn of line.serials">
+                <span>{{ sn }}</span>
+                <button type="button" (click)="removeSerial(line, sn)" [attr.aria-label]="'Retirer ' + sn"><i class="bi bi-x"></i></button>
+              </li>
+              <li class="serial-chips__clear" *ngIf="line.serials.length > 3">
+                <button type="button" (click)="clearSerials(line)">Tout retirer</button>
+              </li>
+            </ul>
+          </div>
+
+          <p class="line__issue" *ngIf="lineIssue(line) as issue"><i class="bi bi-exclamation-circle"></i> {{ issue }}</p>
+        </li>
+      </ul>
+    </section>
+  </div>
+
+  <!-- Récapitulatif -->
+  <aside class="supply-form__aside">
+    <div class="card summary">
+      <h3 class="form-card__title">Récapitulatif</h3>
+      <dl class="summary__rows">
+        <div><dt>Boutique</dt><dd>{{ storeName || '—' }}</dd></div>
+        <div><dt>Fournisseur</dt><dd>{{ supplier?.name || '—' }}</dd></div>
+        <div><dt>Produits</dt><dd>{{ lines.length }}</dd></div>
+        <div><dt>Unités</dt><dd>{{ unitsCount | number: '1.0-3' }}</dd></div>
+        <div *ngIf="scannerMode() && serialLines.length"><dt>N° de série scannés</dt><dd>{{ scannedCount }}{{ expectedCount ? ' / ' + expectedCount : '' }}</dd></div>
+      </dl>
+      <div class="summary__total">
+        <span>Montant total</span>
+        <strong>{{ money(total) }}</strong>
+      </div>
+
+      <ul class="summary__issues" *ngIf="issues.length > 0">
+        <li *ngFor="let issue of issues"><i class="bi bi-dot"></i> {{ issue }}</li>
+      </ul>
+
+      <div class="summary__actions">
+        <button type="button" class="btn btn--primary" [disabled]="isSubmitting() || issues.length > 0" (click)="submit(true)">
+          <i class="bi bi-box-arrow-in-down"></i> {{ isEdit ? 'Enregistrer et réceptionner' : 'Réceptionner maintenant' }}
+        </button>
+        <button type="button" class="btn btn--ghost" [disabled]="isSubmitting() || issues.length > 0" (click)="submit(false)">
+          <i class="bi bi-hourglass-split"></i> {{ isEdit ? 'Enregistrer les modifications' : 'Enregistrer en attente' }}
+        </button>
+      </div>
+      <p class="summary__hint text-muted">
+        <i class="bi bi-info-circle"></i>
+        « En attente » : le stock ne bouge pas tant que la livraison n'est pas réceptionnée depuis la liste.
+      </p>
+    </div>
+  </aside>
+</div>
+
+<app-supplier-form
+  *ngIf="showSupplierForm() && storeId"
+  [storeId]="storeId"
+  (saved)="onSupplierCreated($event)"
+  (closed)="showSupplierForm.set(false)"
+/>

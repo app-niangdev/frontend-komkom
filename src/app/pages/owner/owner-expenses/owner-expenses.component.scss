@@ -1,0 +1,100 @@
+@use '../../../../styles/tokens' as t;
+
+.expense-kpis {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  .kpi__value {
+    font-size: 1.3rem;
+    white-space: nowrap;
+  }
+
+  .kpi__hint {
+    display: block;
+  }
+}
+
+.chart-grid--wide-left {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+}
+
+.ranking__button {
+  display: block;
+  width: 100%;
+  padding: 0.35rem 0.4rem;
+  margin: -0.35rem -0.4rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: t.$page-bg;
+    outline: none;
+  }
+
+  &.is-active {
+    border-color: t.$accent;
+    background: rgba(91, 79, 229, 0.05);
+  }
+}
+
+.sub-heading {
+  margin: 1.1rem 0 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid t.$border-color;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: t.$text-primary;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 991.98px) {
+  .expense-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .chart-grid--wide-left {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Mobile : la liste passe en cartes empilées
+@media (max-width: 575.98px) {
+  .expense-kpis .kpi__value {
+    font-size: 1.1rem;
+  }
+
+  .expenses-table {
+    thead {
+      display: none;
+    }
+
+    tr {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.3rem 0.75rem;
+      padding: 0.85rem 1rem;
+    }
+
+    td {
+      padding: 0 !important;
+      white-space: normal !important;
+    }
+
+    td:nth-child(2) {
+      grid-column: 1 / -1;
+      grid-row: 1;
+    }
+
+    td:last-child {
+      grid-column: 1 / -1;
+      justify-self: end;
+    }
+  }
+}

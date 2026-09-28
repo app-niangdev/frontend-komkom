@@ -1,0 +1,16 @@
+<div class="sf-link" *ngIf="storefront().enabled && storefront().url; else notEnabled" [class.is-offline]="!storefront().online">
+  <i class="bi bi-globe2" aria-hidden="true"></i>
+  <div class="sf-link__body">
+    <span class="sf-link__label">{{ storefront().online ? 'Vitrine en ligne' : 'Vitrine hors ligne (abonnement ou boutique inactif)' }}</span>
+    <a class="sf-link__url" [href]="storefront().url" target="_blank" rel="noopener" [title]="storefront().url">{{ label() }}</a>
+  </div>
+  <button type="button" class="icon-btn" title="Copier le lien" aria-label="Copier le lien de la vitrine" (click)="copy()">
+    <i class="bi bi-clipboard"></i>
+  </button>
+  <a *ngIf="storefront().online && shareUrl()" class="icon-btn" [href]="shareUrl()" target="_blank" rel="noopener" title="Partager sur WhatsApp" aria-label="Partager le lien sur WhatsApp">
+    <i class="bi bi-whatsapp"></i>
+  </a>
+</div>
+<ng-template #notEnabled>
+  <p class="sf-link-off"><i class="bi bi-globe2" aria-hidden="true"></i> Vitrine publique non activée : demandez-la à l'administrateur.</p>
+</ng-template>

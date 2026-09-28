@@ -1,0 +1,103 @@
+<div class="page-header card">
+  <span class="page-header__icon"><i class="bi bi-building"></i></span>
+  <div>
+    <h2 class="page-header__title">Gestion des entreprises</h2>
+    <p class="page-header__desc">Créez les entreprises clientes et leur propriétaire, puis gérez leurs boutiques.</p>
+  </div>
+</div>
+
+<div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+
+<div class="card toolbar-card">
+  <div class="table-card__toolbar">
+    <div class="search">
+      <i class="bi bi-search"></i>
+      <input
+        type="text"
+        placeholder="Nom, email, téléphone, propriétaire..."
+        [(ngModel)]="search"
+        (keyup.enter)="onSearch()"
+      />
+    </div>
+    <button type="button" class="btn btn--primary" (click)="openCreateForm()">
+      <i class="bi bi-plus-lg"></i> Nouvelle entreprise
+    </button>
+  </div>
+</div>
+
+<div class="state-message text-center text-muted" *ngIf="isLoading()">Chargement...</div>
+<div class="state-message text-center text-muted" *ngIf="!isLoading() && companies().length === 0 && !errorMessage()">
+  Aucune entreprise trouvée.
+</div>
+
+<div class="entity-grid" *ngIf="!isLoading() && companies().length > 0">
+  <div
+    class="card entity-card entity-card--clickable"
+    *ngFor="let company of companies()"
+    role="link"
+    tabindex="0"
+    (click)="openCompany(company)"
+    (keyup.enter)="openCompany(company)"
+  >
+    <div class="entity-card__header">
+      <div class="entity-card__logo" [style.background]="company.logo_url ? null : accent(company) + '1f'" [style.color]="accent(company)">
+        <img *ngIf="company.logo_url" [src]="company.logo_url" [alt]="company.name" />
+        <span *ngIf="!company.logo_url">{{ company.short_name.charAt(0) | uppercase }}</span>
+      </div>
+      <span class="badge badge--success">
+        <i class="bi bi-shop"></i>&nbsp;{{ company.stores_count }} boutique{{ company.stores_count > 1 ? 's' : '' }}
+      </span>
+    </div>
+
+    <div>
+      <h3 class="entity-card__name">{{ company.name }}</h3>
+      <p class="entity-card__slogan">{{ company.slogan || company.short_name }}</p>
+    </div>
+
+    <dl class="entity-card__meta">
+      <div class="entity-card__meta-row">
+        <dt><i class="bi bi-person-badge"></i> Propriétaire</dt>
+        <dd>{{ company.owner?.user?.full_name || '—' }}</dd>
+      </div>
+      <div class="entity-card__meta-row">
+        <dt><i class="bi bi-envelope"></i> Email</dt>
+        <dd [title]="company.email">{{ company.email }}</dd>
+      </div>
+      <div class="entity-card__meta-row">
+        <dt><i class="bi bi-telephone"></i> Téléphone</dt>
+        <dd>{{ company.phone_one }}</dd>
+      </div>
+    </dl>
+
+    <div class="entity-card__actions">
+      <button type="button" class="icon-btn icon-btn--primary" title="Voir les boutiques" (click)="$event.stopPropagation(); openCompany(company)">
+        <i class="bi bi-box-arrow-in-right"></i>
+      </button>
+      <button type="button" class="icon-btn" title="Modifier" (click)="openEditForm(company, $event)">
+        <i class="bi bi-pencil"></i>
+      </button>
+      <button type="button" class="icon-btn icon-btn--danger" title="Supprimer" (click)="askDelete(company, $event)">
+        <i class="bi bi-trash"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="card pagination-card" *ngIf="lastPage() > 1">
+  <div class="pagination">
+    <button type="button" class="icon-btn" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">
+      <i class="bi bi-chevron-left"></i>
+    </button>
+    <span class="pagination__label">Page {{ currentPage() }} / {{ lastPage() }} ({{ total() }} entreprises)</span>
+    <button type="button" class="icon-btn" [disabled]="currentPage() === lastPage()" (click)="goToPage(currentPage() + 1)">
+      <i class="bi bi-chevron-right"></i>
+    </button>
+  </div>
+</div>
+
+<app-company-form
+  *ngIf="isFormOpen()"
+  [company]="editingCompany()"
+  (saved)="onSaved($event)"
+  (closed)="closeForm()"
+/>

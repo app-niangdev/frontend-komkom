@@ -1,0 +1,282 @@
+// Jamais affiché à l'écran : seul le document est copié dans l'iframe d'impression
+:host {
+  display: none;
+}
+
+.doc {
+  --doc-accent: #1f2937;
+  color: #111827;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: #fff;
+
+  dl,
+  p,
+  h1 {
+    margin: 0;
+  }
+}
+
+.doc__label {
+  display: block;
+  font-size: 0.72em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+}
+
+.num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.doc__cancelled {
+  margin: 0.8em 0;
+  padding: 0.4em;
+  border: 2px solid #dc2626;
+  color: #dc2626;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: 0.1em;
+}
+
+.doc__totals {
+  div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1em;
+    padding: 0.2em 0;
+  }
+
+  dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+}
+
+.doc__total {
+  font-weight: 800;
+  font-size: 1.1em;
+  border-top: 1px solid #111827;
+  margin-top: 0.3em;
+  padding-top: 0.4em !important;
+}
+
+.doc__due {
+  font-weight: 700;
+  color: #b91c1c;
+}
+
+.doc__footer {
+  margin-top: 1.5em;
+  text-align: center;
+  font-size: 0.85em;
+  color: #4b5563;
+}
+
+// ——— Facture A4 ———
+.doc--a4 {
+  font-size: 11pt;
+
+  .doc__issuer {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 1.2em;
+    align-items: start;
+    padding-bottom: 1em;
+    border-bottom: 3px solid var(--doc-accent);
+  }
+
+  .doc__logo {
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
+  }
+
+  .doc__issuer-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15em;
+    font-size: 0.9em;
+    color: #374151;
+  }
+
+  .doc__store {
+    font-size: 1.35em;
+    color: #111827;
+  }
+
+  .doc__heading {
+    text-align: right;
+
+    h1 {
+      font-size: 1.8em;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--doc-accent);
+    }
+
+    dl div {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.6em;
+    }
+
+    dt {
+      color: #6b7280;
+    }
+
+    dd {
+      margin: 0;
+      font-weight: 600;
+    }
+  }
+
+  .doc__customer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15em;
+    margin: 1.4em 0;
+    padding: 0.8em 1em;
+    background: #f3f4f6;
+    border-radius: 6px;
+    max-width: 50%;
+  }
+
+  .doc__table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th {
+      padding: 0.5em;
+      background: var(--doc-accent);
+      color: #fff;
+      font-size: 0.85em;
+      text-align: left;
+    }
+
+    th.num {
+      text-align: right;
+    }
+
+    td {
+      padding: 0.55em 0.5em;
+      border-bottom: 1px solid #e5e7eb;
+      vertical-align: top;
+    }
+
+    small {
+      display: block;
+      color: #6b7280;
+    }
+  }
+
+  .doc__totals {
+    width: 45%;
+    margin: 1em 0 0 auto;
+  }
+}
+
+// ——— Ticket 80 mm et reçu ———
+.doc--ticket {
+  width: 72mm;
+  margin: 0 auto;
+  font-size: 9.5pt;
+  line-height: 1.35;
+
+  .doc__issuer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding-bottom: 0.6em;
+    border-bottom: 1px dashed #111827;
+  }
+
+  .doc__logo {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+    margin-bottom: 0.3em;
+  }
+
+  .doc__issuer-text {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .doc__store {
+    font-size: 1.2em;
+  }
+
+  .doc__refs {
+    padding: 0.5em 0;
+    text-align: center;
+    border-bottom: 1px dashed #111827;
+  }
+
+  .doc__kind {
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .doc__customer {
+    display: flex;
+    flex-direction: column;
+    padding: 0.5em 0;
+    border-bottom: 1px dashed #111827;
+  }
+
+  .doc__ticket-lines {
+    margin: 0;
+    padding: 0.4em 0;
+    list-style: none;
+    border-bottom: 1px dashed #111827;
+
+    li {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      padding: 0.2em 0;
+    }
+
+    small {
+      grid-column: 1 / -1;
+      color: #4b5563;
+    }
+  }
+
+  .doc__ticket-name {
+    grid-column: 1 / -1;
+    font-weight: 600;
+  }
+
+  .doc__ticket-calc {
+    color: #374151;
+  }
+
+  .doc__ticket-sub {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .doc__totals {
+    padding-top: 0.4em;
+  }
+
+  .doc__receipt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2em;
+    padding: 0.8em 0;
+    border-bottom: 1px dashed #111827;
+    text-align: center;
+  }
+
+  .doc__receipt-amount {
+    font-size: 1.6em;
+  }
+}

@@ -1,0 +1,61 @@
+@use '../../../../styles/tokens' as t;
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.page-header__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: t.$radius-md;
+  background: rgba(91, 79, 229, 0.12);
+  color: t.$accent;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.page-header__title {
+  margin: 0 0 0.15rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: t.$text-primary;
+}
+
+.page-header__desc {
+  margin: 0;
+  font-size: 0.85rem;
+  color: t.$text-secondary;
+}
+
+.page-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+.page-block__label {
+  margin: 0 0 0.35rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: t.$text-muted;
+}
+
+.page-block__text {
+  margin: 0;
+  font-size: 0.85rem;
+  color: t.$text-secondary;
+}
+
+@media (max-width: 767.98px) {
+  .page-grid {
+    grid-template-columns: 1fr;
+  }
+}

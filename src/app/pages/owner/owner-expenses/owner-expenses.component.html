@@ -1,0 +1,190 @@
+<div class="page-header card">
+  <span class="page-header__icon"><i class="bi bi-receipt"></i></span>
+  <div>
+    <h2 class="page-header__title">Dépenses — {{ context.selectedStore()?.name || 'Toutes les boutiques' }}</h2>
+    <p class="page-header__desc">Charges de vos boutiques sur la période : évolution, principaux postes et détail.</p>
+  </div>
+</div>
+
+<div class="card toolbar-card">
+  <app-period-filter (rangeChange)="onRange($event)" />
+  <p class="dashboard-caption" *ngIf="result() as r">
+    <i class="bi bi-calendar3"></i>
+    Du {{ formatIsoDate(r.period.start) }} au {{ formatIsoDate(r.period.end) }} ({{ r.period.days }} jours)
+    · comparé au {{ formatIsoDate(r.period.previous_start) }} – {{ formatIsoDate(r.period.previous_end) }}
+  </p>
+</div>
+
+<app-store-blocked *ngIf="context.selectedIsBlocked()" />
+
+<ng-container *ngIf="!context.selectedIsBlocked()">
+  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+  <div class="state-message text-center text-muted" *ngIf="isLoading() && !result()">Chargement...</div>
+
+  <ng-container *ngIf="result() as r">
+    <!-- Indicateurs -->
+    <div class="kpi-grid expense-kpis" [class.is-refreshing]="isLoading()">
+      <div class="card kpi">
+        <div class="kpi__label"><i class="bi bi-receipt"></i> Total des dépenses</div>
+        <div class="kpi__value">{{ money(r.summary.total) }}</div>
+        <div class="kpi__foot">
+          <span *ngIf="delta() as d" class="kpi__delta" [class.kpi__delta--good]="d.good && d.direction !== 'flat'" [class.kpi__delta--bad]="!d.good" [class.kpi__delta--flat]="d.direction === 'flat'">
+            <i class="bi" [class.bi-arrow-up-right]="d.direction === 'up'" [class.bi-arrow-down-right]="d.direction === 'down'" [class.bi-dash]="d.direction === 'flat'"></i>
+            {{ d.text }}
+          </span>
+          <span *ngIf="!delta()" class="kpi__delta kpi__delta--flat">Aucune dépense</span>
+          <span class="kpi__hint">{{ money(r.summary.previous_total) }} la période précédente</span>
+        </div>
+      </div>
+      <div class="card kpi">
+        <div class="kpi__label"><i class="bi bi-list-ol"></i> Nombre de dépenses</div>
+        <div class="kpi__value">{{ formatNumber(r.summary.count) }}</div>
+      </div>
+      <div class="card kpi">
+        <div class="kpi__label"><i class="bi bi-calendar-day"></i> Moyenne par jour</div>
+        <div class="kpi__value">{{ money(r.summary.daily_average) }}</div>
+      </div>
+      <div class="card kpi">
+        <div class="kpi__label"><i class="bi bi-arrow-up-circle"></i> Plus grosse dépense</div>
+        <div class="kpi__value">{{ money(r.summary.largest) }}</div>
+      </div>
+    </div>
+
+    <div class="chart-grid chart-grid--wide-left">
+      <section class="card chart-card">
+        <header class="chart-card__header">
+          <h3>Évolution</h3>
+          <span class="chart-card__total">{{ money(r.summary.total) }}</span>
+        </header>
+        <p class="chart-card__sub">Dépenses par {{ r.period.granularity === 'day' ? 'jour' : r.period.granularity === 'week' ? 'semaine' : 'mois' }}, en {{ r.currency }}</p>
+        <app-time-series-chart
+          kind="column"
+          label="Dépenses"
+          [points]="r.series"
+          [granularity]="r.period.granularity"
+          [formatValue]="moneyFormatter()"
+          [loading]="isLoading()"
+        />
+      </section>
+
+      <section class="card chart-card" [class.is-refreshing]="isLoading()">
+        <header class="chart-card__header">
+          <h3>Principaux postes</h3>
+        </header>
+        <p class="chart-card__sub">Regroupés par intitulé — cliquez pour filtrer la liste</p>
+        <div class="state-message text-center text-muted" *ngIf="r.summary.by_title.length === 0">Aucune dépense sur la période.</div>
+        <ol class="ranking" *ngIf="r.summary.by_title.length > 0">
+          <li *ngFor="let t of r.summary.by_title" class="ranking__row">
+            <button type="button" class="ranking__button" [class.is-active]="search === t.title" (click)="filterTitle(t.title)" [attr.aria-pressed]="search === t.title">
+              <div class="ranking__head">
+                <span class="ranking__name">{{ t.title }}</span>
+                <span class="ranking__value">{{ money(t.total) }}</span>
+              </div>
+              <div class="ranking__track">
+                <div class="ranking__bar" [style.width.%]="(t.total / titleMax()) * 100"></div>
+              </div>
+              <span class="ranking__meta">{{ formatNumber(t.count) }} dépense(s) · {{ r.summary.total ? ((t.total / r.summary.total) * 100 | number: '1.0-0') : 0 }} % du total</span>
+            </button>
+          </li>
+        </ol>
+
+        <ng-container *ngIf="!context.selectedId() && r.summary.by_store.length > 1">
+          <h4 class="sub-heading">Par boutique</h4>
+          <ol class="ranking">
+            <li *ngFor="let s of r.summary.by_store" class="ranking__row">
+              <div class="ranking__head">
+                <span class="ranking__name">{{ s.store_name }}</span>
+                <span class="ranking__value">{{ money(s.total) }}</span>
+              </div>
+              <div class="ranking__track">
+                <div class="ranking__bar" [style.width.%]="(s.total / storeMax()) * 100"></div>
+              </div>
+            </li>
+          </ol>
+        </ng-container>
+      </section>
+    </div>
+
+    <!-- Liste -->
+    <div class="card toolbar-card">
+      <div class="table-card__toolbar">
+        <div class="toolbar-filters">
+          <div class="search">
+            <i class="bi bi-search"></i>
+            <input type="text" placeholder="Intitulé ou détail..." [(ngModel)]="search" (keyup.enter)="load(1)" aria-label="Rechercher une dépense" />
+          </div>
+          <select class="filter-select" [(ngModel)]="sort" (ngModelChange)="load(1)" aria-label="Trier les dépenses">
+            <option value="recent">Plus récentes</option>
+            <option value="amount">Plus gros montants</option>
+          </select>
+          <button type="button" class="btn btn--ghost" *ngIf="search" (click)="search = ''; load(1)">
+            <i class="bi bi-x-circle"></i> Réinitialiser
+          </button>
+        </div>
+        <button type="button" class="btn btn--primary" (click)="formExpense.set(null)">
+          <i class="bi bi-plus-lg"></i> Nouvelle dépense
+        </button>
+      </div>
+    </div>
+
+    <div class="state-message text-center text-muted card" *ngIf="r.data.length === 0">
+      {{ search ? 'Aucune dépense ne correspond à cette recherche.' : 'Aucune dépense sur la période.' }}
+    </div>
+
+    <div class="card table-card" *ngIf="r.data.length > 0" [class.is-refreshing]="isLoading()">
+      <table class="table expenses-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Dépense</th>
+            <th *ngIf="!context.selectedId()">Boutique</th>
+            <th>Saisie par</th>
+            <th class="text-right">Montant</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let e of r.data">
+            <td class="text-muted">{{ formatIsoDate(e.date) }}</td>
+            <td>
+              <div class="person__name">{{ e.title }}</div>
+              <div class="person__sub" *ngIf="e.description">{{ e.description }}</div>
+            </td>
+            <td *ngIf="!context.selectedId()">{{ e.store?.name }}</td>
+            <td class="text-muted">{{ e.user || '—' }}</td>
+            <td class="text-right num"><strong>{{ money(e.amount) }}</strong></td>
+            <td class="text-right">
+              <div class="table-actions">
+                <button type="button" class="icon-btn" title="Modifier" [attr.aria-label]="'Modifier ' + e.title" (click)="formExpense.set(e)">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button type="button" class="icon-btn icon-btn--danger" title="Supprimer" [attr.aria-label]="'Supprimer ' + e.title" (click)="askDelete(e)">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card pagination-card" *ngIf="r.meta.last_page > 1">
+      <div class="pagination">
+        <button type="button" class="icon-btn" [disabled]="r.meta.current_page === 1" (click)="goToPage(r.meta.current_page - 1)" aria-label="Page précédente">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <span class="pagination__label">Page {{ r.meta.current_page }} / {{ r.meta.last_page }}</span>
+        <button type="button" class="icon-btn" [disabled]="r.meta.current_page === r.meta.last_page" (click)="goToPage(r.meta.current_page + 1)" aria-label="Page suivante">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </ng-container>
+</ng-container>
+
+<app-expense-form
+  *ngIf="formExpense() !== undefined"
+  [expense]="formExpense() ?? null"
+  (saved)="onSaved($event)"
+  (closed)="formExpense.set(undefined)"
+/>

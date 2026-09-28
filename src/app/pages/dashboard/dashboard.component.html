@@ -1,0 +1,50 @@
+<div class="card welcome">
+  <div>
+    <h2 class="welcome__title">Bienvenue à nouveau Ibrahima NIANG <i class="bi bi-emoji-sunglasses"></i></h2>
+    <p class="welcome__desc">Ravi de vous revoir. Voici un aperçu de votre activité.</p>
+    <div class="welcome__actions">
+      <button type="button" class="btn btn--primary"><i class="bi bi-file-earmark-bar-graph"></i> Générer un rapport</button>
+      <button type="button" class="btn btn--ghost"><i class="bi bi-gear"></i> Voir les réglages</button>
+    </div>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <div class="card kpi" *ngFor="let kpi of kpis">
+    <p class="kpi__label">{{ kpi.label }}</p>
+    <p class="kpi__value">{{ kpi.value }}</p>
+    <p class="kpi__trend" [class]="'kpi__trend--' + kpi.trendType">{{ kpi.trend }}</p>
+  </div>
+</div>
+
+<div class="card transactions">
+  <div class="transactions__header">
+    <h3 class="transactions__title">Dernières Transactions</h3>
+    <a href="#" class="transactions__link">Voir tout</a>
+  </div>
+
+  <div class="transactions__table-wrap">
+    <table class="transactions__table">
+      <thead>
+        <tr>
+          <th>Client</th>
+          <th>Statut</th>
+          <th>Montant</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let tx of transactions">
+          <td>{{ tx.client }}</td>
+          <td>
+            <span class="badge" [class]="'badge--' + tx.status">
+              {{ tx.status === 'complete' ? 'Complété' : 'En cours' }}
+            </span>
+          </td>
+          <td>{{ tx.amount }}</td>
+          <td class="text-muted">{{ tx.date }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -1,0 +1,76 @@
+@use '../../../../styles/tokens' as t;
+@use '../../../../styles/form-controls' as f;
+
+:host {
+  display: block;
+}
+
+.preset-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.25rem;
+  border-radius: t.$radius-md;
+  background: t.$page-bg;
+}
+
+.preset-group__option {
+  padding: 0.45rem 0.75rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: t.$text-secondary;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    color: t.$text-primary;
+    background: rgba(11, 11, 11, 0.04);
+  }
+
+  &.is-selected {
+    background: t.$card-bg;
+    color: t.$accent;
+    box-shadow: t.$shadow-sm, 0 0 0 1px rgba(91, 79, 229, 0.25);
+  }
+}
+
+.custom-range {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.9rem;
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: t.$text-secondary;
+  }
+}
+
+.custom-range__input {
+  @include f.text-input;
+  width: auto;
+}
+
+.custom-range__apply {
+  padding: 0.6rem 1.1rem;
+  border: none;
+  border-radius: t.$radius-md;
+  background: t.$accent;
+  color: #fff;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}

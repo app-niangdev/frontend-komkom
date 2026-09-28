@@ -1,0 +1,113 @@
+<div class="modal-backdrop" (click)="closed.emit()"></div>
+<div class="modal modal--wide" role="dialog" aria-modal="true">
+  <div class="modal__header">
+    <h3>{{ store() ? 'Modifier la boutique' : 'Nouvelle boutique' }} — {{ company().name }}</h3>
+    <button type="button" class="icon-btn" title="Fermer" (click)="closed.emit()"><i class="bi bi-x-lg"></i></button>
+  </div>
+
+  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+
+  <form #storeForm="ngForm" (ngSubmit)="storeForm.valid && submit()">
+    <div class="form-grid">
+      <div class="field">
+        <label class="field__label" for="store_name">Nom *</label>
+        <input id="store_name" type="text" class="field__input" [(ngModel)]="form.name" name="name" required maxlength="255" />
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="store_slogan">Slogan</label>
+        <input id="store_slogan" type="text" class="field__input" [(ngModel)]="form.slogan" name="slogan" maxlength="255" />
+      </div>
+
+      <div class="field field--full">
+        <label class="field__label" for="store_address">Adresse *</label>
+        <input id="store_address" type="text" class="field__input" [(ngModel)]="form.address" name="address" required />
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="store_phone_one">Téléphone principal *</label>
+        <input id="store_phone_one" type="tel" class="field__input" [(ngModel)]="form.phone_one" name="phone_one" required />
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="store_email">Email</label>
+        <input id="store_email" type="email" class="field__input" [(ngModel)]="form.email" name="email" email />
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="store_phone_two">Téléphone 2</label>
+        <input id="store_phone_two" type="tel" class="field__input" [(ngModel)]="form.phone_two" name="phone_two" />
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="store_phone_three">Téléphone 3</label>
+        <input id="store_phone_three" type="tel" class="field__input" [(ngModel)]="form.phone_three" name="phone_three" />
+      </div>
+
+      <div class="field field--full">
+        <label class="check-field">
+          <input type="checkbox" [(ngModel)]="form.uses_measurements" name="uses_measurements" />
+          Gère les unités de mesure
+        </label>
+      </div>
+
+      <div class="form-section-title"><i class="bi bi-palette"></i> Identité visuelle</div>
+
+      <div class="field field--full">
+        <label class="check-field">
+          <input type="checkbox" [(ngModel)]="form.use_company_logo" name="use_company_logo" />
+          Utiliser le logo de l'entreprise
+        </label>
+      </div>
+
+      <div class="field field--full" *ngIf="!form.use_company_logo">
+        <label class="field__label" for="store_logo">Logo de la boutique</label>
+        <div class="logo-field">
+          <div class="logo-field__preview">
+            <img *ngIf="logoPreviewUrl()" [src]="logoPreviewUrl()" alt="Aperçu du logo" />
+            <i class="bi bi-image" *ngIf="!logoPreviewUrl()"></i>
+          </div>
+          <div class="logo-field__controls">
+            <label for="store_logo" class="btn btn--ghost logo-field__upload-btn">
+              <i class="bi bi-upload"></i> Choisir une image
+            </label>
+            <input id="store_logo" type="file" accept="image/*" class="logo-field__input" (change)="onLogoSelected($event)" />
+            <span class="text-muted form-hint-inline">PNG, JPG, WEBP ou SVG — 2 Mo max.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field field--full">
+        <label class="check-field">
+          <input type="checkbox" [(ngModel)]="form.use_company_colors" name="use_company_colors" />
+          Utiliser les couleurs de l'entreprise
+        </label>
+      </div>
+
+      <ng-container *ngIf="!form.use_company_colors">
+        <div class="field">
+          <label class="field__label" for="store_primary_color">Couleur primaire</label>
+          <div class="color-field">
+            <input id="store_primary_color" type="color" [(ngModel)]="form.primary_color" name="primary_color" />
+            <code>{{ form.primary_color }}</code>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="store_secondary_color">Couleur secondaire</label>
+          <div class="color-field">
+            <input id="store_secondary_color" type="color" [(ngModel)]="form.secondary_color" name="secondary_color" />
+            <code>{{ form.secondary_color }}</code>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+
+    <div class="modal__actions">
+      <button type="button" class="btn btn--ghost" (click)="closed.emit()">Annuler</button>
+      <button type="submit" class="btn btn--primary" [disabled]="isSubmitting() || storeForm.invalid">
+        {{ isSubmitting() ? 'Enregistrement...' : 'Enregistrer' }}
+      </button>
+    </div>
+  </form>
+</div>

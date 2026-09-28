@@ -1,0 +1,161 @@
+<div class="page-header card">
+  <span class="page-header__icon"><i class="bi bi-box-seam"></i></span>
+  <div>
+    <h2 class="page-header__title">Produits & stock — {{ context.selectedStore()?.name || 'Toutes les boutiques' }}</h2>
+    <p class="page-header__desc" *ngIf="!context.isSeller()">Catalogue, prix de vente et niveau de stock à ce jour. Le stock augmente avec les approvisionnements reçus et baisse avec les ventes.</p>
+    <p class="page-header__desc" *ngIf="context.isSeller()">Catalogue de la boutique : prix de vente et quantités disponibles à ce jour.</p>
+  </div>
+  <!-- Vendeur : consultation seule -->
+  <div class="page-header__actions" *ngIf="!context.isSeller()">
+    <a class="btn btn--ghost" [routerLink]="context.base() + '/serials'"><i class="bi bi-upc-scan"></i> IMEI / N° de série</a>
+    <button type="button" class="btn btn--primary" (click)="openCreate()" [disabled]="!context.selectedId()"
+      [title]="context.selectedId() ? '' : 'Choisissez une boutique dans le sélecteur pour ajouter un produit'">
+      <i class="bi bi-plus-lg"></i> Nouveau produit
+    </button>
+  </div>
+</div>
+
+<app-store-blocked *ngIf="context.selectedIsBlocked()" />
+
+<ng-container *ngIf="!context.selectedIsBlocked()">
+  <!-- Synthèse du stock (cliquable : filtre rapide) -->
+  <div class="stock-summary" *ngIf="result() as r">
+    <div class="card stock-tile">
+      <span class="stock-tile__label"><i class="bi bi-box-seam"></i> Produits</span>
+      <strong>{{ formatNumber(r.summary.products) }}</strong>
+    </div>
+    <div class="card stock-tile" *ngIf="!context.isSeller()">
+      <span class="stock-tile__label"><i class="bi bi-cash-stack"></i> Valeur du stock (prix de vente)</span>
+      <strong>{{ money(r.summary.stock_value) }}</strong>
+    </div>
+    <button type="button" class="card stock-tile stock-tile--button stock-tile--low"
+      [class.is-selected]="stock === 'low'" [attr.aria-pressed]="stock === 'low'" (click)="toggleStock('low')">
+      <span class="stock-tile__label"><i class="bi bi-exclamation-triangle"></i> Stock bas</span>
+      <strong>{{ formatNumber(r.summary.low) }}</strong>
+    </button>
+    <button type="button" class="card stock-tile stock-tile--button stock-tile--out"
+      [class.is-selected]="stock === 'out'" [attr.aria-pressed]="stock === 'out'" (click)="toggleStock('out')">
+      <span class="stock-tile__label"><i class="bi bi-x-octagon"></i> En rupture</span>
+      <strong>{{ formatNumber(r.summary.out) }}</strong>
+    </button>
+  </div>
+
+  <div class="card toolbar-card">
+    <div class="toolbar-filters">
+      <div class="search">
+        <i class="bi bi-search"></i>
+        <input type="text" placeholder="Rechercher un produit..." [(ngModel)]="search" (keyup.enter)="load(1)"
+          aria-label="Rechercher un produit" />
+      </div>
+      <select class="filter-select" [(ngModel)]="categoryId" (ngModelChange)="load(1)"
+        aria-label="Filtrer par catégorie">
+        <option [ngValue]="null">Toutes les catégories</option>
+        <option *ngFor="let c of categories()" [ngValue]="c.id">
+          {{ c.name }}{{ context.selectedId() ? '' : ' — ' + c.store_name }}
+        </option>
+      </select>
+      <select class="filter-select" [(ngModel)]="stock" (ngModelChange)="load(1)"
+        aria-label="Filtrer par état du stock">
+        <option value="">Tous les niveaux de stock</option>
+        <option *ngFor="let s of stockStates" [value]="s">{{ stockLabels[s] }}</option>
+      </select>
+      <button type="button" class="btn btn--ghost" *ngIf="hasFilters()" (click)="resetFilters()">
+        <i class="bi bi-x-circle"></i> Réinitialiser
+      </button>
+    </div>
+  </div>
+
+  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+  <div class="state-message text-center text-muted" *ngIf="isLoading() && !result()">Chargement...</div>
+
+  <ng-container *ngIf="result() as r">
+    <div class="state-message text-center text-muted card" *ngIf="r.data.length === 0">Aucun produit ne correspond à ces
+      critères.</div>
+
+    <!-- Grille de cartes : 2 colonnes sur mobile → 8 sur grand écran (selon la largeur disponible) -->
+    <div class="product-grid-wrap" *ngIf="r.data.length > 0">
+      <ul class="product-grid" [class.is-refreshing]="isLoading()" aria-label="Produits">
+        <li *ngFor="let p of r.data" class="card product-card" [class.product-card--out]="p.stock_state === 'out'">
+          <div class="product-card__media">
+            <div class="product-card__actions" *ngIf="!context.isSeller()">
+              <button type="button" class="icon-btn" title="Modifier" [attr.aria-label]="'Modifier ' + p.name" (click)="openEdit(p)"><i class="bi bi-pencil"></i></button>
+              <button type="button" class="icon-btn icon-btn--danger" title="Supprimer" [attr.aria-label]="'Supprimer ' + p.name" (click)="remove(p)"><i class="bi bi-trash"></i></button>
+            </div>
+            <img *ngIf="p.image_url" [src]="p.image_url" [alt]="p.name" loading="lazy" />
+            <span class="product-card__placeholder" *ngIf="!p.image_url" aria-hidden="true">{{ p.name.charAt(0) |
+              uppercase }}</span>
+
+            <span class="badge stock stock--{{ p.stock_state }} product-card__state">
+              <i class="bi" [class.bi-check-circle]="p.stock_state === 'ok'"
+                [class.bi-exclamation-triangle]="p.stock_state === 'low'"
+                [class.bi-x-octagon]="p.stock_state === 'out'"></i>
+              {{ stockLabels[p.stock_state] }}
+            </span>
+            <span class="product-card__serial" *ngIf="p.require_serial_number" title="Suivi par numéro de série (IMEI)">
+              <i class="bi bi-upc"></i><span class="visually-hidden">Suivi par numéro de série</span>
+            </span>
+          </div>
+
+          <div class="product-card__body">
+            <h3 class="product-card__name" [title]="p.name">{{ p.name }}</h3>
+            <p class="product-card__meta"
+              [title]="(p.category || 'Sans catégorie') + (!context.selectedId() && p.store ? ' · ' + p.store.name : '')">
+              {{ p.category || 'Sans catégorie' }}<ng-container *ngIf="!context.selectedId() && p.store"> · {{
+                p.store.name }}</ng-container>
+            </p>
+
+            <p class="product-card__price">
+              <ng-container *ngIf="p.price !== null; else noPrice">{{ money(p.price) }}<span> / {{ p.base_unit
+                  }}</span></ng-container>
+              <ng-template #noPrice><span class="text-muted">Prix non défini</span></ng-template>
+            </p>
+
+            <dl class="product-card__stock">
+              <div>
+                <dt>Stock</dt>
+                <dd>
+                  <span [class.is-alert]="p.stock_state !== 'ok'">{{ formatNumber(p.quantity) }} {{ p.base_unit
+                    }}</span>
+                  <span class="product-card__threshold">seuil {{ p.alert_threshold }}</span>
+                </dd>
+              </div>
+            </dl>
+
+            <a class="product-card__imei" *ngIf="p.require_serial_number && !context.isSeller()" [routerLink]="context.base() + '/serials'" [queryParams]="{ product: p.id }">
+              <i class="bi bi-upc-scan"></i> Voir les IMEI
+            </a>
+
+            <p class="product-card__units" *ngIf="p.units.length > 0">
+              <i class="bi bi-boxes"></i>
+              <ng-container *ngFor="let u of p.units; let last = last">{{ u.name }} ({{ formatNumber(u.factor) }}) : {{
+                money(u.price) }}{{ last ? '' : ' · ' }}</ng-container>
+            </p>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="card pagination-card" *ngIf="r.meta.last_page > 1">
+      <div class="pagination">
+        <button type="button" class="icon-btn" [disabled]="r.meta.current_page === 1"
+          (click)="goToPage(r.meta.current_page - 1)" aria-label="Page précédente">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <span class="pagination__label">Page {{ r.meta.current_page }} / {{ r.meta.last_page }} ({{
+          formatNumber(r.meta.total) }} produits)</span>
+        <button type="button" class="icon-btn" [disabled]="r.meta.current_page === r.meta.last_page"
+          (click)="goToPage(r.meta.current_page + 1)" aria-label="Page suivante">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </ng-container>
+</ng-container>
+
+<app-product-form
+  *ngIf="editing() as e"
+  [productId]="e.id"
+  [storeId]="context.selectedId()"
+  (saved)="onSaved()"
+  (closed)="editing.set(null)"
+/>

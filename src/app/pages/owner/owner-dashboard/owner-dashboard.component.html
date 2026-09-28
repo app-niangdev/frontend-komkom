@@ -1,0 +1,183 @@
+<div class="page-header card">
+  <span class="page-header__icon"><i class="bi bi-speedometer2"></i></span>
+  <div>
+    <h2 class="page-header__title">{{ context.isSeller() ? 'Mon activité' : 'Tableau de bord' }} — {{ scopeLabel() }}</h2>
+    <p class="page-header__desc" *ngIf="context.isSeller()">Vos ventes et vos encaissements sur la période choisie, comparés à la période précédente.</p>
+    <p class="page-header__desc" *ngIf="!context.isSeller()">
+      Activité sur la période choisie, comparée à la période précédente.<ng-container *ngIf="context.isOwner()"> Changez de boutique depuis le sélecteur en haut de page.</ng-container>
+    </p>
+  </div>
+</div>
+
+<div class="card toolbar-card">
+  <app-period-filter (rangeChange)="onRange($event)" />
+  <p class="dashboard-caption" *ngIf="data() as d">
+    <i class="bi bi-calendar3"></i>
+    Du {{ formatIsoDate(d.period.start) }} au {{ formatIsoDate(d.period.end) }} ({{ d.period.days }} jours)
+    · comparé au {{ formatIsoDate(d.period.previous_start) }} – {{ formatIsoDate(d.period.previous_end) }}
+  </p>
+</div>
+
+<div class="card dashboard-storefront" *ngIf="data()?.storefront as sf">
+  <app-storefront-link [storefront]="sf" />
+</div>
+
+<app-store-blocked *ngIf="context.selectedIsBlocked()" />
+
+<ng-container *ngIf="!context.selectedIsBlocked()">
+  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+  <div class="state-message text-center text-muted" *ngIf="isLoading() && !data()">Chargement...</div>
+
+  <ng-container *ngIf="data() as d">
+    <div class="notice" *ngIf="d.excluded_stores.length > 0" role="status">
+      <i class="bi bi-info-circle"></i>
+      <span>
+        {{ d.excluded_stores.length }} boutique(s) sans abonnement en cours exclue(s) des totaux :
+        <ng-container *ngFor="let s of d.excluded_stores; let last = last">{{ s.store_name }}{{ last ? '.' : ', ' }}</ng-container>
+      </span>
+    </div>
+
+    <!-- Indicateurs de la période -->
+    <div class="kpi-grid" [class.is-refreshing]="isLoading()">
+      <div class="card kpi" *ngFor="let tile of tiles()">
+        <div class="kpi__label"><i class="bi {{ tile.icon }}"></i> {{ tile.label }}</div>
+        <div class="kpi__value">{{ tile.value }}</div>
+        <div class="kpi__foot">
+          <span *ngIf="tile.delta as delta" class="kpi__delta" [class.kpi__delta--good]="delta.good && delta.direction !== 'flat'" [class.kpi__delta--bad]="!delta.good" [class.kpi__delta--flat]="delta.direction === 'flat'">
+            <i class="bi" [class.bi-arrow-up-right]="delta.direction === 'up'" [class.bi-arrow-down-right]="delta.direction === 'down'" [class.bi-dash]="delta.direction === 'flat'"></i>
+            {{ delta.text }}
+          </span>
+          <span *ngIf="!tile.delta" class="kpi__delta kpi__delta--flat">Aucune activité</span>
+          <span class="kpi__hint" *ngIf="tile.hint">{{ tile.hint }}</span>
+        </div>
+      </div>
+
+      <!-- Photographie actuelle : indépendante de la période -->
+      <div class="card kpi kpi--snapshot">
+        <div class="kpi__label"><i class="bi bi-hourglass-split"></i> Reste à encaisser</div>
+        <div class="kpi__value">{{ money()(d.receivables.amount) }}</div>
+        <div class="kpi__foot">
+          <span class="kpi__hint kpi__hint--always">{{ d.receivables.invoices }} facture(s) non soldée(s){{ context.isSeller() ? ' sur vos ventes' : '' }}, à ce jour</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-grid chart-grid--wide-left">
+      <section class="card chart-card">
+        <header class="chart-card__header">
+          <h3>Chiffre d'affaires</h3>
+          <span class="chart-card__total">{{ money()(d.kpis.sales_revenue.value) }}</span>
+        </header>
+        <p class="chart-card__sub">
+          Ventes validées par {{ d.period.granularity === 'day' ? 'jour' : d.period.granularity === 'week' ? 'semaine' : 'mois' }}, en {{ d.currency }}
+        </p>
+        <app-time-series-chart
+          kind="area"
+          label="Chiffre d'affaires"
+          [points]="d.series.sales_revenue"
+          [granularity]="d.period.granularity"
+          [formatValue]="money()"
+          [loading]="isLoading()"
+        />
+      </section>
+
+      <!-- Toutes les boutiques : comparaison ; une boutique : ses meilleurs produits -->
+      <section class="card chart-card" *ngIf="d.by_store.length > 0">
+        <header class="chart-card__header">
+          <h3>Par boutique</h3>
+        </header>
+        <p class="chart-card__sub">Chiffre d'affaires sur la période — cliquez pour voir le détail d'une boutique</p>
+        <ol class="ranking">
+          <li *ngFor="let s of d.by_store" class="ranking__row">
+            <button type="button" class="ranking__button" (click)="openStore(s.store_id)" [attr.aria-label]="'Afficher le tableau de bord de ' + s.store_name">
+              <div class="ranking__head">
+                <span class="ranking__name">{{ s.store_name }}</span>
+                <span class="ranking__value">{{ money()(s.revenue) }}</span>
+              </div>
+              <div class="ranking__track">
+                <div class="ranking__bar" [style.width.%]="(s.revenue / byStoreMax()) * 100"></div>
+              </div>
+              <span class="ranking__meta">{{ formatNumber(s.sales_count) }} vente(s)</span>
+            </button>
+          </li>
+        </ol>
+      </section>
+
+      <section class="card chart-card" *ngIf="d.by_store.length === 0">
+        <header class="chart-card__header">
+          <h3>Meilleurs produits</h3>
+        </header>
+        <p class="chart-card__sub">Chiffre d'affaires sur la période</p>
+        <div class="state-message text-center text-muted" *ngIf="d.top_products.length === 0">Aucune vente sur la période.</div>
+        <ol class="ranking" *ngIf="d.top_products.length > 0">
+          <li *ngFor="let p of d.top_products; let i = index" class="ranking__row">
+            <div class="ranking__head">
+              <span class="ranking__name"><span class="ranking__rank">{{ i + 1 }}</span>{{ p.name }}</span>
+              <span class="ranking__value">{{ money()(p.revenue) }}</span>
+            </div>
+            <div class="ranking__track">
+              <div class="ranking__bar" [style.width.%]="(p.revenue / topMax()) * 100"></div>
+            </div>
+            <span class="ranking__meta">{{ formatNumber(p.quantity) }} {{ p.unit }} vendu(s)</span>
+          </li>
+        </ol>
+      </section>
+    </div>
+
+    <div class="chart-grid" [class.is-refreshing]="isLoading()">
+      <section class="card chart-card" *ngIf="d.by_store.length > 0">
+        <header class="chart-card__header">
+          <h3>Meilleurs produits</h3>
+        </header>
+        <p class="chart-card__sub">Toutes boutiques confondues</p>
+        <div class="state-message text-center text-muted" *ngIf="d.top_products.length === 0">Aucune vente sur la période.</div>
+        <ol class="ranking" *ngIf="d.top_products.length > 0">
+          <li *ngFor="let p of d.top_products; let i = index" class="ranking__row">
+            <div class="ranking__head">
+              <span class="ranking__name"><span class="ranking__rank">{{ i + 1 }}</span>{{ p.name }}</span>
+              <span class="ranking__value">{{ money()(p.revenue) }}</span>
+            </div>
+            <div class="ranking__track">
+              <div class="ranking__bar" [style.width.%]="(p.revenue / topMax()) * 100"></div>
+            </div>
+            <span class="ranking__meta">{{ formatNumber(p.quantity) }} {{ p.unit }} vendu(s)</span>
+          </li>
+        </ol>
+      </section>
+
+      <section class="card chart-card">
+        <header class="chart-card__header">
+          <h3>Stock à surveiller</h3>
+          <span class="badge" [class.badge--state-expired]="d.low_stock.count > 0" [class.badge--state-active]="d.low_stock.count === 0">
+            {{ d.low_stock.count }} produit(s)
+          </span>
+        </header>
+        <p class="chart-card__sub">Produits au niveau ou sous leur seuil d'alerte, à ce jour</p>
+        <div class="state-message text-center text-muted" *ngIf="d.low_stock.count === 0">
+          <i class="bi bi-check-circle"></i> Aucun produit sous son seuil d'alerte.
+        </div>
+        <table class="table stock-table" *ngIf="d.low_stock.items.length > 0">
+          <thead>
+            <tr>
+              <th>Produit</th>
+              <th *ngIf="!d.store">Boutique</th>
+              <th class="text-right">En stock</th>
+              <th class="text-right">Seuil</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of d.low_stock.items">
+              <td>{{ item.name }}</td>
+              <td *ngIf="!d.store" class="text-muted">{{ item.store_name }}</td>
+              <td class="text-right" [class.stock-table__empty]="item.quantity <= 0">{{ formatNumber(item.quantity) }} {{ item.unit }}</td>
+              <td class="text-right text-muted">{{ item.alert_threshold }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="stock-more text-muted" *ngIf="d.low_stock.count > d.low_stock.items.length">
+          + {{ d.low_stock.count - d.low_stock.items.length }} autre(s) produit(s)
+        </p>
+      </section>
+    </div>
+  </ng-container>
+</ng-container>

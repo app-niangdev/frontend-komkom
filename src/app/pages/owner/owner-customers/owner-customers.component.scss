@@ -1,0 +1,151 @@
+@use '../../../../styles/tokens' as t;
+
+.customer-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.summary-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  text-align: left;
+  font: inherit;
+  border: 1px solid transparent;
+
+  strong {
+    font-size: 1.35rem;
+    color: t.$text-primary;
+  }
+
+  &--button {
+    cursor: pointer;
+
+    &:hover {
+      box-shadow: t.$shadow-md;
+    }
+
+    &.is-selected {
+      border-color: t.$accent;
+    }
+  }
+
+  &--due {
+    .summary-tile__label i {
+      color: t.$danger;
+    }
+
+    &.is-selected {
+      border-color: t.$danger;
+    }
+  }
+}
+
+.summary-tile__label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: t.$text-secondary;
+
+  i {
+    color: t.$accent;
+  }
+}
+
+.summary-tile__hint {
+  font-size: 0.75rem;
+  color: t.$text-muted;
+}
+
+.sort-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: t.$text-secondary;
+  white-space: nowrap;
+}
+
+.customer-link {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  .person__name,
+  .person__sub {
+    display: block;
+  }
+
+  &:hover .person__name,
+  &:focus-visible .person__name {
+    color: t.$accent;
+    text-decoration: underline;
+  }
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.link-btn {
+  margin-left: 0.35rem;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: t.$accent;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+@media (max-width: 991.98px) {
+  .customer-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+// Mobile : la liste passe en cartes empilées (pas de défilement horizontal)
+@media (max-width: 575.98px) {
+  .customers-table {
+    thead {
+      display: none;
+    }
+
+    tr {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.35rem 0.75rem;
+      padding: 0.85rem 1rem;
+    }
+
+    td {
+      padding: 0 !important;
+      white-space: normal !important;
+      text-align: left !important;
+    }
+
+    td:first-child {
+      grid-column: 1 / -1;
+    }
+
+    td:last-child {
+      grid-column: 1 / -1;
+      justify-self: end;
+    }
+  }
+
+  .sort-field span {
+    display: none;
+  }
+}

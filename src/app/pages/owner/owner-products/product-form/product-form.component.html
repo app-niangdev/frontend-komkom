@@ -1,0 +1,172 @@
+<div class="modal-backdrop" (click)="closed.emit()"></div>
+<div class="modal modal--xl" role="dialog" aria-modal="true" aria-labelledby="product-form-title">
+  <div class="modal__header">
+    <h3 id="product-form-title">{{ isEdit() ? 'Modifier « ' + (product()?.name || '') + ' »' : 'Nouveau produit' }}</h3>
+    <button type="button" class="icon-btn" title="Fermer" (click)="closed.emit()"><i class="bi bi-x-lg"></i></button>
+  </div>
+
+  <div class="alert alert--error" *ngIf="loadError()">{{ loadError() }}</div>
+  <div class="state-message text-center text-muted" *ngIf="!isReady() && !loadError()">Chargement...</div>
+
+  <form *ngIf="isReady()" (ngSubmit)="submit()" novalidate>
+    <p class="form-store text-muted" *ngIf="storeName()"><i class="bi bi-shop"></i> {{ storeName() }}</p>
+    <div class="alert alert--error" *ngIf="errorMessage()" role="alert">{{ errorMessage() }}</div>
+
+    <div class="product-form">
+      <!-- Informations -->
+      <div class="product-form__main">
+        <div class="form-grid">
+          <div class="field field--full">
+            <label class="field__label" for="pf_name">Nom du produit *</label>
+            <input id="pf_name" class="field__input" name="name" [(ngModel)]="name" maxlength="255" required autocomplete="off" />
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="pf_category">Catégorie</label>
+            <div class="field-with-action" *ngIf="!showNewCategory(); else newCategory">
+              <select id="pf_category" class="field__input" name="category" [(ngModel)]="categoryId">
+                <option [ngValue]="null">Sans catégorie</option>
+                <option *ngFor="let c of categories()" [ngValue]="c.id">{{ c.name }}</option>
+              </select>
+              <button type="button" class="btn btn--ghost" title="Nouvelle catégorie" (click)="showNewCategory.set(true)"><i class="bi bi-plus-lg"></i></button>
+            </div>
+            <ng-template #newCategory>
+              <div class="field-with-action">
+                <input class="field__input" name="new_category" [(ngModel)]="newCategoryName" placeholder="Nom de la catégorie" aria-label="Nom de la nouvelle catégorie" (keydown.enter)="createCategory(); $event.preventDefault()" />
+                <button type="button" class="btn btn--primary" [disabled]="newCategoryName.trim().length < 2 || isCreatingCategory()" (click)="createCategory()">Créer</button>
+                <button type="button" class="btn btn--ghost" title="Annuler" (click)="showNewCategory.set(false)"><i class="bi bi-x-lg"></i></button>
+              </div>
+            </ng-template>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="pf_alert">Seuil d'alerte de stock</label>
+            <input id="pf_alert" class="field__input" type="number" min="0" step="1" name="alert" [(ngModel)]="alertThreshold" />
+            <span class="form-hint-inline text-muted">Le produit passe en « stock bas » à ce niveau.</span>
+          </div>
+
+          <div class="field field--full">
+            <label class="field__label" for="pf_desc">Description</label>
+            <textarea id="pf_desc" class="field__input" rows="2" name="description" [(ngModel)]="description" maxlength="1000"></textarea>
+          </div>
+        </div>
+
+        <!-- Suivi par numéro de série / IMEI -->
+        <fieldset class="serial-choice" [disabled]="serialLocked()">
+          <legend class="field__label">Suivi par numéro de série / IMEI</legend>
+          <label class="serial-option" [class.is-active]="!requireSerial()">
+            <input type="radio" name="serial" [checked]="!requireSerial()" (change)="onSerialChange(false)" />
+            <span>
+              <strong>Non</strong>
+              <small>Stock compté en quantité (sacs, kg, cartons...).</small>
+            </span>
+          </label>
+          <label class="serial-option" [class.is-active]="requireSerial()">
+            <input type="radio" name="serial" [checked]="requireSerial()" (change)="onSerialChange(true)" />
+            <span>
+              <strong><i class="bi bi-upc"></i> Oui, chaque article a un numéro unique</strong>
+              <small>Téléphones, ordinateurs... : les IMEI sont saisis à l'approvisionnement et choisis à la vente.</small>
+            </span>
+          </label>
+          <p class="form-hint-inline text-muted" *ngIf="serialLocked()">
+            <i class="bi bi-lock"></i> Ce choix est figé : le produit a déjà du stock ou des numéros enregistrés.
+          </p>
+        </fieldset>
+      </div>
+
+      <!-- Image -->
+      <div class="product-form__image">
+        <span class="field__label">Image</span>
+        <div class="image-box">
+          <img *ngIf="imagePreview()" [src]="imagePreview()" alt="Aperçu du produit" />
+          <i *ngIf="!imagePreview()" class="bi bi-image"></i>
+        </div>
+        <div class="image-tabs" role="tablist">
+          <button type="button" role="tab" [attr.aria-selected]="imageSource() === 'upload'" [class.is-active]="imageSource() === 'upload'" (click)="setImageSource('upload')">Fichier</button>
+          <button type="button" role="tab" [attr.aria-selected]="imageSource() === 'url'" [class.is-active]="imageSource() === 'url'" (click)="setImageSource('url')">Lien</button>
+        </div>
+        <ng-container *ngIf="imageSource() === 'upload'">
+          <label for="pf_image" class="btn btn--ghost btn--sm image-upload"><i class="bi bi-upload"></i> {{ imagePreview() ? 'Remplacer' : 'Choisir une image' }}</label>
+          <input id="pf_image" type="file" accept="image/png,image/jpeg,image/webp" class="visually-hidden-input" (change)="onImageSelected($event)" />
+        </ng-container>
+        <input *ngIf="imageSource() === 'url'" class="field__input" type="url" name="image_url" [(ngModel)]="imageUrl" (ngModelChange)="imagePreview.set($event || null)" placeholder="https://..." aria-label="Lien de l'image" />
+        <button type="button" class="link-btn link-btn--danger" *ngIf="imagePreview()" (click)="onRemoveImage()"><i class="bi bi-trash"></i> Retirer l'image</button>
+      </div>
+    </div>
+
+    <!-- Prix et unités de vente -->
+    <section class="units">
+      <h4 class="section-title">
+        {{ singleUnit() ? 'Prix de vente' : 'Unités de vente' }}
+        <span class="section-title__sub text-muted" *ngIf="!singleUnit()">— le stock est compté dans l'unité de base</span>
+      </h4>
+
+      <div class="unit-single" *ngIf="singleUnit()">
+        <div class="field" *ngIf="usesMeasurements()">
+          <label class="field__label" for="pf_unit_name">Unité</label>
+          <input id="pf_unit_name" class="field__input" name="unit_name" [(ngModel)]="baseUnit.name" maxlength="50" [disabled]="requireSerial()" />
+        </div>
+        <div class="field">
+          <label class="field__label" for="pf_price">Prix de vente *</label>
+          <div class="input-suffix">
+            <input id="pf_price" class="field__input num" type="number" min="0" step="1" name="price" [(ngModel)]="baseUnit.price" required />
+            <span>XOF</span>
+          </div>
+        </div>
+        <p class="form-hint-inline text-muted unit-single__hint" *ngIf="requireSerial()">Un produit à numéro de série se vend à la pièce.</p>
+      </div>
+
+      <ng-container *ngIf="!singleUnit()">
+        <div class="unit-table" role="table" aria-label="Unités de vente">
+          <div class="unit-row unit-row--head" role="row">
+            <span role="columnheader">Base</span>
+            <span role="columnheader">Nom</span>
+            <span role="columnheader">Contient</span>
+            <span role="columnheader">Prix de vente</span>
+            <span role="columnheader"><span class="sr-only">Actions</span></span>
+          </div>
+          <div class="unit-row" role="row" *ngFor="let u of units; let i = index" [class.is-base]="u.is_base_unit">
+            <span role="cell">
+              <input type="radio" name="base_unit" [checked]="u.is_base_unit" (change)="setBase(u)" [disabled]="hasStock()" [attr.aria-label]="'Unité de base : ' + (u.name || 'unité ' + (i + 1))" />
+            </span>
+            <span role="cell">
+              <input class="field__input" [name]="'unit_name_' + i" [(ngModel)]="u.name" maxlength="50" placeholder="ex. carton" [attr.aria-label]="'Nom de l\'unité ' + (i + 1)" />
+            </span>
+            <span role="cell" class="unit-factor">
+              <ng-container *ngIf="u.is_base_unit"><span class="text-muted">unité de base</span></ng-container>
+              <ng-container *ngIf="!u.is_base_unit">
+                <input class="field__input num" type="number" min="0.001" step="any" [name]="'unit_factor_' + i" [(ngModel)]="u.conversion_factor" [attr.aria-label]="'Quantité d\'unités de base dans ' + (u.name || 'cette unité')" />
+                <span class="text-muted">{{ baseUnit.name || 'base' }}</span>
+              </ng-container>
+            </span>
+            <span role="cell">
+              <div class="input-suffix">
+                <input class="field__input num" type="number" min="0" step="1" [name]="'unit_price_' + i" [(ngModel)]="u.price" [attr.aria-label]="'Prix de ' + (u.name || 'cette unité')" />
+                <span>XOF</span>
+              </div>
+              <small class="text-muted" *ngIf="!u.is_base_unit && perBase(u) !== null">soit {{ money(perBase(u)!) }} / {{ baseUnit.name || 'base' }}</small>
+            </span>
+            <span role="cell">
+              <button type="button" class="icon-btn icon-btn--danger" *ngIf="!u.is_base_unit" title="Retirer cette unité" (click)="removeUnit(u)"><i class="bi bi-trash"></i></button>
+            </span>
+          </div>
+        </div>
+        <button type="button" class="btn btn--ghost btn--sm" (click)="addUnit()" [disabled]="units.length >= 10"><i class="bi bi-plus-lg"></i> Ajouter une unité (carton, paquet...)</button>
+        <p class="form-hint-inline text-muted" *ngIf="hasStock()">
+          <i class="bi bi-lock"></i> Il reste {{ formatNumber(product()!.stock) }} {{ product()!.base_unit }} en stock : l'unité de base ne peut plus changer (vous pouvez la renommer).
+        </p>
+      </ng-container>
+    </section>
+
+    <p class="stock-note text-muted" *ngIf="!isEdit()">
+      <i class="bi bi-info-circle"></i> Le stock démarre à zéro : il augmente avec les approvisionnements reçus{{ requireSerial() ? ', un IMEI par article' : '' }}.
+    </p>
+
+    <div class="modal__actions">
+      <button type="button" class="btn btn--ghost" (click)="closed.emit()" [disabled]="isSubmitting()">Annuler</button>
+      <button type="submit" class="btn btn--primary" [disabled]="isSubmitting()">
+        <i class="bi bi-check-lg"></i> {{ isSubmitting() ? 'Enregistrement...' : isEdit() ? 'Enregistrer' : 'Créer le produit' }}
+      </button>
+    </div>
+  </form>
+</div>

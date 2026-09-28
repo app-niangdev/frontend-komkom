@@ -1,0 +1,79 @@
+<div class="modal-backdrop" (click)="closed.emit()"></div>
+<div class="modal modal--wide" role="dialog" aria-modal="true" aria-labelledby="member-form-title">
+  <div class="modal__header">
+    <h3 id="member-form-title">{{ member() ? (context.isManager() ? 'Modifier le vendeur' : 'Modifier le membre') : (context.isManager() ? 'Ajouter un vendeur' : 'Ajouter un membre') }}</h3>
+    <button type="button" class="icon-btn" title="Fermer" (click)="closed.emit()"><i class="bi bi-x-lg"></i></button>
+  </div>
+
+  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+
+  <form #memberForm="ngForm" (ngSubmit)="memberForm.valid && submit()" novalidate>
+    <div class="form-grid">
+      <div class="form-section-title"><i class="bi bi-shop"></i> Rôle et boutique</div>
+
+      <div class="field">
+        <label class="field__label" for="role">Rôle *</label>
+        <select id="role" class="field__input" [(ngModel)]="form.role" name="role" required [disabled]="!!member() || context.isManager()">
+          <option value="Seller">Vendeur</option>
+          <option value="Manager" *ngIf="!context.isManager()">Gestionnaire</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="store_id">Boutique *</label>
+        <select id="store_id" class="field__input" [(ngModel)]="form.store_id" name="store_id" required [disabled]="context.isManager()">
+          <option [ngValue]="null" disabled>Choisir une boutique</option>
+          <option *ngFor="let s of context.stores()" [ngValue]="s.id">{{ s.name }}</option>
+        </select>
+      </div>
+
+      <p class="text-muted form-hint field--full">
+        <i class="bi bi-info-circle"></i>
+        <ng-container *ngIf="!member() && context.isManager()">Le vendeur enregistre les ventes de votre boutique. Mot de passe initial : « password », à changer depuis « Mon profil ».</ng-container>
+        <ng-container *ngIf="!member() && !context.isManager()">Un gestionnaire administre sa boutique (produits, stock, équipe) ; un vendeur enregistre les ventes. Mot de passe initial : « password », à changer depuis « Mon profil ».</ng-container>
+        <ng-container *ngIf="member() && !context.isManager()">Le rôle ne peut pas être modifié ; la boutique peut changer (mutation).</ng-container>
+      </p>
+
+      <div class="form-section-title"><i class="bi bi-person"></i> Identité</div>
+
+      <div class="field">
+        <label class="field__label" for="first_name">Prénom *</label>
+        <input id="first_name" class="field__input" [(ngModel)]="form.first_name" name="first_name" required maxlength="100" />
+      </div>
+      <div class="field">
+        <label class="field__label" for="last_name">Nom *</label>
+        <input id="last_name" class="field__input" [(ngModel)]="form.last_name" name="last_name" required maxlength="100" />
+      </div>
+      <div class="field">
+        <label class="field__label" for="email">Email de connexion *</label>
+        <input id="email" type="email" class="field__input" [(ngModel)]="form.email" name="email" required email />
+      </div>
+      <div class="field">
+        <label class="field__label" for="gender">Genre *</label>
+        <select id="gender" class="field__input" [(ngModel)]="form.gender" name="gender" required>
+          <option value="male">Homme</option>
+          <option value="female">Femme</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field__label" for="phone_number_one">Téléphone *</label>
+        <input id="phone_number_one" type="tel" class="field__input" [(ngModel)]="form.phone_number_one" name="phone_number_one" required maxlength="20" />
+      </div>
+      <div class="field">
+        <label class="field__label" for="phone_number_two">Téléphone secondaire</label>
+        <input id="phone_number_two" type="tel" class="field__input" [(ngModel)]="form.phone_number_two" name="phone_number_two" maxlength="20" />
+      </div>
+      <div class="field field--full">
+        <label class="field__label" for="address">Adresse *</label>
+        <input id="address" class="field__input" [(ngModel)]="form.address" name="address" required maxlength="255" />
+      </div>
+    </div>
+
+    <div class="modal__actions">
+      <button type="button" class="btn btn--ghost" (click)="closed.emit()">Annuler</button>
+      <button type="submit" class="btn btn--primary" [disabled]="isSubmitting() || memberForm.invalid">
+        {{ isSubmitting() ? 'Enregistrement...' : member() ? 'Enregistrer' : 'Ajouter' }}
+      </button>
+    </div>
+  </form>
+</div>

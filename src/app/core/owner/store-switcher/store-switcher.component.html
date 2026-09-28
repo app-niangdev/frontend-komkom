@@ -1,0 +1,62 @@
+<!-- Gérant ou vendeur : sa boutique, sans choix possible -->
+<div class="switcher" *ngIf="context.isStoreStaff(); else chooser">
+  <span class="switcher__trigger switcher__trigger--static" *ngIf="context.selectedStore() as store" [title]="context.isSeller() ? 'Votre boutique' : 'Boutique que vous gérez'">
+    <i class="bi bi-shop"></i>
+    <span class="switcher__label">{{ store.name }}</span>
+  </span>
+</div>
+
+<ng-template #chooser>
+<div class="switcher">
+  <button
+    type="button"
+    class="switcher__trigger"
+    [attr.aria-expanded]="isOpen()"
+    aria-haspopup="menu"
+    aria-label="Choisir la boutique affichée"
+    (click)="toggle()"
+  >
+    <i class="bi" [class.bi-shop]="context.selectedStore()" [class.bi-grid]="!context.selectedStore()"></i>
+    <span class="switcher__label">{{ context.selectedStore()?.name || 'Toutes les boutiques' }}</span>
+    <i class="bi bi-exclamation-triangle-fill switcher__warn" *ngIf="context.selectedIsBlocked()" title="Abonnement expiré"></i>
+    <i class="bi bi-chevron-down switcher__chevron" [class.is-open]="isOpen()"></i>
+  </button>
+
+  <div class="switcher__menu" *ngIf="isOpen()" role="menu">
+    <p class="switcher__heading">Afficher les données de</p>
+
+    <button type="button" role="menuitemradio" class="switcher__item" [attr.aria-checked]="context.selectedId() === null" (click)="choose(null)">
+      <i class="bi bi-grid switcher__item-icon"></i>
+      <span class="switcher__item-text">
+        <span class="switcher__item-name">Toutes les boutiques</span>
+        <span class="switcher__item-sub">{{ context.stores().length }} boutique(s)</span>
+      </span>
+      <i class="bi bi-check-lg switcher__check" *ngIf="context.selectedId() === null"></i>
+    </button>
+
+    <div class="switcher__sep"></div>
+
+    <button
+      type="button"
+      role="menuitemradio"
+      class="switcher__item"
+      *ngFor="let store of context.stores()"
+      [attr.aria-checked]="context.selectedId() === store.id"
+      (click)="choose(store.id)"
+    >
+      <i class="bi bi-shop switcher__item-icon"></i>
+      <span class="switcher__item-text">
+        <span class="switcher__item-name">{{ store.name }}</span>
+        <span class="switcher__item-sub switcher__item-sub--blocked" *ngIf="isBlocked(store)">
+          <i class="bi bi-x-circle"></i> Abonnement expiré
+        </span>
+        <span class="switcher__item-sub switcher__item-sub--warn" *ngIf="store.subscription.state === 'expiring'">
+          <i class="bi bi-hourglass-split"></i> Expire dans {{ store.subscription.days_left }} j
+        </span>
+        <span class="switcher__item-sub" *ngIf="!store.active">Désactivée</span>
+      </span>
+      <i class="bi bi-check-lg switcher__check" *ngIf="context.selectedId() === store.id"></i>
+    </button>
+  </div>
+</div>
+</ng-template>

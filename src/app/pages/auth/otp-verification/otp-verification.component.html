@@ -1,0 +1,47 @@
+<div class="auth-form">
+  <p class="auth-form__eyebrow">Sécurité</p>
+  <h2 class="auth-form__title">Vérification en deux étapes</h2>
+  <p class="auth-form__desc">
+    Saisissez le code à 6 chiffres envoyé à votre adresse e-mail.
+  </p>
+
+  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+
+  <form (ngSubmit)="onSubmit()">
+    <div class="otp" (paste)="onPaste($event)">
+      <input
+        *ngFor="let digit of digits(); let i = index"
+        #digitInput
+        type="text"
+        inputmode="numeric"
+        maxlength="1"
+        class="otp__cell"
+        [value]="digit"
+        (input)="onDigitInput(i, $event)"
+        (keydown)="onKeyDown(i, $event)"
+        autocomplete="one-time-code"
+      />
+    </div>
+
+    <div class="notice">
+      <i class="bi bi-shield-check"></i>
+      <span>Ne partagez jamais ce code. Il expire dans quelques minutes.</span>
+    </div>
+
+    <button type="submit" class="btn-primary" [disabled]="!isComplete()">Vérifier le code</button>
+  </form>
+
+  <p class="resend">
+    <ng-container *ngIf="!canResend()">
+      Renvoyer le code dans <strong>{{ formattedTimer() }}</strong>
+    </ng-container>
+    <button *ngIf="canResend()" type="button" class="resend__btn" (click)="onResend()">
+      Renvoyer le code
+    </button>
+  </p>
+
+  <a routerLink="/auth/login" class="back-link">
+    <i class="bi bi-arrow-left"></i>
+    Retour à la connexion
+  </a>
+</div>
