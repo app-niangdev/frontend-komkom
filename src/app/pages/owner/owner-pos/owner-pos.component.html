@@ -10,7 +10,10 @@
 <app-store-blocked *ngIf="context.selectedIsBlocked()" />
 
 <div class="card state-message text-center" *ngIf="context.loaded() && !storeId()">
-  <i class="bi bi-shop"></i> Choisissez la boutique où vendre dans le sélecteur en haut de page.
+  <i class="bi bi-shop"></i> Choisissez la boutique où vendre.
+  <div class="pos__store-choice" *ngIf="context.usableStores().length">
+    <button type="button" class="btn btn--ghost" *ngFor="let s of context.usableStores()" (click)="context.select(s.id)">{{ s.name }}</button>
+  </div>
 </div>
 
 <div class="pos" *ngIf="storeId() && !context.selectedIsBlocked()">
@@ -258,6 +261,7 @@
 <ng-container *ngIf="done() as d">
   <div class="modal-backdrop"></div>
   <div class="modal done" role="dialog" aria-modal="true" aria-labelledby="pos-done-title">
+    <button type="button" class="icon-btn done__close" title="Fermer" aria-label="Fermer" (click)="newSale()"><i class="bi bi-x-lg"></i></button>
     <span class="done__icon" [class.done__icon--credit]="d.balance > 0"><i class="bi" [class.bi-check-lg]="d.balance === 0" [class.bi-hourglass-split]="d.balance > 0"></i></span>
     <h3 id="pos-done-title">{{ d.balance > 0 ? 'Vente enregistrée' : 'Vente encaissée' }}</h3>
     <p class="text-muted">{{ d.sale_number }} · facture {{ d.invoice_number }}</p>

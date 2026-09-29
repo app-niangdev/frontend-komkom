@@ -52,7 +52,7 @@
         </div>
 
         <!-- Suivi par numéro de série / IMEI -->
-        <fieldset class="serial-choice" [disabled]="serialLocked()">
+        <fieldset class="serial-choice" *ngIf="usesSerials()" [disabled]="serialLocked()">
           <legend class="field__label">Suivi par numéro de série / IMEI</legend>
           <label class="serial-option" [class.is-active]="!requireSerial()">
             <input type="radio" name="serial" [checked]="!requireSerial()" (change)="onSerialChange(false)" />
@@ -96,8 +96,9 @@
 
     <!-- Prix et unités de vente -->
     <section class="units">
-      <h4 class="section-title">
-        {{ singleUnit() ? 'Prix de vente' : 'Unités de vente' }}
+      <!-- Boutique sans unités de mesure : le seul champ est le prix, son libellé suffit -->
+      <h4 class="section-title" *ngIf="usesMeasurements()">
+        {{ singleUnit() ? 'Unité et prix' : 'Unités de vente' }}
         <span class="section-title__sub text-muted" *ngIf="!singleUnit()">— le stock est compté dans l'unité de base</span>
       </h4>
 

@@ -116,6 +116,8 @@ export interface OwnerInvoiceDetail extends OwnerInvoice {
     email: string | null;
     logo_url: string | null;
     color: string | null;
+    /** Rouleau de l'imprimante ticket de la boutique (mm). */
+    ticket_width: 58 | 80;
   };
 }
 

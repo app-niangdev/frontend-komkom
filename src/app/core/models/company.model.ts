@@ -60,6 +60,8 @@ export interface Store {
   email: string | null;
   active: boolean;
   uses_measurements: boolean;
+  uses_serial_numbers: boolean;
+  ticket_width: 58 | 80;
   use_company_logo: boolean;
   use_company_colors: boolean;
   primary_color: string | null;
@@ -83,6 +85,8 @@ export interface StorePayload {
   phone_three: string | null;
   email: string | null;
   uses_measurements: boolean;
+  uses_serial_numbers: boolean;
+  ticket_width: 58 | 80;
   use_company_logo: boolean;
   use_company_colors: boolean;
   primary_color: string | null;

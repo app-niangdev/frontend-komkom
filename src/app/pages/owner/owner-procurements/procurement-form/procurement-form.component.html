@@ -18,6 +18,7 @@
     </p>
   </div>
   <button
+    *ngIf="scannerMode() || storeUsesSerials"
     type="button"
     class="btn page-header__cta"
     [class.btn--primary]="!scannerMode()"

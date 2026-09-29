@@ -1,0 +1,98 @@
+@use '../../../../../styles/tokens' as t;
+
+.reset-access__intro {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+}
+
+.reset-access__choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.reset-access__option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid t.$border-color;
+  border-radius: t.$radius-md;
+  cursor: pointer;
+  font-size: 0.86rem;
+
+  input {
+    margin-top: 0.2rem;
+  }
+
+  span {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  small {
+    color: t.$text-secondary;
+    line-height: 1.4;
+  }
+
+  &.is-active {
+    border-color: t.$accent;
+    background: rgba(91, 79, 229, 0.05);
+  }
+}
+
+.alert--success {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.reset-access__credentials {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.9rem;
+  border: 1px dashed t.$border-color;
+  border-radius: t.$radius-md;
+}
+
+.reset-access__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  font-size: 0.86rem;
+
+  > span {
+    min-width: 11rem;
+  }
+
+  code {
+    user-select: all;
+    word-break: break-all;
+  }
+}
+
+.reset-access__password {
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.reset-access__warning {
+  margin: 0;
+  font-size: 0.8rem;
+  color: t.$warning;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}

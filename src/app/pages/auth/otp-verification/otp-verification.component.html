@@ -5,21 +5,24 @@
     Saisissez le code à 6 chiffres envoyé à votre adresse e-mail.
   </p>
 
-  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+  <div class="alert alert--error" *ngIf="errorMessage()" role="alert">{{ errorMessage() }}</div>
 
   <form (ngSubmit)="onSubmit()">
     <div class="otp" (paste)="onPaste($event)">
+      <!-- Boucle sur des positions fixes : les champs ne sont jamais recréés pendant la saisie -->
       <input
-        *ngFor="let digit of digits(); let i = index"
+        *ngFor="let i of positions; trackBy: trackPosition"
         #digitInput
         type="text"
         inputmode="numeric"
-        maxlength="1"
+        [attr.maxlength]="i === 0 ? length : 1"
         class="otp__cell"
-        [value]="digit"
+        [value]="digits()[i]"
+        [attr.aria-label]="'Chiffre ' + (i + 1)"
         (input)="onDigitInput(i, $event)"
         (keydown)="onKeyDown(i, $event)"
-        autocomplete="one-time-code"
+        (focus)="$any($event.target).select()"
+        [attr.autocomplete]="i === 0 ? 'one-time-code' : 'off'"
       />
     </div>
 
@@ -28,7 +31,9 @@
       <span>Ne partagez jamais ce code. Il expire dans quelques minutes.</span>
     </div>
 
-    <button type="submit" class="btn-primary" [disabled]="!isComplete()">Vérifier le code</button>
+    <button type="submit" class="btn-primary" [disabled]="!isComplete() || isSubmitting()">
+      {{ isSubmitting() ? 'Vérification...' : 'Vérifier le code' }}
+    </button>
   </form>
 
   <p class="resend">

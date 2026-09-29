@@ -7,9 +7,8 @@
   </div>
   <!-- Vendeur : consultation seule -->
   <div class="page-header__actions" *ngIf="!context.isSeller()">
-    <a class="btn btn--ghost" [routerLink]="context.base() + '/serials'"><i class="bi bi-upc-scan"></i> IMEI / N° de série</a>
-    <button type="button" class="btn btn--primary" (click)="openCreate()" [disabled]="!context.selectedId()"
-      [title]="context.selectedId() ? '' : 'Choisissez une boutique dans le sélecteur pour ajouter un produit'">
+    <a class="btn btn--ghost" *ngIf="context.usesSerials()" [routerLink]="context.base() + '/serials'"><i class="bi bi-upc-scan"></i> IMEI / N° de série</a>
+    <button type="button" class="btn btn--primary" (click)="openCreate()">
       <i class="bi bi-plus-lg"></i> Nouveau produit
     </button>
   </div>

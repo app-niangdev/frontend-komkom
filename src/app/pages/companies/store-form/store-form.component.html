@@ -51,6 +51,21 @@
         </label>
       </div>
 
+      <div class="field field--full">
+        <label class="check-field">
+          <input type="checkbox" [(ngModel)]="form.uses_serial_numbers" name="uses_serial_numbers" />
+          Suit les produits par numéro de série (IMEI)
+        </label>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="ticket_width">Imprimante ticket</label>
+        <select id="ticket_width" class="field__input" [(ngModel)]="form.ticket_width" name="ticket_width">
+          <option [ngValue]="80">Rouleau 80 mm</option>
+          <option [ngValue]="58">Rouleau 58 mm</option>
+        </select>
+      </div>
+
       <div class="form-section-title"><i class="bi bi-palette"></i> Identité visuelle</div>
 
       <div class="field field--full">

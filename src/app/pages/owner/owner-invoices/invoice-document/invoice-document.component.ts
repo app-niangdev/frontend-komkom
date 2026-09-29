@@ -6,7 +6,7 @@ import { formatIsoDate } from '../../../../shared/utils/date.util';
 import { PAYMENT_TYPE_LABELS } from '../../owner-labels.util';
 import { printElement } from './print-document.util';
 
-/** Facture A4, ticket de caisse (80 mm) ou reçu d'un paiement. */
+/** Facture A4, ticket de caisse (rouleau 80 ou 58 mm) ou reçu d'un paiement. */
 export type DocumentKind = 'invoice' | 'ticket' | 'receipt';
 
 /**
@@ -49,12 +49,16 @@ export class InvoiceDocumentComponent {
     return { paidBefore, paidAfter, remaining: Math.max(0, this.invoice().amount_total - paidAfter) };
   });
 
+  /** Rouleau de l'imprimante ticket de la boutique (réglage « Mes boutiques »). */
+  protected readonly ticketWidth = computed<58 | 80>(() => (this.invoice().issuer.ticket_width === 58 ? 58 : 80));
+
   protected readonly title = computed(() => {
     const inv = this.invoice();
     return { invoice: `Facture ${inv.number}`, ticket: `Ticket ${inv.sale.number ?? inv.number}`, receipt: `Reçu ${inv.number}` }[this.kind()];
   });
 
   print(): void {
-    printElement(this.root().nativeElement, this.kind() === 'invoice' ? 'a4' : 'ticket', this.title());
+    const format = this.kind() === 'invoice' ? 'a4' : this.ticketWidth() === 58 ? 'ticket58' : 'ticket80';
+    printElement(this.root().nativeElement, format, this.title());
   }
 }

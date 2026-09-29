@@ -9,6 +9,8 @@ export interface OwnerStoreOption {
   active: boolean;
   /** Vente au poids / au volume et unités multiples ; sinon tout se vend à la pièce. */
   uses_measurements: boolean;
+  /** Suivi des produits par numéro de série (IMEI) ; sinon menus et options IMEI masqués. */
+  uses_serial_numbers: boolean;
   subscription: SubscriptionStatus;
 }
 
@@ -18,6 +20,9 @@ export interface OwnerStoreOverview {
   address: string;
   phone_one: string;
   active: boolean;
+  uses_serial_numbers: boolean;
+  /** Rouleau de l'imprimante ticket (mm). */
+  ticket_width: 58 | 80;
   logo_url: string | null;
   primary_color: string | null;
   subscription: SubscriptionStatus;
@@ -311,6 +316,8 @@ export interface TeamMember {
   address: string;
   gender: 'male' | 'female';
   status: boolean;
+  /** Mot de passe fixé par un responsable, pas encore changé par le membre. */
+  must_change_password: boolean;
   role: TeamRole;
   store: { id: number; name: string } | null;
   image_url: string | null;

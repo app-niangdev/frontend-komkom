@@ -4,6 +4,10 @@
   <p class="auth-form__desc">Connectez-vous pour accéder à votre caisse, votre stock et vos ventes.</p>
 
   <div class="alert alert--success" *ngIf="notice()" role="status"><i class="bi bi-check-circle"></i> {{ notice() }}</div>
+  <div class="alert alert--warning" *ngIf="isBlocked()" role="alert" aria-live="polite">
+    <i class="bi bi-hourglass-split"></i>
+    <span>Trop de tentatives de connexion. Veuillez réessayer dans <strong>{{ waitLabel() }}</strong>.</span>
+  </div>
   <div class="alert alert--error" *ngIf="errorMessage()" role="alert">
     <i class="bi bi-exclamation-circle"></i> {{ errorMessage() }}
   </div>
@@ -95,9 +99,9 @@
       <span>Se souvenir de moi</span>
     </label>
 
-    <button type="submit" class="btn-primary" [disabled]="isSubmitting()">
+    <button type="submit" class="btn-primary" [disabled]="isSubmitting() || isBlocked()">
       <span class="spinner" *ngIf="isSubmitting()" aria-hidden="true"></span>
-      {{ isSubmitting() ? 'Connexion en cours…' : 'Se connecter' }}
+      {{ isSubmitting() ? 'Connexion en cours…' : isBlocked() ? 'Réessayer dans ' + waitLabel() : 'Se connecter' }}
     </button>
 
     <p class="auth-form__secure">

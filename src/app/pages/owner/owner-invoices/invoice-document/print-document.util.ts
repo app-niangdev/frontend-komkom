@@ -1,9 +1,15 @@
 /** Format de page du document imprimé. */
-export type PrintFormat = 'a4' | 'ticket';
+export type PrintFormat = 'a4' | 'ticket80' | 'ticket58';
 
+/**
+ * Rouleaux thermiques : 80 mm (zone imprimable ~72 mm) et 58 mm (~48 mm).
+ * En 58 mm la page n'a pas de marge : le document (48 mm) est centré, les pilotes
+ * de ces imprimantes ajoutant souvent leur propre marge.
+ */
 const PAGE_RULES: Record<PrintFormat, string> = {
   a4: '@page { size: A4; margin: 14mm; }',
-  ticket: '@page { size: 80mm auto; margin: 3mm; }'
+  ticket80: '@page { size: 80mm auto; margin: 3mm; }',
+  ticket58: '@page { size: 58mm auto; margin: 0; }'
 };
 
 /**

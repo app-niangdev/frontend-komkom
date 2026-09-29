@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnDestroy, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -12,6 +12,22 @@ import {
 } from '../../../core/auth/subscription-notice.service';
 import { AuthActionResponse, SubscriptionStatus } from '../../../core/models/auth.model';
 
+const BLOCK_STORAGE_KEY = 'login_blocked_until';
+
+/** « 45 s », « 4 min 05 s », « 1 h 02 min » */
+function formatWait(totalSeconds: number): string {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  if (h > 0) {
+    return `${h} h ${String(m).padStart(2, '0')} min`;
+  }
+  if (m > 0) {
+    return `${m} min ${String(s).padStart(2, '0')} s`;
+  }
+  return `${s} s`;
+}
+
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -19,7 +35,7 @@ import { AuthActionResponse, SubscriptionStatus } from '../../../core/models/aut
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })
-export class LoginComponent {
+export class LoginComponent implements OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly otpState = inject(OtpStateService);
   private readonly router = inject(Router);
@@ -37,6 +53,56 @@ export class LoginComponent {
   /** Message transmis par la page précédente (ex. mot de passe modifié). */
   protected readonly notice = signal<string | null>(history.state?.notice ?? null);
 
+  /** Trop de tentatives : secondes d'attente restantes (décompte), 0 = connexion possible. */
+  protected readonly waitSeconds = signal(0);
+  protected readonly isBlocked = computed(() => this.waitSeconds() > 0);
+  protected readonly waitLabel = computed(() => formatWait(this.waitSeconds()));
+  private blockedUntil = 0;
+  private blockTimer?: ReturnType<typeof setInterval>;
+
+  constructor() {
+    // Rechargement de la page pendant un blocage : le décompte reprend
+    try {
+      const saved = Number(sessionStorage.getItem(BLOCK_STORAGE_KEY));
+      if (saved > Date.now()) {
+        this.startBlock(saved);
+      }
+    } catch {
+      // Stockage indisponible : le serveur renverra le délai à la prochaine tentative
+    }
+  }
+
+  ngOnDestroy(): void {
+    clearInterval(this.blockTimer);
+  }
+
+  /** Blocage jusqu'à `until` (timestamp ms) : décompte à la seconde, bouton désactivé. */
+  private startBlock(until: number): void {
+    this.blockedUntil = until;
+    this.errorMessage.set(null);
+    try {
+      sessionStorage.setItem(BLOCK_STORAGE_KEY, String(until));
+    } catch {
+      // ignoré
+    }
+    const tick = () => {
+      const left = Math.max(0, Math.ceil((this.blockedUntil - Date.now()) / 1000));
+      this.waitSeconds.set(left);
+      if (left === 0) {
+        clearInterval(this.blockTimer);
+        try {
+          sessionStorage.removeItem(BLOCK_STORAGE_KEY);
+        } catch {
+          // ignoré
+        }
+        this.notice.set('Vous pouvez de nouveau essayer de vous connecter.');
+      }
+    };
+    clearInterval(this.blockTimer);
+    tick();
+    this.blockTimer = setInterval(tick, 1000);
+  }
+
   statusLabel(status: SubscriptionStatus): string {
     const label = describeStatus(status);
     return label.charAt(0).toUpperCase() + label.slice(1);
@@ -52,7 +118,7 @@ export class LoginComponent {
 
   onSubmit(): void {
     this.email = this.email.trim();
-    if (!this.email || !this.password || this.isSubmitting()) {
+    if (!this.email || !this.password || this.isSubmitting() || this.isBlocked()) {
       return;
     }
 
@@ -97,6 +163,12 @@ export class LoginComponent {
           const body = err.error;
           if (SubscriptionNoticeService.isExpiredError(body)) {
             this.subscriptionNotice.setExpired(body);
+            return;
+          }
+          // Trop de tentatives (blocage de l'IP, ou limite de requêtes) : délai en secondes
+          if (err.status === 429) {
+            const seconds = Number(body?.retry_after ?? err.headers?.get('Retry-After')) || 60;
+            this.startBlock(Date.now() + seconds * 1000);
             return;
           }
           if (body?.code === 'ACCOUNT_DISABLED' || body?.isDisabled) {

@@ -64,6 +64,21 @@
         </li>
       </ul>
 
+      <label class="check-field store-card__setting" title="Désactivé : les menus et options IMEI / N° de série sont masqués pour cette boutique">
+        <input type="checkbox" [checked]="store.uses_serial_numbers" [disabled]="savingId() === store.id"
+          (change)="toggleSerials(store, $any($event.target))" />
+        Suivi par numéro de série (IMEI)
+      </label>
+
+      <label class="store-card__setting store-card__setting--select">
+        <i class="bi bi-printer"></i> Imprimante ticket
+        <select class="field__input" [value]="store.ticket_width" [disabled]="savingId() === store.id"
+          (change)="changeTicketWidth(store, $any($event.target))">
+          <option value="80">Rouleau 80 mm</option>
+          <option value="58">Rouleau 58 mm</option>
+        </select>
+      </label>
+
       <app-storefront-link [storefront]="store.storefront" />
 
       <footer class="store-card__actions">

@@ -5,7 +5,7 @@
     <p class="page-header__desc">Achats auprès de vos fournisseurs : ce qui est reçu, ce qui reste à réceptionner et le détail de chaque livraison.</p>
   </div>
   <div class="page-header__actions">
-    <a class="btn btn--ghost page-header__cta" [routerLink]="context.base() + '/procurements/scan'" title="Saisir les IMEI / n° de série au lecteur code-barres">
+    <a class="btn btn--ghost page-header__cta" *ngIf="context.usesSerials()" [routerLink]="context.base() + '/procurements/scan'" title="Saisir les IMEI / n° de série au lecteur code-barres">
       <i class="bi bi-upc-scan"></i> Par scanner
     </a>
     <a class="btn btn--primary page-header__cta" [routerLink]="context.base() + '/procurements/new'">

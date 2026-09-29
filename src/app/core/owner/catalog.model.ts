@@ -24,6 +24,7 @@ export interface ProductDetail {
   base_unit: string;
   stock: number;
   uses_measurements: boolean;
+  uses_serial_numbers: boolean;
   units: ProductUnit[];
   /** Produits suivis par numéro de série uniquement. */
   serials: { in_stock: number; sold: number } | null;

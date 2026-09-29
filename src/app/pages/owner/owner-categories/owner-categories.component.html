@@ -6,8 +6,7 @@
     <p class="page-header__desc" *ngIf="context.isSeller()">Familles de produits de la boutique ; cliquez sur le nombre de produits pour les voir.</p>
   </div>
   <!-- Vendeur : consultation seule -->
-  <button type="button" class="btn btn--primary page-header__cta" *ngIf="!context.isSeller()" (click)="openCreate()" [disabled]="!context.selectedId()"
-    [title]="context.selectedId() ? '' : 'Choisissez une boutique dans le sélecteur pour ajouter une catégorie'">
+  <button type="button" class="btn btn--primary page-header__cta" *ngIf="!context.isSeller()" (click)="openCreate()">
     <i class="bi bi-plus-lg"></i> Nouvelle catégorie
   </button>
 </div>

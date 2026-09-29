@@ -124,6 +124,14 @@ export class OwnerPosComponent {
       )
       .subscribe((customers) => this.customerResults.set(customers));
 
+    // Propriétaire en « Toutes les boutiques » avec une seule boutique utilisable : on vend là
+    effect(() => {
+      const usable = this.context.usableStores();
+      if (this.context.loaded() && !this.storeId() && usable.length === 1) {
+        untracked(() => this.context.select(usable[0].id));
+      }
+    }, { allowSignalWrites: true });
+
     // Changement de boutique (propriétaire) : nouveau catalogue, panier vidé
     effect(() => {
       const storeId = this.storeId();
@@ -462,6 +470,14 @@ export class OwnerPosComponent {
     const done = this.done();
     if (done) {
       this.router.navigate([this.context.base() + '/invoices'], { queryParams: { open: done.invoice_id } });
+    }
+  }
+
+  /** Échap sur le récapitulatif = fermer (la vente est déjà enregistrée : on repart d'un panier vide). */
+  @HostListener('document:keydown.escape')
+  protected closeDone(): void {
+    if (this.done()) {
+      this.newSale();
     }
   }
 

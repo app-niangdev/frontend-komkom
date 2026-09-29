@@ -35,6 +35,9 @@ export class OtpVerificationComponent implements OnInit, AfterViewInit, OnDestro
   private readonly router = inject(Router);
   private readonly subscriptionNotice = inject(SubscriptionNoticeService);
 
+  protected readonly length = OTP_LENGTH;
+  protected readonly positions = Array.from({ length: OTP_LENGTH }, (_, i) => i);
+  protected readonly trackPosition = (_: number, i: number) => i;
   protected readonly digits = signal<string[]>(Array(OTP_LENGTH).fill(''));
   protected readonly isComplete = computed(() => this.digits().every((d) => d !== ''));
   protected readonly remainingSeconds = signal(RESEND_DELAY_SECONDS);
@@ -75,18 +78,25 @@ export class OtpVerificationComponent implements OnInit, AfterViewInit, OnDestro
 
   onDigitInput(index: number, event: Event): void {
     const input = event.target as HTMLInputElement;
-    const value = input.value.replace(/\D/g, '').slice(-1);
+    const typed = input.value.replace(/\D/g, '');
+
+    // Plusieurs chiffres d'un coup (remplissage automatique du code reçu, saisie rapide) : on les répartit
+    if (typed.length > 1) {
+      this.fillFrom(index, typed);
+      return;
+    }
 
     this.digits.update((current) => {
       const next = [...current];
-      next[index] = value;
+      next[index] = typed;
       return next;
     });
-    input.value = value;
+    input.value = typed;
 
-    if (value && index < OTP_LENGTH - 1) {
+    if (typed && index < OTP_LENGTH - 1) {
       this.focusInput(index + 1);
     }
+    this.submitIfComplete();
   }
 
   onKeyDown(index: number, event: KeyboardEvent): void {
@@ -97,17 +107,30 @@ export class OtpVerificationComponent implements OnInit, AfterViewInit, OnDestro
 
   onPaste(event: ClipboardEvent): void {
     event.preventDefault();
-    const pasted = event.clipboardData?.getData('text').replace(/\D/g, '').slice(0, OTP_LENGTH) ?? '';
-    if (!pasted) {
-      return;
+    const pasted = event.clipboardData?.getData('text').replace(/\D/g, '') ?? '';
+    if (pasted) {
+      this.fillFrom(0, pasted);
     }
-    const next = Array(OTP_LENGTH).fill('');
-    for (let i = 0; i < pasted.length; i++) {
-      next[i] = pasted[i];
+  }
+
+  /** Répartit des chiffres dans les cases à partir de `start`, puis valide si le code est complet. */
+  private fillFrom(start: number, value: string): void {
+    const next = [...this.digits()];
+    const chars = value.slice(0, OTP_LENGTH - start);
+    for (let i = 0; i < chars.length; i++) {
+      next[start + i] = chars[i];
     }
     this.digits.set(next);
     this.syncInputValues(next);
-    this.focusInput(Math.min(pasted.length, OTP_LENGTH - 1));
+    this.focusInput(Math.min(start + chars.length, OTP_LENGTH - 1));
+    this.submitIfComplete();
+  }
+
+  /** Validation automatique dès le 6e chiffre (le bouton reste pour réessayer). */
+  private submitIfComplete(): void {
+    if (this.isComplete() && !this.isSubmitting()) {
+      this.onSubmit();
+    }
   }
 
   onSubmit(): void {
@@ -149,6 +172,11 @@ export class OtpVerificationComponent implements OnInit, AfterViewInit, OnDestro
             return;
           }
           this.errorMessage.set(err.error?.message ?? 'Code de vérification incorrect.');
+          // Code refusé : on vide les cases pour une nouvelle saisie
+          const empty = Array(OTP_LENGTH).fill('');
+          this.digits.set(empty);
+          this.syncInputValues(empty);
+          this.focusInput(0);
         }
       });
   }

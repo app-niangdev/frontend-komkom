@@ -1,4 +1,4 @@
-<div #doc class="doc" [class.doc--a4]="kind() === 'invoice'" [class.doc--ticket]="kind() !== 'invoice'" [style.--doc-accent]="invoice().issuer.color || '#1f2937'">
+<div #doc class="doc" [class.doc--a4]="kind() === 'invoice'" [class.doc--ticket]="kind() !== 'invoice'" [class.doc--ticket-58]="kind() !== 'invoice' && ticketWidth() === 58" [style.--doc-accent]="invoice().issuer.color || '#1f2937'">
   <ng-container *ngIf="invoice() as inv">
     <!-- En-tête : boutique émettrice -->
     <header class="doc__issuer">

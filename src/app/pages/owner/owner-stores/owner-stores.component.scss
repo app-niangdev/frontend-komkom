@@ -117,3 +117,20 @@
     grid-template-columns: 1fr;
   }
 }
+
+.store-card__setting {
+  font-size: 0.84rem;
+}
+
+.store-card__setting--select {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  select {
+    width: auto;
+    margin-left: auto;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.84rem;
+  }
+}

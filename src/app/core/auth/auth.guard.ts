@@ -17,6 +17,10 @@ export const menuChildGuard: CanActivateChildFn = (_route, state) => {
   const router = inject(Router);
 
   const path = state.url.split('?')[0];
+  // Mot de passe temporaire (fixé par un responsable) : le changer avant toute autre page
+  if (authService.currentUser()?.must_change_password && path !== '/profile') {
+    return router.createUrlTree(['/profile']);
+  }
   if (authService.canAccessPath(path)) {
     return true;
   }

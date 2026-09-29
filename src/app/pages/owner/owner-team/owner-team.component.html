@@ -83,6 +83,10 @@
             <span class="badge" [class.badge--success]="m.status" [class.badge--muted]="!m.status">
               {{ m.status ? 'Actif' : 'Désactivé' }}
             </span>
+            <span class="badge badge--state-expiring" *ngIf="m.must_change_password && m.status"
+              title="Mot de passe provisoire : le membre devra le changer à sa prochaine connexion">
+              <i class="bi bi-key"></i> Mot de passe provisoire
+            </span>
           </td>
           <td class="text-right">
             <span class="text-muted" *ngIf="!m.can_manage" title="Consultation seule">
@@ -91,6 +95,9 @@
             <div class="table-actions" *ngIf="m.can_manage">
               <button type="button" class="icon-btn" title="Modifier" [attr.aria-label]="'Modifier ' + m.full_name" (click)="openEdit(m)">
                 <i class="bi bi-pencil"></i>
+              </button>
+              <button type="button" class="icon-btn" title="Réinitialiser l'accès" [attr.aria-label]="'Réinitialiser l\'accès de ' + m.full_name" (click)="resetting.set(m)">
+                <i class="bi bi-key"></i>
               </button>
               <button
                 type="button"
@@ -126,3 +133,5 @@
   (saved)="onSaved($event)"
   (closed)="isFormOpen.set(false)"
 />
+
+<app-reset-access-dialog *ngIf="resetting() as r" [member]="r" (closed)="onResetClosed($event)" />

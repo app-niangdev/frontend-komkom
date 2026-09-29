@@ -72,8 +72,8 @@ export class OwnerProductsComponent {
     }, { allowSignalWrites: true });
   }
 
-  openCreate(): void {
-    if (this.context.selectedId()) {
+  async openCreate(): Promise<void> {
+    if (await this.context.ensureStore('ajouter ce produit')) {
       this.editing.set({ id: null });
     }
   }

@@ -47,6 +47,8 @@ export class ProfileComponent implements OnInit {
   protected readonly showPasswords = signal(false);
   protected readonly isSavingPassword = signal(false);
   protected readonly passwordError = signal<string | null>(null);
+  /** Mot de passe temporaire donné par un responsable : à changer avant d'utiliser l'application. */
+  protected readonly mustChangePassword = computed(() => !!this.authService.currentUser()?.must_change_password);
 
   protected readonly roleLabel = computed(() => {
     const name = this.profile()?.user.role?.name as RoleName | undefined;

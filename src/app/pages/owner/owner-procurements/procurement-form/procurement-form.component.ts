@@ -142,6 +142,12 @@ export class ProcurementFormComponent implements OnInit {
     return this.context.stores().find((s) => s.id === this.storeId)?.name ?? '';
   }
 
+  /** Le mode scanner ne sert qu'aux numéros de série : proposé seulement si la boutique en utilise. */
+  get storeUsesSerials(): boolean {
+    const store = this.context.stores().find((s) => s.id === this.storeId);
+    return store ? store.uses_serial_numbers : this.context.usesSerials();
+  }
+
   get supplier(): OwnerSupplier | null {
     return this.suppliers().find((s) => s.id === this.supplierId) ?? null;
   }
@@ -218,6 +224,9 @@ export class ProcurementFormComponent implements OnInit {
     this.productSearch = '';
     if (!storeId) {
       return;
+    }
+    if (this.scannerMode() && !this.storeUsesSerials) {
+      this.toggleScannerMode();
     }
     this.loadSuppliers();
     this.ownerService.supplyProducts(storeId, { restock: true }).subscribe({

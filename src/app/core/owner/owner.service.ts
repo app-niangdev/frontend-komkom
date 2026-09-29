@@ -66,6 +66,13 @@ export class OwnerService {
     return this.http.get<{ data: OwnerStoreOption[] }>(`${this.apiUrl}/store-options`).pipe(map((r) => r.data));
   }
 
+  updateStoreSettings(
+    storeId: number,
+    settings: { uses_serial_numbers?: boolean; ticket_width?: 58 | 80 }
+  ): Observable<{ message: string; uses_serial_numbers: boolean; ticket_width: 58 | 80 }> {
+    return this.http.patch<{ message: string; uses_serial_numbers: boolean; ticket_width: 58 | 80 }>(`${this.apiUrl}/stores/${storeId}/settings`, settings);
+  }
+
   stores(start: string, end: string): Observable<OwnerStoreOverview[]> {
     const params = new HttpParams().set('start', start).set('end', end);
     return this.http.get<{ data: OwnerStoreOverview[] }>(`${this.apiUrl}/stores`, { params }).pipe(map((r) => r.data));
@@ -331,6 +338,14 @@ export class OwnerService {
 
   toggleMember(id: number): Observable<{ message: string; data: TeamMember }> {
     return this.http.patch<{ message: string; data: TeamMember }>(`${this.apiUrl}/team/${id}/status`, {});
+  }
+
+  /** « password » : renvoie le mot de passe temporaire (affiché une seule fois) ; « link » : e-mail envoyé. */
+  resetMemberAccess(
+    id: number,
+    method: 'password' | 'link'
+  ): Observable<{ message: string; temporary_password?: string; login?: string }> {
+    return this.http.post<{ message: string; temporary_password?: string; login?: string }>(`${this.apiUrl}/team/${id}/reset-access`, { method });
   }
 
   deleteMember(id: number): Observable<{ message: string }> {

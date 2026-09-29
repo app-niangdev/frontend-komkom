@@ -81,7 +81,12 @@
     </section>
 
     <!-- Mot de passe -->
-    <section class="card profile-card">
+    <section class="card profile-card" [class.profile-card--required]="mustChangePassword()" id="password">
+      <div class="alert alert--warning" *ngIf="mustChangePassword()" role="alert">
+        <i class="bi bi-key"></i>
+        <span><strong>Choisissez votre propre mot de passe.</strong> Vous vous êtes connecté avec un mot de passe provisoire :
+          saisissez-le comme « mot de passe actuel », puis choisissez le vôtre pour accéder à l'application.</span>
+      </div>
       <header class="profile-card__header">
         <h3><i class="bi bi-shield-lock"></i> Mot de passe</h3>
         <p>Après le changement, vous serez déconnecté de tous vos appareils.</p>

@@ -4,8 +4,12 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { LayoutService } from '../layout.service';
 import { NavItem } from '../../models/nav-item.model';
 import { AuthService } from '../../auth/auth.service';
+import { StoreContextService } from '../../owner/store-context.service';
 
 const FALLBACK_ICON = 'bi-dot';
+
+/** Écrans propres aux numéros de série : masqués quand la boutique n'en utilise pas. */
+const SERIAL_ROUTES = [/\/serials$/, /\/procurements\/scan$/];
 
 @Component({
   selector: 'app-sidebar',
@@ -17,9 +21,13 @@ const FALLBACK_ICON = 'bi-dot';
 export class SidebarComponent {
   protected readonly layout = inject(LayoutService);
   private readonly authService = inject(AuthService);
+  private readonly context = inject(StoreContextService);
 
   protected readonly navItems = computed<NavItem[]>(() => {
-    const menus = [...this.authService.menus()].sort((a, b) => a.position - b.position);
+    const usesSerials = this.context.usesSerials();
+    const menus = [...this.authService.menus()]
+      .filter((menu) => usesSerials || !SERIAL_ROUTES.some((pattern) => pattern.test(menu.url)))
+      .sort((a, b) => a.position - b.position);
     return menus.map((menu) => ({
       label: menu.title,
       icon: menu.icon || FALLBACK_ICON,

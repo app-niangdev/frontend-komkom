@@ -78,6 +78,14 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     }
     return this.context.stores().find((s) => s.id === this.storeId())?.uses_measurements ?? true;
   });
+  /** Boutique sans numéros de série : le choix « suivi par IMEI » n'est pas proposé. */
+  protected readonly usesSerials = computed(() => {
+    const product = this.product();
+    if (product) {
+      return product.uses_serial_numbers || product.require_serial_number;
+    }
+    return this.context.stores().find((s) => s.id === this.storeId())?.uses_serial_numbers ?? true;
+  });
   /** Une seule unité (à la pièce) : boutique sans mesures, ou produit suivi par numéro de série. */
   protected readonly singleUnit = computed(() => !this.usesMeasurements() || this.requireSerial());
 

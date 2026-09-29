@@ -182,7 +182,14 @@ export class AuthService {
     // On mémorise l'état « non authentifié » : les guards ne relancent pas /authenticate
     // (sinon boucle infinie /authenticate -> 401 -> /refresh -> échec -> redirection -> ...).
     this.markUnauthenticated();
-    if (!this.router.url.startsWith('/auth')) {
+    // Au premier chargement (lien reçu par e-mail…), router.url vaut encore « / » tant que la
+    // navigation n'est pas terminée : on regarde aussi l'URL visée et celle du navigateur.
+    const targets = [
+      this.router.url,
+      this.router.getCurrentNavigation()?.finalUrl?.toString() ?? '',
+      window.location.pathname
+    ];
+    if (!targets.some((url) => url.startsWith('/auth'))) {
       this.router.navigateByUrl('/auth/login');
     }
   }

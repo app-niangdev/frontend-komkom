@@ -9,13 +9,14 @@ import { TeamMember, TeamRole } from '../../../core/owner/owner.model';
 import { StoreBlockedComponent } from '../../../core/owner/store-blocked/store-blocked.component';
 import { extractErrorMessage } from '../../../shared/utils/http-error.util';
 import { TeamMemberFormComponent } from './team-member-form/team-member-form.component';
+import { ResetAccessDialogComponent } from './reset-access-dialog/reset-access-dialog.component';
 
 const ROLE_LABELS: Record<TeamRole, string> = { Manager: 'Gestionnaire', Seller: 'Vendeur' };
 
 @Component({
   selector: 'app-owner-team',
   standalone: true,
-  imports: [CommonModule, FormsModule, StoreBlockedComponent, TeamMemberFormComponent],
+  imports: [CommonModule, FormsModule, StoreBlockedComponent, TeamMemberFormComponent, ResetAccessDialogComponent],
   templateUrl: './owner-team.component.html',
   styleUrls: ['../../../../styles/_admin-crud.scss', '../../../../styles/_dashboard.scss']
 })
@@ -70,6 +71,16 @@ export class OwnerTeamComponent {
 
   initials(m: TeamMember): string {
     return `${m.first_name.charAt(0)}${m.last_name.charAt(0)}`.toUpperCase();
+  }
+
+  /** Membre dont on réinitialise l'accès (fenêtre ouverte). */
+  protected readonly resetting = signal<TeamMember | null>(null);
+
+  onResetClosed(done: boolean): void {
+    this.resetting.set(null);
+    if (done) {
+      this.load();
+    }
   }
 
   openCreate(): void {

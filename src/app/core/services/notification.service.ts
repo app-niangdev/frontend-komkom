@@ -17,6 +17,13 @@ export interface PromptOptions extends ConfirmOptions {
   requiredMessage?: string;
 }
 
+/** Options d'un choix dans une liste (cf. choose()). */
+export interface ChooseOptions extends ConfirmOptions {
+  /** Valeur → libellé affiché. */
+  choices: Record<string, string>;
+  placeholder?: string;
+}
+
 /**
  * Service de notification basé sur SweetAlert2,
  * configuré aux couleurs et au design de KomKom.
@@ -177,6 +184,34 @@ export class NotificationService {
     });
 
     return result.isConfirmed ? (result.value as string).trim() : null;
+  }
+
+  /**
+   * Fait choisir une valeur dans une liste déroulante.
+   * Résout la valeur choisie, ou `null` si l'utilisateur annule.
+   */
+  async choose(options: ChooseOptions): Promise<string | null> {
+    const result = await Swal.fire({
+      icon: options.icon ?? 'question',
+      title: options.title,
+      text: options.text,
+      input: 'select',
+      inputOptions: options.choices,
+      inputPlaceholder: options.placeholder ?? 'Choisir…',
+      inputAttributes: { 'aria-label': options.title },
+      inputValidator: (value) => (value ? null : 'Faites un choix dans la liste.'),
+      showCancelButton: true,
+      confirmButtonText: options.confirmText ?? 'Continuer',
+      cancelButtonText: options.cancelText ?? 'Annuler',
+      reverseButtons: true,
+      customClass: {
+        ...this.baseClass,
+        confirmButton: 'kk-swal__btn kk-swal__btn--primary'
+      },
+      buttonsStyling: false
+    });
+
+    return result.isConfirmed ? String(result.value) : null;
   }
 
   /** Toast discret en haut à droite (auto-close). */

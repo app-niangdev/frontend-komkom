@@ -81,8 +81,8 @@ export class OwnerCategoriesComponent {
     this.load();
   }
 
-  openCreate(): void {
-    if (!this.context.selectedId()) {
+  async openCreate(): Promise<void> {
+    if (!(await this.context.ensureStore('ajouter cette catégorie'))) {
       return;
     }
     this.formName = '';

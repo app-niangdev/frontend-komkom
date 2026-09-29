@@ -723,6 +723,14 @@
   clip: rect(0 0 0 0);
 }
 
+.pos__store-choice {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
 // ——— Vente enregistrée ———
 .done {
   width: min(440px, calc(100vw - 2rem));
@@ -731,6 +739,12 @@
   h3 {
     margin-top: 0.75rem;
   }
+}
+
+.done__close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
 }
 
 .done__icon {

@@ -18,6 +18,8 @@ export interface AuthUser {
   email: string | null;
   role_id: number;
   status: boolean;
+  /** Mot de passe temporaire : changement imposé avant d'utiliser l'application. */
+  must_change_password?: boolean;
   role: { id: number; name: string };
   phone_number_one?: string | null;
   phone_number_two?: string | null;

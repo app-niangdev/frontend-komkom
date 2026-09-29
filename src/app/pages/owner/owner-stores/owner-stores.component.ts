@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { OwnerService } from '../../../core/owner/owner.service';
 import { StoreContextService } from '../../../core/owner/store-context.service';
+import { NotificationService } from '../../../core/services/notification.service';
 import { OwnerStoreOverview } from '../../../core/owner/owner.model';
 import { PeriodFilterComponent, PeriodRange } from '../../../shared/components/period-filter/period-filter.component';
 import { formatMoney, formatNumber } from '../../../shared/utils/format.util';
@@ -25,6 +26,7 @@ export class OwnerStoresComponent {
   private readonly ownerService = inject(OwnerService);
   private readonly router = inject(Router);
   private readonly context = inject(StoreContextService);
+  private readonly notification = inject(NotificationService);
 
   protected readonly stateLabels = STATE_LABELS;
   protected readonly describeStatus = describeStatus;
@@ -36,6 +38,7 @@ export class OwnerStoresComponent {
   protected readonly range = signal<PeriodRange | null>(null);
   protected readonly isLoading = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
+  protected readonly savingId = signal<number | null>(null);
 
   protected readonly totals = computed(() => {
     const open = this.stores().filter((s) => !this.isBlocked(s));
@@ -59,6 +62,44 @@ export class OwnerStoresComponent {
   open(store: OwnerStoreOverview, page: 'dashboard' | 'sales'): void {
     this.context.select(store.id);
     this.router.navigateByUrl(`/owner/${page}`);
+  }
+
+  /** Active / désactive les numéros de série ; refusé par l'API si des produits en dépendent. */
+  toggleSerials(store: OwnerStoreOverview, input: HTMLInputElement): void {
+    const enabled = input.checked;
+    this.savingId.set(store.id);
+    this.ownerService.updateStoreSettings(store.id, { uses_serial_numbers: enabled }).subscribe({
+      next: (res) => {
+        this.savingId.set(null);
+        this.stores.update((list) => list.map((s) => (s.id === store.id ? { ...s, uses_serial_numbers: enabled } : s)));
+        // Menus et écrans IMEI suivent le nouveau réglage
+        this.context.refresh();
+        this.notification.toast(res.message);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.savingId.set(null);
+        input.checked = !enabled;
+        this.notification.error('Réglage non modifié', extractErrorMessage(err));
+      }
+    });
+  }
+
+  /** Largeur du rouleau de l'imprimante ticket : s'applique aux prochains tickets et reçus imprimés. */
+  changeTicketWidth(store: OwnerStoreOverview, select: HTMLSelectElement): void {
+    const width = Number(select.value) === 58 ? 58 : 80;
+    this.savingId.set(store.id);
+    this.ownerService.updateStoreSettings(store.id, { ticket_width: width }).subscribe({
+      next: (res) => {
+        this.savingId.set(null);
+        this.stores.update((list) => list.map((s) => (s.id === store.id ? { ...s, ticket_width: width } : s)));
+        this.notification.toast(res.message);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.savingId.set(null);
+        select.value = String(store.ticket_width);
+        this.notification.error('Réglage non modifié', extractErrorMessage(err));
+      }
+    });
   }
 
   private load(): void {

@@ -1,5 +1,6 @@
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { AuthService } from '../auth/auth.service';
+import { NotificationService } from '../services/notification.service';
 import { OwnerService } from './owner.service';
 import { OwnerStoreOption } from './owner.model';
 
@@ -17,6 +18,7 @@ const STORAGE_PREFIX = 'owner.selectedStore.';
 export class StoreContextService {
   private readonly authService = inject(AuthService);
   private readonly ownerService = inject(OwnerService);
+  private readonly notification = inject(NotificationService);
 
   private readonly storesSig = signal<OwnerStoreOption[]>([]);
   private readonly selectedIdSig = signal<number | null>(null);
@@ -43,6 +45,24 @@ export class StoreContextService {
     const store = this.selectedStore();
     return !!store && (store.subscription.state === 'expired' || store.subscription.state === 'none');
   });
+
+  /**
+   * Numéros de série (IMEI) en usage : boutique choisie, ou au moins une boutique en « Toutes les boutiques ».
+   * Vrai tant que les boutiques ne sont pas chargées (pas de menu qui clignote).
+   */
+  readonly usesSerials = computed(() => {
+    const store = this.selectedStore();
+    if (store) {
+      return store.uses_serial_numbers;
+    }
+    const stores = this.storesSig();
+    return stores.length === 0 || stores.some((s) => s.uses_serial_numbers);
+  });
+
+  /** Boutiques où l'on peut travailler : actives et avec un abonnement en cours. */
+  readonly usableStores = computed(() =>
+    this.storesSig().filter((s) => s.active && s.subscription.state !== 'expired' && s.subscription.state !== 'none')
+  );
 
   constructor() {
     // Chargement (ou rechargement) des boutiques quand un propriétaire, un gérant ou un vendeur se connecte
@@ -108,6 +128,38 @@ export class StoreContextService {
     } catch {
       // Stockage indisponible (navigation privée) : le choix vaut pour la session en cours
     }
+  }
+
+  /**
+   * Garantit qu'une boutique est choisie avant une création (produit, catégorie…).
+   * En « Toutes les boutiques », la seule boutique utilisable est prise d'office ; s'il y en a
+   * plusieurs, le propriétaire la choisit dans une liste. Le choix met à jour le sélecteur du haut.
+   * Résout `false` si aucune boutique n'est utilisable ou si l'utilisateur annule.
+   */
+  async ensureStore(action: string): Promise<boolean> {
+    if (this.selectedIdSig() !== null) {
+      return true;
+    }
+    const stores = this.usableStores();
+    if (stores.length === 0) {
+      this.notification.info('Aucune boutique disponible', 'Aucune boutique active avec un abonnement en cours.');
+      return false;
+    }
+    if (stores.length === 1) {
+      this.select(stores[0].id);
+      return true;
+    }
+    const choice = await this.notification.choose({
+      title: 'Quelle boutique ?',
+      text: `Choisissez la boutique pour ${action}.`,
+      choices: Object.fromEntries(stores.map((s) => [String(s.id), s.name])),
+      placeholder: 'Boutique…'
+    });
+    if (!choice) {
+      return false;
+    }
+    this.select(Number(choice));
+    return true;
   }
 
   private restoreSelection(userId: number): void {

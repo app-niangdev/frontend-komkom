@@ -1,0 +1,72 @@
+<div class="modal-backdrop" (click)="close()"></div>
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="reset-access-title">
+  <div class="modal__header">
+    <h3 id="reset-access-title">Réinitialiser l'accès</h3>
+    <button type="button" class="icon-btn" title="Fermer" aria-label="Fermer" (click)="close()" [disabled]="isSubmitting()"><i class="bi bi-x-lg"></i></button>
+  </div>
+
+  <!-- 1. Choix de la méthode -->
+  <ng-container *ngIf="!result(); else done">
+    <p class="reset-access__intro">
+      Compte de <strong>{{ member().full_name }}</strong>&nbsp;<span class="text-muted">({{ member().email }})</span>
+    </p>
+
+    <div class="alert alert--error" *ngIf="errorMessage()" role="alert">{{ errorMessage() }}</div>
+
+    <fieldset class="reset-access__choices" [disabled]="isSubmitting()">
+      <legend class="sr-only">Méthode</legend>
+      <label class="reset-access__option" [class.is-active]="method() === 'password'">
+        <input type="radio" name="method" [checked]="method() === 'password'" (change)="method.set('password')" />
+        <span>
+          <strong><i class="bi bi-key"></i> Mot de passe temporaire</strong>
+          <small>Affiché ici une seule fois, à transmettre au membre. Ses sessions ouvertes sont fermées et il devra choisir
+            son propre mot de passe à la prochaine connexion.</small>
+        </span>
+      </label>
+      <label class="reset-access__option" [class.is-active]="method() === 'link'">
+        <input type="radio" name="method" [checked]="method() === 'link'" (change)="method.set('link')" />
+        <span>
+          <strong><i class="bi bi-envelope"></i> Lien par e-mail</strong>
+          <small>Un lien de réinitialisation est envoyé à {{ member().email }}. L'ancien mot de passe reste valable tant que le
+            lien n'est pas utilisé.</small>
+        </span>
+      </label>
+    </fieldset>
+
+    <div class="modal__actions">
+      <button type="button" class="btn btn--ghost" (click)="close()" [disabled]="isSubmitting()">Annuler</button>
+      <button type="button" class="btn btn--primary" (click)="submit()" [disabled]="isSubmitting()">
+        {{ isSubmitting() ? 'Réinitialisation...' : method() === 'password' ? 'Générer le mot de passe' : 'Envoyer le lien' }}
+      </button>
+    </div>
+  </ng-container>
+
+  <!-- 2. Résultat -->
+  <ng-template #done>
+    <ng-container *ngIf="result() as r">
+      <div class="alert alert--success" role="status"><i class="bi bi-check-circle"></i> {{ r.message }}</div>
+
+      <div class="reset-access__credentials" *ngIf="r.temporaryPassword as pwd">
+        <div class="reset-access__row">
+          <span class="text-muted">Identifiant</span>
+          <code>{{ r.login }}</code>
+        </div>
+        <div class="reset-access__row">
+          <span class="text-muted">Mot de passe temporaire</span>
+          <code class="reset-access__password">{{ pwd }}</code>
+          <button type="button" class="btn btn--ghost" (click)="copy(pwd)">
+            <i class="bi" [class.bi-clipboard]="!copied()" [class.bi-clipboard-check]="copied()"></i>
+            {{ copied() ? 'Copié' : 'Copier' }}
+          </button>
+        </div>
+        <p class="reset-access__warning">
+          <i class="bi bi-exclamation-triangle"></i> Notez-le maintenant : il ne sera plus affiché après la fermeture de cette fenêtre.
+        </p>
+      </div>
+
+      <div class="modal__actions">
+        <button type="button" class="btn btn--primary" (click)="close()">Terminé</button>
+      </div>
+    </ng-container>
+  </ng-template>
+</div>
