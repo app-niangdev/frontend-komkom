@@ -58,6 +58,13 @@
         </label>
       </div>
 
+      <div class="field field--full" *ngIf="!saveFn()">
+        <label class="check-field">
+          <input type="checkbox" [(ngModel)]="form.whatsapp_invoices_enabled" name="whatsapp_invoices_enabled" />
+          Envoie la facture et les reçus au client sur WhatsApp (s'il a donné son numéro)
+        </label>
+      </div>
+
       <div class="field">
         <label class="field__label" for="ticket_width">Imprimante ticket</label>
         <select id="ticket_width" class="field__input" [(ngModel)]="form.ticket_width" name="ticket_width">

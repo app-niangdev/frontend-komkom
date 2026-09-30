@@ -790,6 +790,16 @@
   color: t.$danger;
 }
 
+.done__whatsapp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: #15803d;
+}
+
 .done__actions {
   display: flex;
   flex-wrap: wrap;

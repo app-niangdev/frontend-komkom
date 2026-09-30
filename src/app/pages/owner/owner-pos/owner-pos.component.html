@@ -271,6 +271,7 @@
       <div *ngIf="d.balance > 0" class="done__due"><dt>Reste dû</dt><dd>{{ money(d.balance) }}</dd></div>
       <div *ngIf="change() > 0"><dt>Monnaie rendue</dt><dd>{{ money(change()) }}</dd></div>
     </dl>
+    <p *ngIf="d.whatsapp_sent" class="done__whatsapp"><i class="bi bi-whatsapp"></i> La facture est envoyée au client sur WhatsApp.</p>
     <div class="done__actions">
       <button type="button" class="btn btn--ghost" (click)="printTicket()" [disabled]="!doneInvoice()"><i class="bi bi-printer"></i> Imprimer le ticket</button>
       <button type="button" class="btn btn--ghost" (click)="viewInvoice()"><i class="bi bi-receipt"></i> Voir la facture</button>

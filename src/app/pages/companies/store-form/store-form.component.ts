@@ -62,6 +62,7 @@ export class StoreFormComponent implements OnInit, OnDestroy {
       uses_measurements: store?.uses_measurements ?? true,
       uses_serial_numbers: store?.uses_serial_numbers ?? true,
       ticket_width: store?.ticket_width ?? 80,
+      whatsapp_invoices_enabled: store?.whatsapp_invoices_enabled ?? false,
       use_company_logo: store?.use_company_logo ?? true,
       use_company_colors: store?.use_company_colors ?? true,
       primary_color: store?.primary_color ?? company.primary_color ?? '#0d6efd',
@@ -105,6 +106,8 @@ export class StoreFormComponent implements OnInit, OnDestroy {
       uses_measurements: f.uses_measurements,
       uses_serial_numbers: f.uses_serial_numbers,
       ticket_width: f.ticket_width,
+      // Réservé à l'administrateur : jamais envoyé depuis l'espace propriétaire
+      ...(this.saveFn() ? {} : { whatsapp_invoices_enabled: f.whatsapp_invoices_enabled }),
       use_company_logo: f.use_company_logo,
       use_company_colors: f.use_company_colors,
       primary_color: f.use_company_colors ? null : f.primary_color,
