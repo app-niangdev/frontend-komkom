@@ -271,12 +271,17 @@
       <div *ngIf="d.balance > 0" class="done__due"><dt>Reste dû</dt><dd>{{ money(d.balance) }}</dd></div>
       <div *ngIf="change() > 0"><dt>Monnaie rendue</dt><dd>{{ money(change()) }}</dd></div>
     </dl>
-    <p *ngIf="d.whatsapp_sent" class="done__whatsapp"><i class="bi bi-whatsapp"></i> La facture est envoyée au client sur WhatsApp.</p>
     <div class="done__actions">
       <button type="button" class="btn btn--ghost" (click)="printTicket()" [disabled]="!doneInvoice()"><i class="bi bi-printer"></i> Imprimer le ticket</button>
       <button type="button" class="btn btn--ghost" (click)="viewInvoice()"><i class="bi bi-receipt"></i> Voir la facture</button>
+      <button *ngIf="d.whatsapp_available" type="button" class="btn btn--whatsapp" (click)="sendWhatsapp()"
+        [disabled]="whatsappState() === 'sending' || whatsappState() === 'sent'">
+        <i class="bi" [class.bi-whatsapp]="whatsappState() !== 'sent'" [class.bi-check2-all]="whatsappState() === 'sent'"></i>
+        {{ whatsappState() === 'sending' ? 'Envoi…' : whatsappState() === 'sent' ? 'Envoyée sur WhatsApp' : whatsappState() === 'error' ? 'Réessayer WhatsApp' : 'Envoyer WhatsApp' }}
+      </button>
       <button type="button" class="btn btn--primary" (click)="newSale()" autofocus><i class="bi bi-plus-lg"></i> Nouvelle vente</button>
     </div>
+    <p *ngIf="whatsappError()" class="done__whatsapp-error" role="alert">{{ whatsappError() }}</p>
   </div>
   <app-invoice-document *ngIf="doneInvoice() as inv" [invoice]="inv" [currency]="currency()" kind="ticket" />
 </ng-container>

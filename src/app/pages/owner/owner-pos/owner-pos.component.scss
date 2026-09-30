@@ -790,14 +790,26 @@
   color: t.$danger;
 }
 
-.done__whatsapp {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  margin: 0 0 1rem;
+.btn--whatsapp {
+  background: #15803d;
+  border-color: #15803d;
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background: #166534;
+    border-color: #166534;
+  }
+
+  &:disabled {
+    opacity: 0.85;
+  }
+}
+
+.done__whatsapp-error {
+  margin: 0.75rem 0 0;
   font-size: 0.85rem;
-  color: #15803d;
+  color: #dc2626;
+  text-align: center;
 }
 
 .done__actions {

@@ -67,8 +67,8 @@ export interface CheckoutResult {
   total_amount: number;
   amount_paid: number;
   balance: number;
-  /** Facture envoyée au client sur WhatsApp (boutique où l'envoi est activé, client avec téléphone). */
-  whatsapp_sent?: boolean;
+  /** Envoi de la facture sur WhatsApp possible (boutique où l'envoi est activé, client avec téléphone). */
+  whatsapp_available?: boolean;
 }
 
 export interface OwnerInvoice {

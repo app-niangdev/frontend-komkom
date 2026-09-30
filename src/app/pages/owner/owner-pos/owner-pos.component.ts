@@ -96,6 +96,9 @@ export class OwnerPosComponent {
   protected readonly submitError = signal<string | null>(null);
   protected readonly done = signal<CheckoutResult | null>(null);
   protected readonly doneInvoice = signal<OwnerInvoiceDetail | null>(null);
+  /** Envoi de la facture sur WhatsApp depuis le récapitulatif : idle → sending → sent (ou error). */
+  protected readonly whatsappState = signal<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  protected readonly whatsappError = signal<string | null>(null);
   private readonly ticketRef = viewChild(InvoiceDocumentComponent);
 
   protected readonly storeId = computed(() => this.context.selectedId());
@@ -473,6 +476,22 @@ export class OwnerPosComponent {
     }
   }
 
+  sendWhatsapp(): void {
+    const done = this.done();
+    if (!done || this.whatsappState() === 'sending' || this.whatsappState() === 'sent') {
+      return;
+    }
+    this.whatsappState.set('sending');
+    this.whatsappError.set(null);
+    this.posService.sendWhatsapp(done.invoice_id).subscribe({
+      next: () => this.whatsappState.set('sent'),
+      error: (err: HttpErrorResponse) => {
+        this.whatsappState.set('error');
+        this.whatsappError.set(extractErrorMessage(err));
+      }
+    });
+  }
+
   /** Échap sur le récapitulatif = fermer (la vente est déjà enregistrée : on repart d'un panier vide). */
   @HostListener('document:keydown.escape')
   protected closeDone(): void {
@@ -484,6 +503,8 @@ export class OwnerPosComponent {
   newSale(): void {
     this.done.set(null);
     this.doneInvoice.set(null);
+    this.whatsappState.set('idle');
+    this.whatsappError.set(null);
     this.resetSale();
   }
 

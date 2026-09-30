@@ -78,6 +78,11 @@ export class PosService {
     return this.http.post<{ message: string }>(`${this.apiUrl}/invoices/${id}/payments`, payload);
   }
 
+  /** Envoi de la facture au client sur WhatsApp. */
+  sendWhatsapp(id: number): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/invoices/${id}/whatsapp`, {});
+  }
+
   payments(query: OwnerPaymentsQuery, perPage = 20): Observable<OwnerPaymentsResponse> {
     const params = this.paymentParams(query).set('page', query.page).set('perPage', perPage);
     return this.http.get<OwnerPaymentsResponse>(`${this.apiUrl}/payments`, { params });
