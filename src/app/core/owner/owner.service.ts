@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../auth/auth.service';
+import { Store, StorePayload } from '../models/company.model';
 import {
   OwnerCategory,
   OwnerCompany,
@@ -64,6 +65,26 @@ export class OwnerService {
 
   storeOptions(): Observable<OwnerStoreOption[]> {
     return this.http.get<{ data: OwnerStoreOption[] }>(`${this.apiUrl}/store-options`).pipe(map((r) => r.data));
+  }
+
+  /** Boutique à modifier (« Mes boutiques ») : mêmes champs que le formulaire boutique de l'administrateur. */
+  storeDetail(storeId: number): Observable<Store> {
+    return this.http.get<{ data: Store }>(`${this.apiUrl}/stores/${storeId}`).pipe(map((r) => r.data));
+  }
+
+  /**
+   * Multipart (logo) : booléens envoyés en 1/0. Un champ vidé part en chaîne vide (null côté API,
+   * pour pouvoir effacer un slogan ou un téléphone) ; sans nouveau logo, le logo actuel est gardé.
+   */
+  updateStore(storeId: number, payload: StorePayload): Observable<{ message: string; data: Store }> {
+    const form = new FormData();
+    Object.entries(payload).forEach(([key, value]) => {
+      if (key === 'company_id' || value === undefined || (key === 'logo' && !value)) {
+        return;
+      }
+      form.set(key, value === null ? '' : typeof value === 'boolean' ? (value ? '1' : '0') : value instanceof File ? value : String(value));
+    });
+    return this.http.post<{ message: string; data: Store }>(`${this.apiUrl}/stores/${storeId}`, form);
   }
 
   updateStoreSettings(

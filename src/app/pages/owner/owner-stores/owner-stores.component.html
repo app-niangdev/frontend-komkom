@@ -34,6 +34,10 @@
       <span class="badge badge--state-{{ store.subscription.state }}" [title]="describeStatus(store.subscription)">
         {{ stateLabels[store.subscription.state] }}
       </span>
+      <button type="button" class="icon-btn" title="Modifier la boutique" [attr.aria-label]="'Modifier ' + store.name"
+        [disabled]="savingId() === store.id" (click)="edit(store)">
+        <i class="bi bi-pencil"></i>
+      </button>
     </header>
 
     <ng-container *ngIf="!isBlocked(store); else blocked">
@@ -99,3 +103,12 @@
     </ng-template>
   </article>
 </div>
+
+<app-store-form
+  *ngIf="editing() as e"
+  [company]="e.company"
+  [store]="e.store"
+  [saveFn]="saveStore"
+  (saved)="onStoreSaved($event)"
+  (closed)="editing.set(null)"
+/>

@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit, inject, input, output, signal } from '@an
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { CompanyService } from '../../../core/services/company.service';
 import { Company, Store, StorePayload } from '../../../core/models/company.model';
 import { extractErrorMessage } from '../../../shared/utils/http-error.util';
@@ -11,7 +12,16 @@ type StoreFormState = Omit<StorePayload, 'company_id' | 'logo' | 'primary_color'
   secondary_color: string;
 };
 
-/** Modale de création / modification d'une boutique rattachée à une entreprise. */
+/** Entreprise de rattachement : seuls son nom et ses couleurs (valeurs par défaut) servent au formulaire. */
+export type StoreFormCompany = Pick<Company, 'id' | 'name' | 'primary_color' | 'secondary_color'>;
+
+/** Enregistrement d'une modification ; par défaut, l'API administrateur. */
+export type StoreSaveFn = (storeId: number, payload: StorePayload) => Observable<{ message: string }>;
+
+/**
+ * Modale de création / modification d'une boutique rattachée à une entreprise.
+ * Partagée par l'administrateur (Entreprises) et le propriétaire (« Mes boutiques », via `saveFn`).
+ */
 @Component({
   selector: 'app-store-form',
   standalone: true,
@@ -22,9 +32,10 @@ type StoreFormState = Omit<StorePayload, 'company_id' | 'logo' | 'primary_color'
 export class StoreFormComponent implements OnInit, OnDestroy {
   private readonly companyService = inject(CompanyService);
 
-  readonly company = input.required<Company>();
+  readonly company = input.required<StoreFormCompany>();
   /** Boutique à modifier, ou null pour une création. */
   readonly store = input<Store | null>(null);
+  readonly saveFn = input<StoreSaveFn | null>(null);
   readonly saved = output<string>();
   readonly closed = output<void>();
 
@@ -102,8 +113,11 @@ export class StoreFormComponent implements OnInit, OnDestroy {
     };
 
     const store = this.store();
+    const saveFn = this.saveFn();
     const request = store
-      ? this.companyService.updateStore(store.id, payload)
+      ? saveFn
+        ? saveFn(store.id, payload)
+        : this.companyService.updateStore(store.id, payload)
       : this.companyService.createStore(payload);
 
     request.subscribe({

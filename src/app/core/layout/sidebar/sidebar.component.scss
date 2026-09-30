@@ -55,6 +55,9 @@
 }
 
 .sidebar__brand-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: #fff;
   font-weight: 700;
   font-size: 1.05rem;

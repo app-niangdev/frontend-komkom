@@ -23,6 +23,14 @@ export class SidebarComponent {
   private readonly authService = inject(AuthService);
   private readonly context = inject(StoreContextService);
 
+  /** Admin : « Komkom » ; propriétaire, gérant, vendeur : nom abrégé de leur entreprise. */
+  protected readonly brandName = computed(() => {
+    if (this.authService.currentUser()?.role?.name === 'Admin') {
+      return 'Komkom';
+    }
+    return this.authService.company()?.short_name?.trim() || 'Komkom';
+  });
+
   protected readonly navItems = computed<NavItem[]>(() => {
     const usesSerials = this.context.usesSerials();
     const menus = [...this.authService.menus()]

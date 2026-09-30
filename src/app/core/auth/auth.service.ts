@@ -137,6 +137,11 @@ export class AuthService {
     return menus[0]?.url ?? '/dashboard';
   }
 
+  /** Nom abrégé / logo de l'entreprise modifiés (« Mon entreprise ») : la barre latérale suit. */
+  updateCompany(company: { short_name: string; logo_url: string | null }): void {
+    this.companySig.set({ short_name: company.short_name, logo_url: company.logo_url ?? '' });
+  }
+
   /** Met à jour l'utilisateur affiché (navbar, profil) après une modification de son compte. */
   updateCurrentUser(user: AuthUser): void {
     this.currentUserSig.set(user);

@@ -4,6 +4,7 @@ import { FormsModule, NgForm } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { OwnerService } from '../../../core/owner/owner.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { AuthService } from '../../../core/auth/auth.service';
 import { OwnerCompany, OwnerCompanyPayload } from '../../../core/owner/owner.model';
 import { extractErrorMessage } from '../../../shared/utils/http-error.util';
 
@@ -22,6 +23,7 @@ const MAX_LOGO_BYTES = 2 * 1024 * 1024;
 export class OwnerCompanyComponent implements OnInit, OnDestroy {
   private readonly ownerService = inject(OwnerService);
   private readonly notification = inject(NotificationService);
+  private readonly authService = inject(AuthService);
 
   protected readonly company = signal<OwnerCompany | null>(null);
   protected readonly isLoading = signal(true);
@@ -122,6 +124,7 @@ export class OwnerCompanyComponent implements OnInit, OnDestroy {
         next: (res) => {
           this.isSaving.set(false);
           this.apply(res.data);
+          this.authService.updateCompany(res.data);
           form.resetForm(this.form);
           this.notification.toast(res.message, 'success');
         },

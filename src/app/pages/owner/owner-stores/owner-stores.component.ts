@@ -13,12 +13,15 @@ import { extractErrorMessage } from '../../../shared/utils/http-error.util';
 import { describeStatus } from '../../../core/auth/subscription-notice.service';
 import { STATE_LABELS } from '../../admin-subscriptions/subscription-state.util';
 import { StorefrontLinkComponent } from '../../../shared/components/storefront-link/storefront-link.component';
+import { StoreFormComponent, StoreFormCompany, StoreSaveFn } from '../../companies/store-form/store-form.component';
+import { Store } from '../../../core/models/company.model';
+import { forkJoin } from 'rxjs';
 
 /** « Mes boutiques » : chaque boutique de l'entreprise avec ses indicateurs sur la période. */
 @Component({
   selector: 'app-owner-stores',
   standalone: true,
-  imports: [CommonModule, PeriodFilterComponent, StorefrontLinkComponent],
+  imports: [CommonModule, PeriodFilterComponent, StorefrontLinkComponent, StoreFormComponent],
   templateUrl: './owner-stores.component.html',
   styleUrls: ['../../../../styles/_admin-crud.scss', '../../../../styles/_dashboard.scss', './owner-stores.component.scss']
 })
@@ -62,6 +65,32 @@ export class OwnerStoresComponent {
   open(store: OwnerStoreOverview, page: 'dashboard' | 'sales'): void {
     this.context.select(store.id);
     this.router.navigateByUrl(`/owner/${page}`);
+  }
+
+  // --- Modification d'une boutique (formulaire partagé avec l'administrateur)
+  protected readonly editing = signal<{ store: Store; company: StoreFormCompany } | null>(null);
+  protected readonly saveStore: StoreSaveFn = (id, payload) => this.ownerService.updateStore(id, payload);
+
+  edit(store: OwnerStoreOverview): void {
+    this.savingId.set(store.id);
+    forkJoin({ detail: this.ownerService.storeDetail(store.id), company: this.ownerService.company() }).subscribe({
+      next: ({ detail, company }) => {
+        this.savingId.set(null);
+        this.editing.set({ store: detail, company });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.savingId.set(null);
+        this.notification.error('Boutique indisponible', extractErrorMessage(err));
+      }
+    });
+  }
+
+  onStoreSaved(message: string): void {
+    this.editing.set(null);
+    this.notification.toast(message, 'success');
+    this.load();
+    // Nom, réglages (numéros de série, unités) : sélecteur du haut et écrans partagés à jour
+    this.context.refresh();
   }
 
   /** Active / désactive les numéros de série ; refusé par l'API si des produits en dépendent. */

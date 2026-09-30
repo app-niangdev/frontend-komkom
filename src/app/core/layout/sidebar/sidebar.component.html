@@ -5,7 +5,7 @@
   [class.is-open]="layout.isMobileSidebarOpen()">
   <div class="sidebar__brand">
     <span class="sidebar__brand-icon"><i class="bi bi-stars"></i></span>
-    <span class="sidebar__brand-name">Komkom</span>
+    <span class="sidebar__brand-name" [title]="brandName()">{{ brandName() }}</span>
   </div>
 
   <nav class="sidebar__nav">
