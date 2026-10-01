@@ -68,9 +68,19 @@
           <i class="bi bi-x-circle"></i> Réinitialiser
         </button>
       </div>
-      <button type="button" class="btn btn--primary" (click)="formCustomer.set(null)">
-        <i class="bi bi-person-plus"></i> Nouveau client
-      </button>
+      <div class="toolbar-actions">
+        <button
+          type="button"
+          class="btn btn--whatsapp"
+          *ngIf="canRemind() && (result()?.summary?.debtors ?? 0) > 0"
+          (click)="batchOpen.set(true)"
+        >
+          <i class="bi bi-whatsapp"></i> Relancer les débiteurs
+        </button>
+        <button type="button" class="btn btn--primary" (click)="formCustomer.set(null)">
+          <i class="bi bi-person-plus"></i> Nouveau client
+        </button>
+      </div>
     </div>
   </div>
 
@@ -120,12 +130,26 @@
               <ng-container *ngIf="c.balance_due > 0; else noDue">
                 <span class="due">{{ money(c.balance_due) }}</span>
                 <div class="person__sub">{{ c.open_invoices }} facture(s)</div>
+                <div class="person__sub reminded" *ngIf="c.reminder.last_at">
+                  <i class="bi bi-whatsapp"></i> Relancé le {{ formatIsoDate(c.reminder.last_at) }}
+                </div>
               </ng-container>
               <ng-template #noDue><span class="text-muted">—</span></ng-template>
             </td>
             <td class="text-muted">{{ c.last_purchase_at ? formatIsoDate(c.last_purchase_at) : 'Aucun' }}</td>
             <td class="text-right">
               <div class="table-actions">
+                <button
+                  type="button"
+                  class="icon-btn icon-btn--whatsapp"
+                  *ngIf="canRemind() && c.balance_due > 0"
+                  [disabled]="!!c.reminder.blocker || remindingId() !== null"
+                  [title]="reminderHint(c.reminder)"
+                  [attr.aria-label]="'Relancer ' + c.name + ' sur WhatsApp'"
+                  (click)="askRemind(c)"
+                >
+                  <i class="bi" [class.bi-whatsapp]="remindingId() !== c.id" [class.bi-hourglass-split]="remindingId() === c.id"></i>
+                </button>
                 <button type="button" class="icon-btn icon-btn--primary" title="Fiche client" [attr.aria-label]="'Fiche de ' + c.name" (click)="fileId.set(c.id)">
                   <i class="bi bi-eye"></i>
                 </button>
@@ -164,7 +188,9 @@
   </ng-container>
 </ng-container>
 
-<app-customer-file *ngIf="fileId() as id" [customerId]="id" (edit)="editFromFile()" (closed)="fileId.set(null)" />
+<app-customer-file *ngIf="fileId() as id" [customerId]="id" (edit)="editFromFile()" (reminded)="reload()" (closed)="fileId.set(null)" />
+
+<app-reminder-batch *ngIf="batchOpen()" [storeId]="context.selectedId()" (closed)="onBatchClosed($event)" />
 
 <app-customer-form
   *ngIf="formCustomer() !== undefined"

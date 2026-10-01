@@ -50,7 +50,24 @@
 
     <!-- Factures non soldées -->
     <ng-container *ngIf="f.open_invoices.length > 0">
-      <h4 class="section-title"><i class="bi bi-hourglass-split"></i> Factures non soldées</h4>
+      <div class="section-head">
+        <h4 class="section-title"><i class="bi bi-hourglass-split"></i> Factures non soldées</h4>
+        <div class="remind" *ngIf="!context.isSeller() && f.reminder.blocker !== 'disabled'">
+          <span class="remind__last" *ngIf="f.reminder.last_at"><i class="bi bi-whatsapp"></i> Relancé le {{ formatIsoDate(f.reminder.last_at) }}</span>
+          <button
+            type="button"
+            class="btn btn--sm btn--whatsapp"
+            [disabled]="!!f.reminder.blocker || isReminding()"
+            [title]="reminderHint(f.reminder)"
+            (click)="remind()"
+          >
+            <i class="bi bi-whatsapp"></i> {{ isReminding() ? 'Envoi...' : 'Relancer sur WhatsApp' }}
+          </button>
+        </div>
+      </div>
+      <p class="remind__blocked" *ngIf="!context.isSeller() && f.reminder.blocker === 'no_phone'">
+        <i class="bi bi-exclamation-triangle"></i> Relance impossible : le numéro de téléphone est absent ou invalide.
+      </p>
       <div class="table-card detail-table">
         <table class="table">
           <thead>

@@ -14,6 +14,8 @@ import {
   OwnerCustomer,
   OwnerCustomerFile,
   OwnerCustomersResponse,
+  ReminderResult,
+  ReminderTargetsResponse,
   OwnerDashboard,
   ExpensePayload,
   ExpenseSort,
@@ -187,6 +189,15 @@ export class OwnerService {
 
   deleteCustomer(id: number): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.apiUrl}/customers/${id}`);
+  }
+
+  reminderTargets(storeId: number | null): Observable<ReminderTargetsResponse> {
+    return this.http.get<ReminderTargetsResponse>(`${this.apiUrl}/customers/reminder-targets`, { params: this.scoped(storeId) });
+  }
+
+  /** Relance WhatsApp d'un client débiteur (422 = sans objet, 502 = échec de l'envoi). */
+  remindCustomer(id: number): Observable<ReminderResult> {
+    return this.http.post<ReminderResult>(`${this.apiUrl}/customers/${id}/remind`, {});
   }
 
   expenses(

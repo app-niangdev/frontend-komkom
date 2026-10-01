@@ -1,0 +1,131 @@
+@use '../../../../../styles/tokens' as t;
+
+.modal__header h3 i {
+  color: #15803d;
+}
+
+.batch__lead {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  color: t.$text-primary;
+}
+
+.batch__note {
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+  color: t.$text-secondary;
+}
+
+.batch__list {
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid t.$border-color;
+  border-radius: t.$radius-md;
+
+  li {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem 0.85rem;
+    font-size: 0.85rem;
+    color: t.$text-primary;
+
+    & + li {
+      border-top: 1px solid t.$border-color;
+    }
+  }
+
+  small {
+    margin-left: 0.35rem;
+  }
+}
+
+.batch__reason {
+  font-size: 0.8rem;
+  color: t.$text-secondary;
+  text-align: right;
+}
+
+.batch__excluded {
+  margin-bottom: 0.85rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: t.$radius-md;
+  background: rgba(217, 119, 6, 0.08);
+  font-size: 0.82rem;
+
+  h4 {
+    margin: 0 0 0.25rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: t.$warning;
+  }
+
+  p {
+    margin: 0;
+    color: t.$text-primary;
+  }
+}
+
+.batch__title {
+  margin: 0 0 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: t.$text-primary;
+}
+
+.batch__bar {
+  height: 8px;
+  margin-bottom: 0.75rem;
+  border-radius: 4px;
+  background: t.$page-bg;
+  overflow: hidden;
+
+  span {
+    display: block;
+    height: 100%;
+    background: #15803d;
+    transition: width 0.3s ease;
+  }
+}
+
+.batch__counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.1rem;
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: t.$text-secondary;
+
+  &--final {
+    font-size: 0.92rem;
+    font-weight: 600;
+  }
+}
+
+.is-sent {
+  color: t.$success;
+}
+
+.is-failed {
+  color: t.$danger;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.btn--whatsapp {
+  background: #15803d;
+  border-color: #15803d;
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background: #166534;
+    border-color: #166534;
+  }
+}

@@ -97,6 +97,38 @@
   font-variant-numeric: tabular-nums;
 }
 
+.toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.btn--whatsapp {
+  background: #15803d;
+  border-color: #15803d;
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background: #166534;
+    border-color: #166534;
+  }
+}
+
+.icon-btn--whatsapp:not(:disabled) {
+  color: #15803d;
+
+  &:hover {
+    background: rgba(21, 128, 61, 0.1);
+    color: #15803d;
+    border-color: rgba(21, 128, 61, 0.35);
+  }
+}
+
+.reminded {
+  color: #15803d;
+}
+
 .link-btn {
   margin-left: 0.35rem;
   padding: 0;

@@ -1,0 +1,115 @@
+<div class="modal-backdrop" (click)="close()"></div>
+<div class="modal modal--wide" role="dialog" aria-modal="true" aria-labelledby="reminder-batch-title">
+  <div class="modal__header">
+    <h3 id="reminder-batch-title"><i class="bi bi-whatsapp"></i> Relancer les débiteurs</h3>
+    <button type="button" class="icon-btn" title="Fermer" aria-label="Fermer" (click)="close()" [disabled]="phase() === 'running'">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+
+  <div class="state-message text-center text-muted" *ngIf="phase() === 'loading'">Chargement...</div>
+  <div class="alert alert--error" *ngIf="errorMessage()" role="alert">{{ errorMessage() }}</div>
+
+  <!-- 1. Aperçu -->
+  <ng-container *ngIf="phase() === 'preview' && !errorMessage()">
+    <p class="batch__lead" *ngIf="targets().length > 0; else nothing">
+      <strong>{{ targets().length }} client(s)</strong> vont recevoir un message WhatsApp leur rappelant leur reste dû
+      et leurs factures non soldées, pour un total de <strong>{{ money(targetsTotal()) }}</strong>.
+    </p>
+    <ng-template #nothing>
+      <p class="batch__lead">Aucun client à relancer pour le moment.</p>
+    </ng-template>
+
+    <p class="batch__note" *ngIf="deferred() > 0">
+      <i class="bi bi-info-circle"></i> Les {{ targets().length }} plus gros restes dus partent dans ce lot. Relancez ensuite pour les
+      {{ deferred() }} client(s) suivant(s).
+    </p>
+
+    <ul class="batch__list" *ngIf="targets().length > 0">
+      <li *ngFor="let c of targets()">
+        <span>{{ c.name }} <small class="text-muted">{{ c.phone }}</small></span>
+        <span class="num">{{ money(c.balance_due) }}</span>
+      </li>
+    </ul>
+
+    <div class="batch__excluded" *ngFor="let group of excluded()">
+      <h4><i class="bi bi-slash-circle"></i> {{ group.label }} ({{ group.customers.length }}) — non relancés</h4>
+      <p>
+        <ng-container *ngFor="let c of group.customers; let last = last">{{ c.name }}<ng-container *ngIf="!last">, </ng-container></ng-container>
+      </p>
+      <p class="text-muted" *ngIf="group.blocker === 'no_phone'">Corrigez le numéro dans la fiche du client pour pouvoir le relancer.</p>
+    </div>
+
+    <div class="modal__actions">
+      <button type="button" class="btn btn--ghost" (click)="close()">Annuler</button>
+      <button type="button" class="btn btn--whatsapp" *ngIf="targets().length > 0" (click)="start()">
+        <i class="bi bi-send"></i> Envoyer {{ targets().length }} relance(s)
+      </button>
+    </div>
+  </ng-container>
+
+  <!-- 2. Envoi en cours -->
+  <ng-container *ngIf="phase() === 'running'">
+    <p class="batch__lead" role="status">
+      Envoi {{ processed() }} / {{ queue().length }}
+      <ng-container *ngIf="current() as c"> — {{ c.name }}</ng-container>
+    </p>
+    <div class="batch__bar" role="progressbar" [attr.aria-valuenow]="progress()" aria-valuemin="0" aria-valuemax="100">
+      <span [style.width.%]="progress()"></span>
+    </div>
+    <p class="batch__counts">
+      <span class="is-sent"><i class="bi bi-check-circle"></i> {{ sent().length }} envoyée(s)</span>
+      <span class="is-failed" *ngIf="failed().length > 0"><i class="bi bi-x-circle"></i> {{ failed().length }} échec(s)</span>
+      <span *ngIf="skipped().length > 0"><i class="bi bi-dash-circle"></i> {{ skipped().length }} ignorée(s)</span>
+    </p>
+    <p class="batch__note"><i class="bi bi-info-circle"></i> Gardez cette fenêtre ouverte jusqu'à la fin de l'envoi.</p>
+
+    <div class="modal__actions">
+      <button type="button" class="btn btn--ghost" (click)="stop()">Arrêter</button>
+    </div>
+  </ng-container>
+
+  <!-- 3. Bilan -->
+  <ng-container *ngIf="phase() === 'done'">
+    <div class="alert alert--error" *ngIf="stopReason() as reason" role="alert"><i class="bi bi-exclamation-triangle"></i> {{ reason }}</div>
+
+    <p class="batch__counts batch__counts--final">
+      <span class="is-sent"><i class="bi bi-check-circle"></i> {{ sent().length }} envoyée(s)</span>
+      <span class="is-failed"><i class="bi bi-x-circle"></i> {{ failed().length }} échec(s)</span>
+      <span><i class="bi bi-dash-circle"></i> {{ skipped().length }} ignorée(s)</span>
+      <span *ngIf="notAttempted().length > 0"><i class="bi bi-hourglass"></i> {{ notAttempted().length }} non tentée(s)</span>
+    </p>
+
+    <ng-container *ngIf="failed().length > 0">
+      <h4 class="batch__title is-failed">Relances échouées</h4>
+      <ul class="batch__list">
+        <li *ngFor="let o of failed()">
+          <span>{{ o.customer.name }} <small class="text-muted">{{ o.customer.phone }}</small></span>
+          <span class="batch__reason">{{ o.message }}</span>
+        </li>
+      </ul>
+    </ng-container>
+
+    <ng-container *ngIf="skipped().length > 0">
+      <h4 class="batch__title">Relances ignorées</h4>
+      <ul class="batch__list">
+        <li *ngFor="let o of skipped()">
+          <span>{{ o.customer.name }}</span>
+          <span class="batch__reason">{{ o.message }}</span>
+        </li>
+      </ul>
+    </ng-container>
+
+    <p class="batch__note" *ngIf="notAttempted().length > 0">
+      <i class="bi bi-info-circle"></i> Non tentées :
+      <ng-container *ngFor="let c of notAttempted(); let last = last">{{ c.name }}<ng-container *ngIf="!last">, </ng-container></ng-container>.
+    </p>
+
+    <div class="modal__actions">
+      <button type="button" class="btn btn--ghost" (click)="close()">Fermer</button>
+      <button type="button" class="btn btn--whatsapp" *ngIf="retryable().length > 0" (click)="retry()">
+        <i class="bi bi-arrow-repeat"></i> Réessayer ({{ retryable().length }})
+      </button>
+    </div>
+  </ng-container>
+</div>

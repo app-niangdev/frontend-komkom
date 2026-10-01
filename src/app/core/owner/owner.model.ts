@@ -190,6 +190,37 @@ export interface OwnerCustomer {
   balance_due: number;
   open_invoices: number;
   last_purchase_at: string | null;
+  reminder: CustomerReminderState;
+}
+
+/** Ce qui empêche de relancer un client sur WhatsApp. */
+export type ReminderBlocker = 'disabled' | 'no_phone' | 'no_debt' | 'recent';
+
+export interface CustomerReminderState {
+  /** null = le client peut être relancé maintenant. */
+  blocker: ReminderBlocker | null;
+  /** Dernière relance envoyée (date ISO). */
+  last_at: string | null;
+}
+
+/** Débiteurs du périmètre, du plus gros reste dû au plus petit (GET /customers/reminder-targets). */
+export interface ReminderTargetsResponse {
+  data: OwnerCustomer[];
+  /** Nombre de clients relancés par lot. */
+  batch_size: number;
+  /** Délai minimal entre deux relances d'un même client. */
+  cooldown_hours: number;
+  currency: string;
+}
+
+/** Réponse de POST /customers/{id}/remind (200 envoyée, 422 ignorée, 502 échec). */
+export interface ReminderResult {
+  status: 'sent' | 'skipped' | 'failed';
+  reason: string | null;
+  message: string;
+  /** Le service WhatsApp est en panne : inutile de poursuivre un lot. */
+  fatal: boolean;
+  last_at: string | null;
 }
 
 export type CustomerSegment = 'debtors' | 'buyers' | 'inactive';
@@ -200,6 +231,8 @@ export interface OwnerCustomersResponse {
   meta: PageMeta;
   summary: { customers: number; debtors: number; total_due: number; total_purchases: number; inactive: number };
   currency: string;
+  /** Au moins une boutique du périmètre peut relancer ses clients sur WhatsApp. */
+  reminders_enabled: boolean;
 }
 
 export interface OwnerCustomerInvoice {

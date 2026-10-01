@@ -107,6 +107,54 @@ a.contact__line:hover {
   }
 }
 
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin: 1.2rem 0 0.6rem;
+
+  .section-title {
+    margin: 0;
+  }
+}
+
+.remind {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem 0.75rem;
+}
+
+.remind__last {
+  font-size: 0.78rem;
+  color: #15803d;
+}
+
+.remind__blocked {
+  margin: 0 0 0.6rem;
+  font-size: 0.8rem;
+  color: t.$warning;
+}
+
+.btn--whatsapp {
+  background: #15803d;
+  border-color: #15803d;
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background: #166534;
+    border-color: #166534;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
 .detail-table {
   border: 1px solid t.$border-color;
   border-radius: t.$radius-md;

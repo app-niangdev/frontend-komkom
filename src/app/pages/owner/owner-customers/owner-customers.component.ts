@@ -12,6 +12,8 @@ import { formatIsoDate } from '../../../shared/utils/date.util';
 import { extractErrorMessage } from '../../../shared/utils/http-error.util';
 import { CustomerFormComponent } from './customer-form/customer-form.component';
 import { CustomerFileComponent } from './customer-file/customer-file.component';
+import { ReminderBatchComponent } from './reminder-batch/reminder-batch.component';
+import { reminderHint } from './reminder.util';
 
 const SORT_OPTIONS: { key: CustomerSort; label: string }[] = [
   { key: 'purchases', label: 'Meilleurs clients' },
@@ -23,7 +25,7 @@ const SORT_OPTIONS: { key: CustomerSort; label: string }[] = [
 @Component({
   selector: 'app-owner-customers',
   standalone: true,
-  imports: [CommonModule, FormsModule, StoreBlockedComponent, CustomerFormComponent, CustomerFileComponent],
+  imports: [CommonModule, FormsModule, StoreBlockedComponent, CustomerFormComponent, CustomerFileComponent, ReminderBatchComponent],
   templateUrl: './owner-customers.component.html',
   styleUrls: ['../../../../styles/_admin-crud.scss', '../../../../styles/_dashboard.scss', './owner-customers.component.scss']
 })
@@ -35,6 +37,7 @@ export class OwnerCustomersComponent {
   protected readonly sortOptions = SORT_OPTIONS;
   protected readonly formatNumber = formatNumber;
   protected readonly formatIsoDate = formatIsoDate;
+  protected readonly reminderHint = reminderHint;
 
   protected search = '';
   protected segment: CustomerSegment | '' = '';
@@ -48,6 +51,10 @@ export class OwnerCustomersComponent {
   protected readonly fileId = signal<number | null>(null);
   /** Formulaire : undefined = fermé, null = ajout, client = modification. */
   protected readonly formCustomer = signal<OwnerCustomer | null | undefined>(undefined);
+  /** Relance groupée des débiteurs ouverte. */
+  protected readonly batchOpen = signal(false);
+  /** Client dont la relance est en cours d'envoi. */
+  protected readonly remindingId = signal<number | null>(null);
 
   protected money = (value: number) => formatMoney(value, this.result()?.currency ?? 'XOF');
 
@@ -130,6 +137,51 @@ export class OwnerCustomersComponent {
       },
       error: (err: HttpErrorResponse) => this.notification.toast(extractErrorMessage(err), 'error')
     });
+  }
+
+  /** Relances WhatsApp : propriétaire et gérant, dans les boutiques où l'administrateur les a activées. */
+  canRemind(): boolean {
+    return !!this.result()?.reminders_enabled && !this.context.isSeller();
+  }
+
+  async askRemind(customer: OwnerCustomer): Promise<void> {
+    if (customer.reminder.blocker || this.remindingId() !== null) {
+      return;
+    }
+    const confirmed = await this.notification.confirm({
+      title: `Relancer ${customer.name} ?`,
+      text: `Un message WhatsApp lui rappellera qu'il lui reste ${this.money(customer.balance_due)} à régler, avec ses factures non soldées.`,
+      confirmText: 'Envoyer la relance',
+      cancelText: 'Annuler'
+    });
+    if (!confirmed) {
+      return;
+    }
+
+    this.remindingId.set(customer.id);
+    this.ownerService.remindCustomer(customer.id).subscribe({
+      next: (res) => {
+        this.remindingId.set(null);
+        this.notification.toast(res.message, 'success');
+        this.reload();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.remindingId.set(null);
+        this.notification.error('Relance non envoyée', extractErrorMessage(err));
+        this.reload();
+      }
+    });
+  }
+
+  onBatchClosed(sent: boolean): void {
+    this.batchOpen.set(false);
+    if (sent) {
+      this.reload();
+    }
+  }
+
+  reload(): void {
+    this.load(this.result()?.meta.current_page ?? 1);
   }
 
   load(page: number): void {
