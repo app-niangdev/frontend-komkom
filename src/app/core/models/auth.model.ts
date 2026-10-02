@@ -20,6 +20,8 @@ export interface AuthUser {
   status: boolean;
   /** Mot de passe temporaire : changement imposé avant d'utiliser l'application. */
   must_change_password?: boolean;
+  /** Langue d'affichage enregistrée sur le compte (null : jamais choisie). */
+  locale?: 'fr' | 'ar' | null;
   role: { id: number; name: string };
   phone_number_one?: string | null;
   phone_number_two?: string | null;

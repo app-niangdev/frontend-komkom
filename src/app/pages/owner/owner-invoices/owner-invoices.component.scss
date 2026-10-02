@@ -1,7 +1,7 @@
 @use '../../../../styles/tokens' as t;
 
 .page-header__cta {
-  margin-left: auto;
+  margin-inline-start: auto;
   align-self: center;
   white-space: nowrap;
   text-decoration: none;
@@ -66,6 +66,6 @@
   }
 
   .page-header__cta {
-    margin-left: 0;
+    margin-inline-start: 0;
   }
 }

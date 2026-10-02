@@ -10,7 +10,7 @@ import { PeriodFilterComponent, PeriodRange } from '../../../shared/components/p
 import { formatIsoDate } from '../../../shared/utils/date.util';
 import { formatMoney, formatNumber } from '../../../shared/utils/format.util';
 import { extractErrorMessage } from '../../../shared/utils/http-error.util';
-import { describeStatus } from '../../../core/auth/subscription-notice.service';
+import { SubscriptionNoticeService } from '../../../core/auth/subscription-notice.service';
 import { KpiDelta, kpiDelta } from '../owner-labels.util';
 
 interface KpiTile {
@@ -35,7 +35,7 @@ export class OwnerDashboardComponent {
 
   protected readonly formatIsoDate = formatIsoDate;
   protected readonly formatNumber = formatNumber;
-  protected readonly describeStatus = describeStatus;
+  protected readonly describeStatus = inject(SubscriptionNoticeService).describe;
 
   private readonly range = signal<PeriodRange | null>(null);
   protected readonly data = signal<OwnerDashboard | null>(null);

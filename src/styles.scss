@@ -1,6 +1,9 @@
 /* You can add global styles to this file, and also import other style files */
 @use 'styles/tokens' as t;
 @import 'sweetalert2/dist/sweetalert2.min.css';
+@import '@fontsource/noto-sans-arabic/arabic-400.css';
+@import '@fontsource/noto-sans-arabic/arabic-600.css';
+@import '@fontsource/noto-sans-arabic/arabic-700.css';
 
 * {
   box-sizing: border-box;
@@ -14,7 +17,7 @@ body {
 }
 
 body {
-  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: t.$font-family;
   background: t.$page-bg;
   color: t.$text-primary;
   -webkit-font-smoothing: antialiased;
@@ -52,7 +55,7 @@ body:not(.swal2-toast-shown) .swal2-container.swal2-backdrop-show {
 .kk-swal {
   border-radius: #{t.$radius-lg} !important;
   padding: 22px 22px 18px !important;
-  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  font-family: #{t.$font-family} !important;
   border: 1px solid #{t.$border-color};
   box-shadow: t.$shadow-md !important;
 }
@@ -132,7 +135,7 @@ body:not(.swal2-toast-shown) .swal2-container.swal2-backdrop-show {
 .kk-swal__toast {
   border-radius: 11px !important;
   padding: 10px 14px !important;
-  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  font-family: #{t.$font-family} !important;
   border: 1px solid #{t.$border-color} !important;
   box-shadow: t.$shadow-md !important;
 }
@@ -148,12 +151,47 @@ body:not(.swal2-toast-shown) .swal2-container.swal2-backdrop-show {
   margin: 0.5rem 0 0.9rem;
   padding: 0;
   list-style: none;
-  text-align: left;
+  text-align: start;
 
   li {
     padding: 0.45rem 0.7rem;
     border-radius: 8px;
     background: rgba(217, 119, 6, 0.08);
     margin-bottom: 0.35rem;
+  }
+}
+
+/* ——— Arabe : affichage de droite à gauche ——— */
+html[lang='ar'] {
+  // L'écriture arabe est liée : pas d'espacement entre les lettres
+  * {
+    letter-spacing: 0 !important;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+  }
+}
+
+[dir='rtl'] {
+  // E-mail, téléphone, adresse web : toujours saisis de gauche à droite
+  input[type='email'],
+  input[type='tel'],
+  input[type='url'] {
+    direction: ltr;
+    text-align: right;
+  }
+
+  // Flèches de sens (retour, suivant, pagination) : inversées
+  .bi-chevron-left::before,
+  .bi-chevron-right::before,
+  .bi-arrow-left::before,
+  .bi-arrow-right::before,
+  .bi-box-arrow-right::before,
+  .bi-box-arrow-in-right::before {
+    transform: scaleX(-1);
   }
 }

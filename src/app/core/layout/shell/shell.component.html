@@ -10,8 +10,8 @@
       role="status"
     >
       <i class="bi bi-exclamation-triangle"></i>
-      <span>{{ bannerText(subscriptionNotice.alerts()) }} Pensez à renouveler auprès de votre administrateur.</span>
-      <button type="button" class="subscription-banner__close" aria-label="Masquer" (click)="subscriptionNotice.dismissBanner()">
+      <span>{{ bannerText(subscriptionNotice.alerts()) }} {{ 'subscription.bannerHelp' | transloco }}</span>
+      <button type="button" class="subscription-banner__close" [attr.aria-label]="'common.hide' | transloco" (click)="subscriptionNotice.dismissBanner()">
         <i class="bi bi-x-lg"></i>
       </button>
     </div>

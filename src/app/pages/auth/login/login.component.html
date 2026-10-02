@@ -1,12 +1,12 @@
 <div class="auth-form">
-  <p class="auth-form__eyebrow">Espace KomKom</p>
-  <h2 class="auth-form__title">Bon retour parmi nous</h2>
-  <p class="auth-form__desc">Connectez-vous pour accéder à votre caisse, votre stock et vos ventes.</p>
+  <p class="auth-form__eyebrow">{{ 'auth.login.eyebrow' | transloco }}</p>
+  <h2 class="auth-form__title">{{ 'auth.login.title' | transloco }}</h2>
+  <p class="auth-form__desc">{{ 'auth.login.desc' | transloco }}</p>
 
   <div class="alert alert--success" *ngIf="notice()" role="status"><i class="bi bi-check-circle"></i> {{ notice() }}</div>
   <div class="alert alert--warning" *ngIf="isBlocked()" role="alert" aria-live="polite">
     <i class="bi bi-hourglass-split"></i>
-    <span>Trop de tentatives de connexion. Veuillez réessayer dans <strong>{{ waitLabel() }}</strong>.</span>
+    <span [innerHTML]="'auth.login.blocked' | transloco: { wait: waitLabel() }"></span>
   </div>
   <div class="alert alert--error" *ngIf="errorMessage()" role="alert">
     <i class="bi bi-exclamation-circle"></i> {{ errorMessage() }}
@@ -16,44 +16,44 @@
     <div class="subscription-expired__header">
       <i class="bi bi-calendar-x"></i>
       <div>
-        <strong>{{ expired.message }}</strong>
-        <p>L'accès est suspendu jusqu'au renouvellement de l'abonnement.</p>
+        <strong>{{ expiredTitle(expired.message) }}</strong>
+        <p>{{ 'auth.login.suspendedUntilRenewal' | transloco }}</p>
       </div>
     </div>
 
     <dl class="subscription-expired__item" *ngFor="let sub of expired.subscriptions">
       <div>
-        <dt>Boutique</dt>
+        <dt>{{ 'auth.login.store' | transloco }}</dt>
         <dd>{{ sub.store_name }}<span *ngIf="sub.company_name"> — {{ sub.company_name }}</span></dd>
       </div>
       <div *ngIf="sub.plan">
-        <dt>Formule</dt>
+        <dt>{{ 'auth.login.plan' | transloco }}</dt>
         <dd>{{ sub.plan }}</dd>
       </div>
       <div *ngIf="sub.starts_at && sub.ends_at">
-        <dt>Période</dt>
-        <dd>du {{ formatDate(sub.starts_at) }} au {{ formatDate(sub.ends_at) }}</dd>
+        <dt>{{ 'auth.login.period' | transloco }}</dt>
+        <dd>{{ 'auth.login.periodValue' | transloco: { from: formatDate(sub.starts_at), to: formatDate(sub.ends_at) } }}</dd>
       </div>
       <div>
-        <dt>Statut</dt>
+        <dt>{{ 'auth.login.status' | transloco }}</dt>
         <dd class="subscription-expired__status">{{ statusLabel(sub) }}</dd>
       </div>
     </dl>
 
     <p class="subscription-expired__help">
-      Contactez votre administrateur ou le propriétaire de l'entreprise pour renouveler l'abonnement.
+      {{ 'auth.login.renewHelp' | transloco }}
     </p>
   </div>
 
   <form (ngSubmit)="onSubmit()">
     <div class="field">
-      <label class="field__label" for="email">Adresse e-mail</label>
+      <label class="field__label" for="email">{{ 'auth.login.email' | transloco }}</label>
       <input
         id="email"
         type="email"
         name="email"
         class="field__input"
-        placeholder="vous@entreprise.com"
+        [placeholder]="'auth.login.emailPlaceholder' | transloco"
         [(ngModel)]="email"
         autocomplete="username"
         autofocus
@@ -63,8 +63,8 @@
 
     <div class="field">
       <div class="field__row">
-        <label class="field__label" for="password">Mot de passe</label>
-        <a routerLink="/auth/forgot-password" class="field__link">Mot de passe oublié ?</a>
+        <label class="field__label" for="password">{{ 'auth.login.password' | transloco }}</label>
+        <a routerLink="/auth/forgot-password" class="field__link">{{ 'auth.login.forgot' | transloco }}</a>
       </div>
       <div class="field__password">
         <input
@@ -83,35 +83,40 @@
         <button
           type="button"
           class="field__password-toggle"
-          [attr.aria-label]="isPasswordVisible() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+          [attr.aria-label]="(isPasswordVisible() ? 'auth.login.hidePassword' : 'auth.login.showPassword') | transloco"
           (click)="togglePasswordVisibility()"
         >
           <i class="bi" [class.bi-eye]="!isPasswordVisible()" [class.bi-eye-slash]="isPasswordVisible()"></i>
         </button>
       </div>
       <p class="field__hint field__hint--warning" *ngIf="capsLockOn()">
-        <i class="bi bi-capslock-fill"></i> Verrouillage des majuscules activé
+        <i class="bi bi-capslock-fill"></i> {{ 'auth.login.capsLock' | transloco }}
       </p>
     </div>
 
     <label class="checkbox">
       <input type="checkbox" name="rememberMe" [(ngModel)]="rememberMe" />
-      <span>Se souvenir de moi</span>
+      <span>{{ 'auth.login.remember' | transloco }}</span>
     </label>
 
     <button type="submit" class="btn-primary" [disabled]="isSubmitting() || isBlocked()">
       <span class="spinner" *ngIf="isSubmitting()" aria-hidden="true"></span>
-      {{ isSubmitting() ? 'Connexion en cours…' : isBlocked() ? 'Réessayer dans ' + waitLabel() : 'Se connecter' }}
+      {{
+        isSubmitting()
+          ? ('auth.login.submitting' | transloco)
+          : isBlocked()
+            ? ('auth.login.retryIn' | transloco: { wait: waitLabel() })
+            : ('auth.login.submit' | transloco)
+      }}
     </button>
 
     <p class="auth-form__secure">
       <i class="bi bi-shield-lock"></i>
-      Connexion sécurisée. Un code de vérification peut vous être envoyé par e-mail.
+      {{ 'auth.login.secure' | transloco }}
     </p>
 
     <p class="auth-form__footer">
-      Pas encore de compte ? Votre accès est créé par le propriétaire de votre entreprise
-      ou par l'équipe KomKom.
+      {{ 'auth.login.footer' | transloco }}
     </p>
   </form>
 </div>

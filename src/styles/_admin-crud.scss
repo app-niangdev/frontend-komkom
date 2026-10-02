@@ -211,7 +211,7 @@
   dd {
     margin: 0;
     color: t.$text-primary;
-    text-align: right;
+    text-align: end;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -234,7 +234,7 @@
 }
 
 .text-right {
-  text-align: right;
+  text-align: end;
 }
 
 .badge {
@@ -570,7 +570,7 @@ select.field__input {
   th,
   td {
     padding: 0.85rem 1.25rem;
-    text-align: left;
+    text-align: start;
     font-size: 0.85rem;
     white-space: nowrap;
   }
@@ -599,7 +599,7 @@ select.field__input {
 
 .table th.text-right,
 .table td.text-right {
-  text-align: right;
+  text-align: end;
 }
 
 .table-actions {
@@ -803,13 +803,13 @@ select.field__input {
   }
 
   .btn:first-child {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
   }
 
   .btn:last-child {
-    margin-left: -1px;
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
+    margin-inline-start: -1px;
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
   }
 }

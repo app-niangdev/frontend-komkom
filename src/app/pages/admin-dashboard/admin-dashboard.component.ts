@@ -8,7 +8,7 @@ import { CompanyService } from '../../core/services/company.service';
 import { AdminStats, KpiValue } from '../../core/models/admin-stats.model';
 import { SubscriptionState } from '../../core/models/auth.model';
 import { Company } from '../../core/models/company.model';
-import { describeStatus } from '../../core/auth/subscription-notice.service';
+import { SubscriptionNoticeService } from '../../core/auth/subscription-notice.service';
 import { TimeSeriesChartComponent } from '../../shared/components/time-series-chart/time-series-chart.component';
 import { addDays, formatIsoDate, todayIso } from '../../shared/utils/date.util';
 import { formatCompact, formatMoney, formatNumber } from '../../shared/utils/format.util';
@@ -56,7 +56,7 @@ export class AdminDashboardComponent implements OnInit {
   protected readonly stateLabels = STATE_LABELS;
   protected readonly stateIcons = STATE_ICONS;
   protected readonly stateOrder: SubscriptionState[] = ['active', 'expiring', 'expired', 'none'];
-  protected readonly describeStatus = describeStatus;
+  protected readonly describeStatus = inject(SubscriptionNoticeService).describe;
   protected readonly formatIsoDate = formatIsoDate;
   protected readonly formatNumber = formatNumber;
 

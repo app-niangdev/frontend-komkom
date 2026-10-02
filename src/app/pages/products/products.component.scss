@@ -234,7 +234,7 @@
 }
 
 .text-right {
-  text-align: right;
+  text-align: end;
 }
 
 .icon-btn {
@@ -305,7 +305,7 @@
   &--floating {
     position: absolute;
     top: 0.4rem;
-    right: 0.4rem;
+    inset-inline-end: 0.4rem;
     padding: 0.2rem 0.5rem;
     font-size: 0.65rem;
     background: t.$card-bg;

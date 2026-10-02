@@ -125,7 +125,7 @@
 .navbar__menu {
   position: absolute;
   top: calc(100% + 0.5rem);
-  right: 0;
+  inset-inline-end: 0;
   min-width: 190px;
   background: t.$card-bg;
   border: 1px solid t.$border-color;
@@ -149,7 +149,7 @@
   color: t.$text-secondary;
   text-decoration: none;
   cursor: pointer;
-  text-align: left;
+  text-align: start;
 
   i {
     width: 1rem;

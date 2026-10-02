@@ -1,0 +1,134 @@
+{
+  "common": {
+    "ok": "OK",
+    "close": "Fermer",
+    "understood": "Compris",
+    "confirm": "Confirmer",
+    "cancel": "Annuler",
+    "continue": "Continuer",
+    "choose": "Choisir…",
+    "required": "Ce champ est obligatoire.",
+    "chooseRequired": "Faites un choix dans la liste.",
+    "processing": "Traitement en cours…",
+    "hide": "Masquer"
+  },
+  "language": {
+    "label": "Langue",
+    "switchTo": "Passer en {{name}}",
+    "saveFailed": "La langue n'a pas pu être enregistrée sur votre compte."
+  },
+  "time": {
+    "hoursMinutes": "{{h}} h {{m}} min",
+    "minutesSeconds": "{{m}} min {{s}} s",
+    "seconds": "{{s}} s"
+  },
+  "auth": {
+    "layout": {
+      "eyebrow": "Gestion de stock & de ventes",
+      "titleLine1": "Votre commerce,",
+      "titleLine2": "sous contrôle en temps réel.",
+      "desc": "Encaissez, suivez votre stock boutique par boutique et gardez un œil sur votre chiffre d'affaires, où que vous soyez.",
+      "features": {
+        "posTitle": "Caisse rapide",
+        "posDesc": "Ventes, factures, tickets et paiements partiels en quelques clics.",
+        "stockTitle": "Stock multi-boutiques",
+        "stockDesc": "Approvisionnements, unités de mesure et suivi des IMEI / numéros de série.",
+        "statsTitle": "Pilotage en temps réel",
+        "statsDesc": "Chiffre d'affaires, encaissements, dépenses et rapports PDF.",
+        "rolesTitle": "Accès par rôle",
+        "rolesDesc": "Propriétaire, gérant et vendeur : chacun voit ce qui le concerne."
+      },
+      "copyright": "© {{year}} KomKom. Tous droits réservés."
+    },
+    "login": {
+      "eyebrow": "Espace KomKom",
+      "title": "Bon retour parmi nous",
+      "desc": "Connectez-vous pour accéder à votre caisse, votre stock et vos ventes.",
+      "blocked": "Trop de tentatives de connexion. Veuillez réessayer dans <strong>{{wait}}</strong>.",
+      "expiredTitle": "Votre abonnement a expiré.",
+      "suspendedUntilRenewal": "L'accès est suspendu jusqu'au renouvellement de l'abonnement.",
+      "store": "Boutique",
+      "plan": "Formule",
+      "period": "Période",
+      "periodValue": "du {{from}} au {{to}}",
+      "status": "Statut",
+      "renewHelp": "Contactez votre administrateur ou le propriétaire de l'entreprise pour renouveler l'abonnement.",
+      "email": "Adresse e-mail",
+      "emailPlaceholder": "vous@entreprise.com",
+      "password": "Mot de passe",
+      "forgot": "Mot de passe oublié ?",
+      "showPassword": "Afficher le mot de passe",
+      "hidePassword": "Masquer le mot de passe",
+      "capsLock": "Verrouillage des majuscules activé",
+      "remember": "Se souvenir de moi",
+      "submit": "Se connecter",
+      "submitting": "Connexion en cours…",
+      "retryIn": "Réessayer dans {{wait}}",
+      "secure": "Connexion sécurisée. Un code de vérification peut vous être envoyé par e-mail.",
+      "footer": "Pas encore de compte ? Votre accès est créé par le propriétaire de votre entreprise ou par l'équipe KomKom.",
+      "canRetry": "Vous pouvez de nouveau essayer de vous connecter.",
+      "sessionLoadFailed": "Connexion réussie mais impossible de charger votre session.",
+      "accountSuspended": "Votre compte a été suspendu.",
+      "invalid": "Identifiants incorrects.",
+      "error": "Une erreur est survenue lors de la connexion. Veuillez réessayer.",
+      "attemptsLeft": "{{message}} (tentatives restantes : {{count}})"
+    }
+  },
+  "nav": {
+    "toggle": "Basculer la navigation",
+    "myAccount": "Mon compte",
+    "profile": "Mon profil",
+    "logout": "Déconnexion",
+    "logoutText": "Voulez-vous vraiment vous déconnecter ?",
+    "logoutConfirm": "Se déconnecter",
+    "logoutCancel": "Rester connecté",
+    "loggedOut": "Vous avez été déconnecté."
+  },
+  "page": {
+    "dashboard": "Tableau de bord",
+    "sales": "Ventes",
+    "newSale": "Nouvelle vente",
+    "invoices": "Factures & reçus",
+    "products": "Produits & stock",
+    "payments": "Paiements",
+    "categories": "Catégories",
+    "serials": "IMEI / N° de série",
+    "customers": "Clients",
+    "expenses": "Dépenses",
+    "procurements": "Approvisionnements",
+    "newProcurement": "Nouvel approvisionnement",
+    "scanProcurement": "Approvisionnement par scanner",
+    "editProcurement": "Modifier l'approvisionnement",
+    "suppliers": "Fournisseurs",
+    "team": "Équipe",
+    "stats": "Statistiques",
+    "companies": "Entreprises",
+    "company": "Entreprise",
+    "subscriptions": "Abonnements",
+    "users": "Utilisateurs",
+    "profile": "Mon profil",
+    "stores": "Mes boutiques",
+    "myCompany": "Mon entreprise"
+  },
+  "subscription": {
+    "none": "aucun abonnement",
+    "expired": {
+      "one": "expiré le {{date}} (il y a {{count}} jour)",
+      "other": "expiré le {{date}} (il y a {{count}} jours)"
+    },
+    "expiresToday": "expire aujourd'hui ({{date}})",
+    "expiring": {
+      "one": "expire le {{date}}, dans {{count}} jour",
+      "other": "expire le {{date}}, dans {{count}} jours"
+    },
+    "active": "actif jusqu'au {{date}}",
+    "bannerOne": "Abonnement de « {{store}} » : {{status}}.",
+    "bannerMany": {
+      "other": "{{count}} boutiques ont un abonnement expiré ou proche de l'échéance."
+    },
+    "bannerHelp": "Pensez à renouveler auprès de votre administrateur.",
+    "alertTitleExpiring": "Votre abonnement arrive à échéance",
+    "alertTitle": "Attention à vos abonnements",
+    "alertHelp": "Contactez votre administrateur pour renouveler l'abonnement et éviter toute interruption."
+  }
+}

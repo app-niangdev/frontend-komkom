@@ -5,6 +5,7 @@ import { LayoutService } from '../layout.service';
 import { NavItem } from '../../models/nav-item.model';
 import { AuthService } from '../../auth/auth.service';
 import { StoreContextService } from '../../owner/store-context.service';
+import { LanguageService } from '../../i18n/language.service';
 
 const FALLBACK_ICON = 'bi-dot';
 
@@ -22,6 +23,7 @@ export class SidebarComponent {
   protected readonly layout = inject(LayoutService);
   private readonly authService = inject(AuthService);
   private readonly context = inject(StoreContextService);
+  private readonly language = inject(LanguageService);
 
   /** Admin : « Komkom » ; propriétaire, gérant, vendeur : nom abrégé de leur entreprise. */
   protected readonly brandName = computed(() => {
@@ -37,7 +39,8 @@ export class SidebarComponent {
       .filter((menu) => usesSerials || !SERIAL_ROUTES.some((pattern) => pattern.test(menu.url)))
       .sort((a, b) => a.position - b.position);
     return menus.map((menu) => ({
-      label: menu.title,
+      // Le titre en base est en français ; les autres langues le traduisent par le code du menu
+      label: this.language.tOr(`menu.${menu.code}`, menu.title),
       icon: menu.icon || FALLBACK_ICON,
       route: menu.url,
       // « Ventes » (/sales) ne doit pas rester actif sur « Nouvelle vente » (/sales/new)

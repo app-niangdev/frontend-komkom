@@ -1,7 +1,7 @@
 @use '../../../../styles/tokens' as t;
 
 .page-header__cta {
-  margin-left: auto;
+  margin-inline-start: auto;
   align-self: center;
   white-space: nowrap;
   text-decoration: none;
@@ -82,7 +82,7 @@
   background: t.$card-bg;
   color: t.$text-primary;
   font: inherit;
-  text-align: left;
+  text-align: start;
   cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
 
@@ -129,7 +129,7 @@
 .product__sn {
   position: absolute;
   top: 6px;
-  right: 6px;
+  inset-inline-end: 6px;
   display: inline-flex;
   padding: 0.15rem 0.35rem;
   border-radius: 6px;
@@ -384,11 +384,11 @@
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  margin-left: auto;
+  margin-inline-start: auto;
 
   input {
     width: 84px;
-    text-align: right;
+    text-align: end;
     font-variant-numeric: tabular-nums;
 
     &.is-edited {
@@ -506,7 +506,7 @@
     background: t.$card-bg;
     font: inherit;
     font-size: 0.8rem;
-    text-align: left;
+    text-align: start;
     cursor: pointer;
 
     &:hover {
@@ -622,7 +622,7 @@
     font-size: 0.85rem;
     font-weight: 500;
     color: t.$text-primary;
-    text-align: right;
+    text-align: end;
     font-variant-numeric: tabular-nums;
   }
 }
@@ -744,7 +744,7 @@
 .done__close {
   position: absolute;
   top: 0.75rem;
-  right: 0.75rem;
+  inset-inline-end: 0.75rem;
 }
 
 .done__icon {
@@ -872,7 +872,7 @@
   }
 
   .cart-bar__go {
-    margin-left: auto;
+    margin-inline-start: auto;
     font-weight: 600;
   }
 

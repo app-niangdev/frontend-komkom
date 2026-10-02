@@ -6,28 +6,31 @@
     </div>
 
     <div class="auth__pitch">
-      <p class="auth__pitch-eyebrow">Gestion de stock &amp; de ventes</p>
-      <h1 class="auth__pitch-title">Votre commerce,<br />sous contrôle en temps réel.</h1>
-      <p class="auth__pitch-desc">
-        Encaissez, suivez votre stock boutique par boutique et gardez un œil sur votre chiffre d'affaires,
-        où que vous soyez.
-      </p>
+      <p class="auth__pitch-eyebrow">{{ 'auth.layout.eyebrow' | transloco }}</p>
+      <h1 class="auth__pitch-title">{{ 'auth.layout.titleLine1' | transloco }}<br />{{ 'auth.layout.titleLine2' | transloco }}</h1>
+      <p class="auth__pitch-desc">{{ 'auth.layout.desc' | transloco }}</p>
 
       <ul class="auth__features">
         <li *ngFor="let item of features">
           <span class="auth__features-icon"><i class="bi" [ngClass]="item.icon"></i></span>
           <div>
-            <strong>{{ item.title }}</strong>
-            <p>{{ item.desc }}</p>
+            <strong>{{ item.title | transloco }}</strong>
+            <p>{{ item.desc | transloco }}</p>
           </div>
         </li>
       </ul>
     </div>
 
-    <p class="auth__copyright">© {{ year }} KomKom. Tous droits réservés.</p>
+    <p class="auth__copyright">{{ 'auth.layout.copyright' | transloco: { year: year } }}</p>
   </aside>
 
   <main class="auth__panel">
+    <!-- Autre langue disponible, écrite dans cette langue pour être reconnue sans lire l'interface -->
+    <button type="button" class="auth__lang" [attr.lang]="language.otherLang()" (click)="language.choose(language.otherLang())">
+      <i class="bi bi-translate"></i>
+      <span>{{ langNames[language.otherLang()] }}</span>
+    </button>
+
     <div class="auth__mobile-brand">
       <span class="auth__brand-logo"><i class="bi bi-stars"></i></span>
       <span class="auth__brand-name">KomKom</span>

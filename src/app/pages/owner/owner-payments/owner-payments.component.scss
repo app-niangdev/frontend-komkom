@@ -77,7 +77,7 @@
   flex-direction: column;
   gap: 0.3rem;
   font: inherit;
-  text-align: left;
+  text-align: start;
   color: t.$text-primary;
   cursor: pointer;
 
@@ -142,7 +142,7 @@
   border-radius: t.$radius-md;
   background: none;
   font: inherit;
-  text-align: left;
+  text-align: start;
   color: t.$text-primary;
   cursor: pointer;
 
@@ -193,14 +193,14 @@
   font-size: 0.88rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  text-align: right;
+  text-align: end;
 }
 
 .method__meta {
   grid-area: meta;
   font-size: 0.72rem;
   color: t.$text-muted;
-  text-align: right;
+  text-align: end;
 }
 
 .sub-heading {
@@ -239,7 +239,7 @@
 }
 
 .cashiers__amount {
-  text-align: right;
+  text-align: end;
   font-variant-numeric: tabular-nums;
 }
 

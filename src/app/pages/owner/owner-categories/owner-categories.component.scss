@@ -1,7 +1,7 @@
 @use '../../../../styles/tokens' as t;
 
 .page-header__cta {
-  margin-left: auto;
+  margin-inline-start: auto;
   align-self: center;
   white-space: nowrap;
 }
@@ -134,7 +134,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  margin-right: auto;
+  margin-inline-end: auto;
   color: t.$accent;
   font-weight: 600;
   text-decoration: none;
@@ -228,6 +228,6 @@ textarea.field__input {
   }
 
   .page-header__cta {
-    margin-left: 0;
+    margin-inline-start: 0;
   }
 }

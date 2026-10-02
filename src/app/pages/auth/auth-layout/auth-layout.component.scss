@@ -123,12 +123,41 @@
 }
 
 .auth__panel {
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 2.5rem;
+}
+
+.auth__lang {
+  position: absolute;
+  top: 1.25rem;
+  inset-inline-end: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid t.$border-color;
+  border-radius: t.$radius-md;
+  background: t.$card-bg;
+  color: t.$text-primary;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+
+  i {
+    color: t.$accent;
+  }
+
+  &:hover {
+    border-color: t.$accent;
+    color: t.$accent;
+  }
 }
 
 .auth__mobile-brand {
@@ -151,6 +180,11 @@
   }
 
   .auth__panel {
-    padding: 2rem 1.5rem;
+    padding: 4.5rem 1.5rem 2rem;
+  }
+
+  .auth__lang {
+    top: 1rem;
+    inset-inline-end: 1rem;
   }
 }

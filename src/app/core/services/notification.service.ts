@@ -1,5 +1,6 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import Swal, { SweetAlertIcon, SweetAlertResult } from 'sweetalert2';
+import { LanguageService } from '../i18n/language.service';
 
 export interface ConfirmOptions {
   title: string;
@@ -30,6 +31,8 @@ export interface ChooseOptions extends ConfirmOptions {
  */
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
+  private readonly language = inject(LanguageService);
+
   private readonly brandPrimary = '#5b4fe5';
   private readonly brandAccent = '#d97706';
   private readonly brandDanger = '#dc2626';
@@ -50,7 +53,7 @@ export class NotificationService {
       icon: 'success',
       title,
       text,
-      confirmButtonText: 'OK',
+      confirmButtonText: this.language.t('common.ok'),
       confirmButtonColor: this.brandPrimary,
       iconColor: this.brandSuccess,
       customClass: this.baseClass,
@@ -67,7 +70,7 @@ export class NotificationService {
       icon: 'success',
       title,
       text,
-      confirmButtonText: 'OK',
+      confirmButtonText: this.language.t('common.ok'),
       confirmButtonColor: this.brandPrimary,
       iconColor: this.brandSuccess,
       customClass: this.baseClass,
@@ -82,7 +85,7 @@ export class NotificationService {
       icon: 'error',
       title,
       text,
-      confirmButtonText: 'Fermer',
+      confirmButtonText: this.language.t('common.close'),
       confirmButtonColor: this.brandDanger,
       iconColor: this.brandDanger,
       customClass: this.baseClass,
@@ -95,7 +98,7 @@ export class NotificationService {
       icon: 'warning',
       title,
       text,
-      confirmButtonText: 'Compris',
+      confirmButtonText: this.language.t('common.understood'),
       confirmButtonColor: this.brandAccent,
       iconColor: this.brandAccent,
       customClass: this.baseClass,
@@ -109,7 +112,7 @@ export class NotificationService {
       icon: 'warning',
       title,
       html,
-      confirmButtonText: 'Compris',
+      confirmButtonText: this.language.t('common.understood'),
       confirmButtonColor: this.brandAccent,
       iconColor: this.brandAccent,
       customClass: this.baseClass,
@@ -122,7 +125,7 @@ export class NotificationService {
       icon: 'info',
       title,
       text,
-      confirmButtonText: 'OK',
+      confirmButtonText: this.language.t('common.ok'),
       confirmButtonColor: this.brandPrimary,
       iconColor: this.brandPrimary,
       customClass: this.baseClass,
@@ -138,8 +141,8 @@ export class NotificationService {
       title: options.title,
       text: options.text,
       showCancelButton: true,
-      confirmButtonText: options.confirmText ?? 'Confirmer',
-      cancelButtonText: options.cancelText ?? 'Annuler',
+      confirmButtonText: options.confirmText ?? this.language.t('common.confirm'),
+      cancelButtonText: options.cancelText ?? this.language.t('common.cancel'),
       confirmButtonColor: isDanger ? this.brandDanger : this.brandPrimary,
       reverseButtons: true,
       focusCancel: isDanger,
@@ -168,10 +171,10 @@ export class NotificationService {
       inputPlaceholder: options.placeholder ?? '',
       inputAttributes: { 'aria-label': options.title },
       inputValidator: (value) =>
-        value?.trim() ? null : (options.requiredMessage ?? 'Ce champ est obligatoire.'),
+        value?.trim() ? null : (options.requiredMessage ?? this.language.t('common.required')),
       showCancelButton: true,
-      confirmButtonText: options.confirmText ?? 'Confirmer',
-      cancelButtonText: options.cancelText ?? 'Annuler',
+      confirmButtonText: options.confirmText ?? this.language.t('common.confirm'),
+      cancelButtonText: options.cancelText ?? this.language.t('common.cancel'),
       reverseButtons: true,
       focusCancel: isDanger,
       customClass: {
@@ -197,12 +200,12 @@ export class NotificationService {
       text: options.text,
       input: 'select',
       inputOptions: options.choices,
-      inputPlaceholder: options.placeholder ?? 'Choisir…',
+      inputPlaceholder: options.placeholder ?? this.language.t('common.choose'),
       inputAttributes: { 'aria-label': options.title },
-      inputValidator: (value) => (value ? null : 'Faites un choix dans la liste.'),
+      inputValidator: (value) => (value ? null : this.language.t('common.chooseRequired')),
       showCancelButton: true,
-      confirmButtonText: options.confirmText ?? 'Continuer',
-      cancelButtonText: options.cancelText ?? 'Annuler',
+      confirmButtonText: options.confirmText ?? this.language.t('common.continue'),
+      cancelButtonText: options.cancelText ?? this.language.t('common.cancel'),
       reverseButtons: true,
       customClass: {
         ...this.baseClass,
@@ -231,7 +234,7 @@ export class NotificationService {
   }
 
   /** Affiche un loader (à fermer manuellement avec close()). */
-  loading(title = 'Traitement en cours…'): void {
+  loading(title = this.language.t('common.processing')): void {
     Swal.fire({
       title,
       allowOutsideClick: false,

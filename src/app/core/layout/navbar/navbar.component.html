@@ -1,9 +1,9 @@
 <header class="navbar">
   <div class="navbar__left">
-    <button type="button" class="navbar__toggle" aria-label="Basculer la navigation" (click)="layout.toggleSidebar()">
+    <button type="button" class="navbar__toggle" [attr.aria-label]="'nav.toggle' | transloco" (click)="layout.toggleSidebar()">
       <i class="bi bi-layout-sidebar-inset"></i>
     </button>
-    <h1 class="navbar__title">{{ pageTitle() }}</h1>
+    <h1 class="navbar__title">{{ pageTitle() | transloco }}</h1>
   </div>
 
   <div class="navbar__right">
@@ -13,7 +13,7 @@
     <div class="navbar__profile">
       <button type="button" class="navbar__profile-trigger" (click)="toggleProfileMenu()">
         <span class="navbar__profile-info">
-          <span class="navbar__profile-name">{{ authService.currentUser()?.full_name || 'Mon compte' }}</span>
+          <span class="navbar__profile-name">{{ authService.currentUser()?.full_name || ('nav.myAccount' | transloco) }}</span>
         </span>
         <span class="navbar__avatar">{{ authService.currentUser()?.first_name?.charAt(0) || '' }}{{
           authService.currentUser()?.last_name?.charAt(0) || '' }}</span>
@@ -22,9 +22,12 @@
 
       <div class="navbar__menu" *ngIf="isProfileMenuOpen()">
         <a class="navbar__menu-item" routerLink="/profile" (click)="isProfileMenuOpen.set(false)"><i
-            class="bi bi-person"></i> Mon profil</a>
+            class="bi bi-person"></i> {{ 'nav.profile' | transloco }}</a>
+        <button type="button" class="navbar__menu-item" [attr.lang]="language.otherLang()" (click)="switchLanguage()">
+          <i class="bi bi-translate"></i> {{ langNames[language.otherLang()] }}
+        </button>
         <button type="button" class="navbar__menu-item navbar__menu-item--danger" (click)="logout()">
-          <i class="bi bi-box-arrow-right"></i> Déconnexion
+          <i class="bi bi-box-arrow-right"></i> {{ 'nav.logout' | transloco }}
         </button>
       </div>
     </div>

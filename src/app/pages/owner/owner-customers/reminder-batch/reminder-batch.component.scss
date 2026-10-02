@@ -40,14 +40,14 @@
   }
 
   small {
-    margin-left: 0.35rem;
+    margin-inline-start: 0.35rem;
   }
 }
 
 .batch__reason {
   font-size: 0.8rem;
   color: t.$text-secondary;
-  text-align: right;
+  text-align: end;
 }
 
 .batch__excluded {

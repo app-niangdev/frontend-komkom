@@ -1,4 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { LanguageService } from '../i18n/language.service';
 import { NotificationService } from '../services/notification.service';
 import { SubscriptionExpiredError, SubscriptionStatus } from '../models/auth.model';
 
@@ -10,6 +11,7 @@ import { SubscriptionExpiredError, SubscriptionStatus } from '../models/auth.mod
 @Injectable({ providedIn: 'root' })
 export class SubscriptionNoticeService {
   private readonly notification = inject(NotificationService);
+  private readonly language = inject(LanguageService);
 
   private readonly expiredSig = signal<SubscriptionExpiredError | null>(null);
   private readonly alertsSig = signal<SubscriptionStatus[]>([]);
@@ -51,44 +53,43 @@ export class SubscriptionNoticeService {
       return;
     }
 
-    const title =
+    const title = this.language.t(
       alerts.length === 1 && alerts[0].state === 'expiring'
-        ? 'Votre abonnement arrive à échéance'
-        : 'Attention à vos abonnements';
+        ? 'subscription.alertTitleExpiring'
+        : 'subscription.alertTitle'
+    );
 
     const items = alerts
-      .map((a) => `<li><strong>${escapeHtml(a.store_name)}</strong> : ${escapeHtml(describeStatus(a))}</li>`)
+      .map((a) => `<li><strong>${escapeHtml(a.store_name)}</strong> : ${escapeHtml(this.describe(a))}</li>`)
       .join('');
 
     this.notification.warningHtml(
       title,
       `<ul class="subscription-alert-list">${items}</ul>` +
-        '<p>Contactez votre administrateur pour renouveler l\'abonnement et éviter toute interruption.</p>'
+        `<p>${escapeHtml(this.language.t('subscription.alertHelp'))}</p>`
     );
   }
-}
 
-/** Libellé lisible d'un état d'abonnement. */
-export function describeStatus(status: SubscriptionStatus): string {
-  const end = status.ends_at ? formatDate(status.ends_at) : null;
+  /** Libellé lisible d'un état d'abonnement, dans la langue affichée. */
+  readonly describe = (status: SubscriptionStatus): string => {
+    const date = status.ends_at ? formatDate(status.ends_at) : null;
 
-  switch (status.state) {
-    case 'none':
-      return 'aucun abonnement';
-    case 'expired': {
-      const days = Math.abs(status.days_left ?? 0);
-      return `expiré le ${end} (il y a ${days} jour${days > 1 ? 's' : ''})`;
-    }
-    case 'expiring': {
-      const days = status.days_left ?? 0;
-      if (days === 0) {
-        return `expire aujourd'hui (${end})`;
+    switch (status.state) {
+      case 'none':
+        return this.language.t('subscription.none');
+      case 'expired':
+        return this.language.plural('subscription.expired', Math.abs(status.days_left ?? 0), { date });
+      case 'expiring': {
+        const days = status.days_left ?? 0;
+        if (days === 0) {
+          return this.language.t('subscription.expiresToday', { date });
+        }
+        return this.language.plural('subscription.expiring', days, { date });
       }
-      return `expire le ${end}, dans ${days} jour${days > 1 ? 's' : ''}`;
+      default:
+        return this.language.t('subscription.active', { date });
     }
-    default:
-      return `actif jusqu'au ${end}`;
-  }
+  };
 }
 
 export function formatDate(isoDate: string): string {

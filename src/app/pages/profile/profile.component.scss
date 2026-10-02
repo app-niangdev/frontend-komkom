@@ -49,7 +49,7 @@
   margin: 1.25rem 0 0;
   padding-top: 1rem;
   border-top: 1px solid t.$border-color;
-  text-align: left;
+  text-align: start;
 
   > div {
     display: flex;
@@ -86,7 +86,7 @@
   background: t.$page-bg;
   font-size: 0.76rem;
   color: t.$text-secondary;
-  text-align: left;
+  text-align: start;
 }
 
 // --- Formulaires ------------------------------------------------------------------
@@ -130,7 +130,7 @@
 }
 
 .show-toggle {
-  margin-right: auto;
+  margin-inline-end: auto;
   font-size: 0.82rem;
   color: t.$text-secondary;
 }

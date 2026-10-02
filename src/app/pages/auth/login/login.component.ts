@@ -3,35 +3,22 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { AuthService } from '../../../core/auth/auth.service';
+import { LanguageService } from '../../../core/i18n/language.service';
 import { OtpStateService } from '../../../core/auth/otp-state.service';
 import {
   SubscriptionNoticeService,
-  describeStatus,
   formatDate
 } from '../../../core/auth/subscription-notice.service';
 import { AuthActionResponse, SubscriptionStatus } from '../../../core/models/auth.model';
 
 const BLOCK_STORAGE_KEY = 'login_blocked_until';
 
-/** « 45 s », « 4 min 05 s », « 1 h 02 min » */
-function formatWait(totalSeconds: number): string {
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
-  if (h > 0) {
-    return `${h} h ${String(m).padStart(2, '0')} min`;
-  }
-  if (m > 0) {
-    return `${m} min ${String(s).padStart(2, '0')} s`;
-  }
-  return `${s} s`;
-}
-
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, TranslocoPipe],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })
@@ -39,6 +26,7 @@ export class LoginComponent implements OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly otpState = inject(OtpStateService);
   private readonly router = inject(Router);
+  private readonly language = inject(LanguageService);
   protected readonly subscriptionNotice = inject(SubscriptionNoticeService);
   protected readonly formatDate = formatDate;
 
@@ -56,7 +44,7 @@ export class LoginComponent implements OnDestroy {
   /** Trop de tentatives : secondes d'attente restantes (décompte), 0 = connexion possible. */
   protected readonly waitSeconds = signal(0);
   protected readonly isBlocked = computed(() => this.waitSeconds() > 0);
-  protected readonly waitLabel = computed(() => formatWait(this.waitSeconds()));
+  protected readonly waitLabel = computed(() => this.formatWait(this.waitSeconds()));
   private blockedUntil = 0;
   private blockTimer?: ReturnType<typeof setInterval>;
 
@@ -95,7 +83,7 @@ export class LoginComponent implements OnDestroy {
         } catch {
           // ignoré
         }
-        this.notice.set('Vous pouvez de nouveau essayer de vous connecter.');
+        this.notice.set(this.language.t('auth.login.canRetry'));
       }
     };
     clearInterval(this.blockTimer);
@@ -103,9 +91,33 @@ export class LoginComponent implements OnDestroy {
     this.blockTimer = setInterval(tick, 1000);
   }
 
+  /** « 45 s », « 4 min 05 s », « 1 h 02 min » */
+  private formatWait(totalSeconds: number): string {
+    this.language.lang(); // le décompte suit la langue affichée
+    const h = Math.floor(totalSeconds / 3600);
+    const m = String(Math.floor((totalSeconds % 3600) / 60));
+    const s = String(totalSeconds % 60);
+    if (h > 0) {
+      return this.language.t('time.hoursMinutes', { h, m: m.padStart(2, '0') });
+    }
+    if (m !== '0') {
+      return this.language.t('time.minutesSeconds', { m, s: s.padStart(2, '0') });
+    }
+    return this.language.t('time.seconds', { s });
+  }
+
   statusLabel(status: SubscriptionStatus): string {
-    const label = describeStatus(status);
+    const label = this.subscriptionNotice.describe(status);
     return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+
+  /** Le serveur répond en français : dans une autre langue, on affiche l'équivalent traduit. */
+  expiredTitle(serverMessage: string): string {
+    return this.language.lang() === 'fr' ? serverMessage : this.language.t('auth.login.expiredTitle');
+  }
+
+  private serverMessage(body: { message?: string } | null | undefined, key: string): string {
+    return (this.language.lang() === 'fr' && body?.message) || this.language.t(key);
   }
 
   detectCapsLock(event: KeyboardEvent): void {
@@ -154,7 +166,7 @@ export class LoginComponent implements OnDestroy {
             },
             error: () => {
               this.isSubmitting.set(false);
-              this.errorMessage.set('Connexion réussie mais impossible de charger votre session.');
+              this.errorMessage.set(this.language.t('auth.login.sessionLoadFailed'));
             }
           });
         },
@@ -172,16 +184,21 @@ export class LoginComponent implements OnDestroy {
             return;
           }
           if (body?.code === 'ACCOUNT_DISABLED' || body?.isDisabled) {
-            this.errorMessage.set(body?.message ?? 'Votre compte a été suspendu.');
+            this.errorMessage.set(this.serverMessage(body, 'auth.login.accountSuspended'));
             return;
           }
           if (typeof body?.attempts_left === 'number') {
             this.errorMessage.set(
-              `${body?.message ?? 'Identifiants incorrects.'} (tentatives restantes : ${body.attempts_left})`
+              this.language.t('auth.login.attemptsLeft', {
+                message: this.serverMessage(body, 'auth.login.invalid'),
+                count: body.attempts_left
+              })
             );
             return;
           }
-          this.errorMessage.set(body?.message ?? 'Identifiants incorrects.');
+          this.errorMessage.set(
+            this.serverMessage(body, body?.code === 'INVALID_CREDENTIALS' ? 'auth.login.invalid' : 'auth.login.error')
+          );
         }
       });
   }

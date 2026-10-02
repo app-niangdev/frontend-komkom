@@ -13,7 +13,7 @@
   height: 100vh;
   flex-shrink: 0;
   background: t.$sidebar-bg;
-  border-right: 1px solid t.$sidebar-border;
+  border-inline-end: 1px solid t.$sidebar-border;
   transition: width 0.2s ease;
   overflow: hidden;
   z-index: 20;
@@ -159,12 +159,18 @@
   .sidebar {
     position: fixed;
     top: 0;
-    left: 0;
+    inset-inline-start: 0;
     width: t.$sidebar-width;
     transform: translateX(-100%);
     box-shadow: 8px 0 24px rgba(0, 0, 0, 0.25);
     transition: transform 0.25s ease;
     z-index: 31;
+
+    // Arabe : le panneau glisse depuis la droite
+    :host-context([dir='rtl']) & {
+      transform: translateX(100%);
+      box-shadow: -8px 0 24px rgba(0, 0, 0, 0.25);
+    }
 
     &.is-collapsed {
       width: t.$sidebar-width;
@@ -180,7 +186,8 @@
       }
     }
 
-    &.is-open {
+    &.is-open,
+    :host-context([dir='rtl']) &.is-open {
       transform: translateX(0);
     }
   }

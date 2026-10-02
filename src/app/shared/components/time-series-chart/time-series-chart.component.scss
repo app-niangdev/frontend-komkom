@@ -152,7 +152,7 @@
   td {
     padding: 0.45rem 0.6rem;
     border-bottom: 1px solid t.$border-color;
-    text-align: left;
+    text-align: start;
   }
 
   th {
@@ -166,7 +166,7 @@
   }
 
   .num {
-    text-align: right;
+    text-align: end;
     font-variant-numeric: tabular-nums;
   }
 }

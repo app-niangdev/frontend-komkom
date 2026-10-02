@@ -93,14 +93,14 @@
   position: relative;
 
   .field__input {
-    padding-right: 2.6rem;
+    padding-inline-end: 2.6rem;
   }
 }
 
 .field__password-toggle {
   position: absolute;
   top: 50%;
-  right: 0.7rem;
+  inset-inline-end: 0.7rem;
   transform: translateY(-50%);
   display: inline-flex;
   align-items: center;
@@ -252,7 +252,7 @@
 
   dd {
     margin: 0;
-    text-align: right;
+    text-align: end;
   }
 }
 

@@ -13,6 +13,7 @@ import {
 } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { SubscriptionNoticeService } from './subscription-notice.service';
+import { LanguageService } from '../i18n/language.service';
 import {
   ApiMessageResponse,
   AuthActionResponse,
@@ -28,6 +29,7 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly subscriptionNotice = inject(SubscriptionNoticeService);
+  private readonly language = inject(LanguageService);
 
   private readonly apiUrl = environment.apiUrl;
 
@@ -213,6 +215,7 @@ export class AuthService {
     this.menusSig.set(response.menus ?? []);
     this.authenticatedSig.set(true);
     this.subscriptionNotice.setAlerts(response.subscription_alerts ?? []);
+    this.language.syncWithAccount(response.user.locale);
 
     if (response.company?.short_name) {
       this.companySig.set({
@@ -228,6 +231,7 @@ export class AuthService {
     this.companySig.set(null);
     this.authenticatedSig.set(false);
     this.subscriptionNotice.reset();
+    this.language.unlinkAccount();
   }
 
   private markUnauthenticated(): void {

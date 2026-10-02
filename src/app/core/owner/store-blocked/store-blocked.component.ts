@@ -1,7 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StoreContextService } from '../store-context.service';
-import { describeStatus } from '../../auth/subscription-notice.service';
+import { SubscriptionNoticeService } from '../../auth/subscription-notice.service';
 
 /** Affiché à la place des données quand la boutique choisie n'a plus d'abonnement en cours. */
 @Component({
@@ -74,9 +74,10 @@ import { describeStatus } from '../../auth/subscription-notice.service';
 })
 export class StoreBlockedComponent {
   protected readonly context = inject(StoreContextService);
+  private readonly subscriptionNotice = inject(SubscriptionNoticeService);
 
   protected readonly statusText = computed(() => {
     const store = this.context.selectedStore();
-    return store ? describeStatus(store.subscription) : '';
+    return store ? this.subscriptionNotice.describe(store.subscription) : '';
   });
 }

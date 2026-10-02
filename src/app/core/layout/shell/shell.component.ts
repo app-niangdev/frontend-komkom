@@ -1,7 +1,9 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
-import { SubscriptionNoticeService, describeStatus } from '../../auth/subscription-notice.service';
+import { TranslocoPipe } from '@jsverse/transloco';
+import { SubscriptionNoticeService } from '../../auth/subscription-notice.service';
+import { LanguageService } from '../../i18n/language.service';
 import { SubscriptionStatus } from '../../models/auth.model';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { NavbarComponent } from '../navbar/navbar.component';
@@ -9,18 +11,22 @@ import { NavbarComponent } from '../navbar/navbar.component';
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, SidebarComponent, NavbarComponent],
+  imports: [CommonModule, RouterOutlet, SidebarComponent, NavbarComponent, TranslocoPipe],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss'
 })
 export class ShellComponent {
   protected readonly subscriptionNotice = inject(SubscriptionNoticeService);
+  private readonly language = inject(LanguageService);
 
   protected bannerText(alerts: SubscriptionStatus[]): string {
     if (alerts.length === 1) {
-      return `Abonnement de « ${alerts[0].store_name} » : ${describeStatus(alerts[0])}.`;
+      return this.language.t('subscription.bannerOne', {
+        store: alerts[0].store_name,
+        status: this.subscriptionNotice.describe(alerts[0])
+      });
     }
-    return `${alerts.length} boutiques ont un abonnement expiré ou proche de l'échéance.`;
+    return this.language.plural('subscription.bannerMany', alerts.length);
   }
 
   protected isCritical(alerts: SubscriptionStatus[]): boolean {

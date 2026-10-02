@@ -30,6 +30,9 @@ $success: #16a34a;
 $danger: #dc2626;
 $warning: #d97706;
 
+// Police : les caractères arabes passent par Noto Sans Arabic, le reste par la police système
+$font-family: 'Noto Sans Arabic', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
 // Radius / shadow
 $radius-md: 10px;
 $radius-lg: 14px;

@@ -192,8 +192,8 @@
 }
 
 .stepper-actions__count {
-  margin-right: auto;
-  margin-left: 0.25rem;
+  margin-inline-end: auto;
+  margin-inline-start: 0.25rem;
   font-size: 0.8rem;
   color: t.$text-muted;
 }

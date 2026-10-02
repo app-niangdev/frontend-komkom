@@ -26,7 +26,7 @@
 }
 
 .num {
-  text-align: right;
+  text-align: end;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
@@ -109,7 +109,7 @@
   }
 
   .doc__heading {
-    text-align: right;
+    text-align: end;
 
     h1 {
       font-size: 1.8em;
@@ -154,11 +154,11 @@
       background: var(--doc-accent);
       color: #fff;
       font-size: 0.85em;
-      text-align: left;
+      text-align: start;
     }
 
     th.num {
-      text-align: right;
+      text-align: end;
     }
 
     td {
@@ -272,7 +272,7 @@
 
   .doc__ticket-sub {
     align-self: end;
-    text-align: right;
+    text-align: end;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }

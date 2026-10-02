@@ -10,7 +10,7 @@ import { PeriodFilterComponent, PeriodRange } from '../../../shared/components/p
 import { formatMoney, formatNumber } from '../../../shared/utils/format.util';
 import { formatIsoDate } from '../../../shared/utils/date.util';
 import { extractErrorMessage } from '../../../shared/utils/http-error.util';
-import { describeStatus } from '../../../core/auth/subscription-notice.service';
+import { SubscriptionNoticeService } from '../../../core/auth/subscription-notice.service';
 import { STATE_LABELS } from '../../admin-subscriptions/subscription-state.util';
 import { StorefrontLinkComponent } from '../../../shared/components/storefront-link/storefront-link.component';
 import { StoreFormComponent, StoreFormCompany, StoreSaveFn } from '../../companies/store-form/store-form.component';
@@ -32,7 +32,7 @@ export class OwnerStoresComponent {
   private readonly notification = inject(NotificationService);
 
   protected readonly stateLabels = STATE_LABELS;
-  protected readonly describeStatus = describeStatus;
+  protected readonly describeStatus = inject(SubscriptionNoticeService).describe;
   protected readonly formatNumber = formatNumber;
   protected readonly formatIsoDate = formatIsoDate;
   protected readonly money = (value: number) => formatMoney(value, 'XOF');

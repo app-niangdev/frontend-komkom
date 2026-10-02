@@ -1,7 +1,7 @@
 @use '../../../../styles/tokens' as t;
 
 .page-header__cta {
-  margin-left: auto;
+  margin-inline-start: auto;
   align-self: center;
   white-space: nowrap;
   text-decoration: none;
@@ -20,7 +20,7 @@
   gap: 0.3rem;
   padding: 1rem 1.25rem;
   font: inherit;
-  text-align: left;
+  text-align: start;
   cursor: pointer;
   color: t.$text-primary;
 
