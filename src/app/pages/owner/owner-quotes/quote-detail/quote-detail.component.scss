@@ -1,0 +1,91 @@
+@use '../../../../../styles/tokens' as t;
+
+.status-note {
+  margin-bottom: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid t.$border-color;
+  border-radius: t.$radius-md;
+  background: t.$page-bg;
+  font-size: 0.84rem;
+
+  i {
+    margin-inline-end: 0.3rem;
+  }
+}
+
+.status-note--accepted {
+  border-color: rgba(22, 163, 74, 0.3);
+  background: rgba(22, 163, 74, 0.06);
+  color: #15803d;
+}
+
+.status-note--refused {
+  border-color: rgba(220, 38, 38, 0.25);
+  background: rgba(220, 38, 38, 0.05);
+  color: t.$danger;
+}
+
+.decision {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid rgba(91, 79, 229, 0.3);
+  border-radius: t.$radius-md;
+  background: rgba(91, 79, 229, 0.04);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.btn--accept {
+  background: #15803d;
+  border-color: #15803d;
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background: #166534;
+  }
+}
+
+.btn--whatsapp {
+  background: #15803d;
+  border-color: #15803d;
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background: #166534;
+    border-color: #166534;
+  }
+}
+
+.notes {
+  margin: 0;
+  white-space: pre-line;
+  font-size: 0.86rem;
+}
+
+.whatsapp-hint {
+  margin: 1rem 0 0;
+  font-size: 0.8rem;
+}
+
+.quote-actions {
+  flex-wrap: wrap;
+}
+
+.quote-actions__spacer {
+  flex: 1;
+}
+
+@media (max-width: 575.98px) {
+  .quote-actions .btn {
+    flex: 1 1 calc(50% - 0.75rem);
+    justify-content: center;
+  }
+
+  .quote-actions__spacer {
+    display: none;
+  }
+}

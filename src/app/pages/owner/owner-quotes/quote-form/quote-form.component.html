@@ -1,0 +1,257 @@
+<a class="back-link" [routerLink]="context.base() + '/quotes'"><i class="bi bi-arrow-left"></i> Devis</a>
+
+<div class="page-header card">
+  <span class="page-header__icon"><i class="bi" [class.bi-file-earmark-plus]="!isEdit" [class.bi-pencil-square]="isEdit"></i></span>
+  <div class="page-header__body">
+    <h2 class="page-header__title">{{ isEdit ? 'Modifier le devis ' + (quoteNumber() || '') : 'Nouveau devis' }}</h2>
+    <p class="page-header__desc">
+      Choisissez le client, puis ajoutez des produits de la boutique (nom et prix repris du catalogue, modifiables)
+      ou des lignes libres. Le devis ne touche ni au stock ni aux produits.
+    </p>
+  </div>
+</div>
+
+<div class="alert alert--error" *ngIf="loadError()">
+  {{ loadError() }} <a [routerLink]="context.base() + '/quotes'">Retour à la liste</a>
+</div>
+<div class="state-message text-center text-muted" *ngIf="!isReady() && !loadError()">Chargement...</div>
+
+<div class="supply-form" *ngIf="isReady()">
+  <div class="supply-form__main">
+    <div class="alert alert--error" *ngIf="errorMessage()" role="alert">{{ errorMessage() }}</div>
+
+    <!-- 1. Boutique et client -->
+    <section class="card form-card">
+      <h3 class="form-card__title"><span class="step">1</span> Boutique et client</h3>
+      <div class="form-grid">
+        <div class="field">
+          <label class="field__label" for="qf_store">Boutique *</label>
+          <select id="qf_store" class="field__input" [ngModel]="storeId" (ngModelChange)="changeStore($event)" [disabled]="isEdit" name="store">
+            <option [ngValue]="null" disabled>Choisir une boutique</option>
+            <option *ngFor="let s of stores()" [ngValue]="s.id">{{ s.name }}</option>
+          </select>
+          <span class="form-hint-inline text-muted" *ngIf="isEdit">La boutique d'un devis ne change pas.</span>
+        </div>
+        <div class="field">
+          <span class="field__label" id="qf_customer_label">Client *</span>
+          <div class="segmented" role="radiogroup" aria-labelledby="qf_customer_label">
+            <button type="button" role="radio" [attr.aria-checked]="customerMode === 'existing'" [class.is-active]="customerMode === 'existing'" (click)="setCustomerMode('existing')">Client connu</button>
+            <button type="button" role="radio" [attr.aria-checked]="customerMode === 'new'" [class.is-active]="customerMode === 'new'" (click)="setCustomerMode('new')">Nouveau client</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="customer-pick" *ngIf="customerMode === 'existing'">
+        <div class="search">
+          <i class="bi bi-person-search"></i>
+          <input
+            type="text"
+            placeholder="{{ storeId ? 'Nom ou téléphone du client...' : 'Choisissez d\'abord la boutique' }}"
+            [(ngModel)]="customerSearch"
+            (ngModelChange)="onCustomerSearch()"
+            (focus)="openCustomerSearch()"
+            [disabled]="!storeId"
+            name="customerSearch"
+            autocomplete="off"
+            aria-label="Rechercher un client"
+          />
+        </div>
+        <ul class="customer-results" *ngIf="!customer() && customerResults().length > 0">
+          <li *ngFor="let c of customerResults()">
+            <button type="button" (click)="pickCustomer(c)">
+              <span>{{ c.name }}</span> <span class="text-muted">· {{ c.phone }}</span>
+            </button>
+          </li>
+        </ul>
+        <p class="text-muted small" *ngIf="storeId && !customer() && customerSearch && customerResults().length === 0">
+          Aucun client trouvé. Choisissez « Nouveau client » pour l'ajouter.
+        </p>
+        <p class="customer-chosen" *ngIf="customer() as c">
+          <i class="bi bi-person-check"></i> {{ c.name }}<ng-container *ngIf="c.phone"> · {{ c.phone }}</ng-container>
+        </p>
+      </div>
+
+      <div class="customer-new form-grid" *ngIf="customerMode === 'new'">
+        <div class="field">
+          <label class="field__label" for="qf_new_name">Nom du client *</label>
+          <input id="qf_new_name" class="field__input" type="text" [(ngModel)]="newCustomer.name" (ngModelChange)="markDirty()" name="newName" />
+        </div>
+        <div class="field">
+          <label class="field__label" for="qf_new_phone">Téléphone *</label>
+          <input id="qf_new_phone" class="field__input" type="tel" [(ngModel)]="newCustomer.phone" (ngModelChange)="markDirty()" name="newPhone" placeholder="77 000 00 00" />
+          <span class="form-hint-inline text-muted">Il sera ajouté aux clients de la boutique (sert aussi à l'envoi WhatsApp).</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Lignes -->
+    <section class="card form-card">
+      <div class="form-card__head">
+        <h3 class="form-card__title"><span class="step">2</span> Lignes du devis</h3>
+        <button type="button" class="btn btn--ghost btn--sm" (click)="addFreeLine()"><i class="bi bi-pencil"></i> Ajouter une ligne libre</button>
+      </div>
+
+      <div class="product-picker" [class.is-disabled]="!storeId">
+        <div class="search product-picker__input">
+          <i class="bi bi-search"></i>
+          <input
+            type="text"
+            placeholder="{{ storeId ? 'Rechercher un produit de la boutique...' : 'Choisissez d\'abord la boutique' }}"
+            [(ngModel)]="productSearch"
+            (ngModelChange)="onSearch($event)"
+            (focus)="openSearch()"
+            (blur)="closeSearchSoon()"
+            (keydown)="onSearchKeydown($event)"
+            [disabled]="!storeId"
+            name="productSearch"
+            autocomplete="off"
+            role="combobox"
+            aria-label="Rechercher un produit"
+            aria-controls="quote-product-results"
+            [attr.aria-expanded]="searchOpen()"
+          />
+          <span class="spinner" *ngIf="searching()" aria-hidden="true"></span>
+        </div>
+        <ul class="product-picker__results" id="quote-product-results" role="listbox" *ngIf="searchOpen() && storeId">
+          <li class="product-picker__empty" *ngIf="!searching() && results().length === 0">
+            {{ productSearch ? 'Aucun produit ne correspond : ajoutez une ligne libre.' : 'Tapez le nom d\'un produit.' }}
+          </li>
+          <li
+            *ngFor="let p of results(); let i = index"
+            role="option"
+            class="product-picker__option"
+            [class.is-active]="i === activeResult"
+            [attr.aria-selected]="i === activeResult"
+            (mousedown)="$event.preventDefault()"
+            (click)="addProduct(p)"
+            (mouseenter)="activeResult = i"
+          >
+            <div class="product-picker__name">
+              {{ p.name }}
+              <span class="tag tag--added" *ngIf="isInLines(p.id)"><i class="bi bi-check2"></i> Déjà ajouté</span>
+            </div>
+            <div class="product-picker__meta">
+              <span *ngFor="let u of p.units">{{ money(u.price) }} / {{ u.name }}</span>
+              <span *ngIf="p.category">{{ p.category }}</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="lines-empty" *ngIf="lines.length === 0">
+        <i class="bi bi-file-earmark-text"></i>
+        <p>Aucune ligne pour l'instant. Recherchez un produit ci-dessus ou ajoutez une ligne libre (prestation, article hors catalogue...).</p>
+      </div>
+
+      <ul class="lines" *ngIf="lines.length > 0">
+        <li *ngFor="let line of lines; let i = index; trackBy: trackLine" class="line" [class.is-highlight]="highlight() === line.key">
+          <div class="quote-line__head">
+            <div class="field quote-line__designation">
+              <label class="field__label" [for]="'qd-' + line.key">
+                Désignation *
+                <span class="tag" *ngIf="line.productId"><i class="bi bi-box-seam"></i> Produit</span>
+                <span class="tag" *ngIf="!line.productId"><i class="bi bi-pencil"></i> Ligne libre</span>
+              </label>
+              <input
+                [id]="'qd-' + line.key"
+                class="field__input"
+                type="text"
+                maxlength="255"
+                [(ngModel)]="line.designation"
+                (ngModelChange)="markDirty()"
+                [name]="'designation-' + line.key"
+                placeholder="Ex. Installation, livraison..."
+              />
+            </div>
+            <button type="button" class="icon-btn" title="Retirer la ligne" [attr.aria-label]="'Retirer la ligne ' + (i + 1)" (click)="removeLine(line)">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+
+          <div class="line__fields line__fields--4">
+            <div class="field">
+              <label class="field__label" [for]="'qq-' + line.key">Quantité *</label>
+              <input [id]="'qq-' + line.key" class="field__input num" type="number" min="0" step="any" [(ngModel)]="line.quantity" (ngModelChange)="markDirty()" [name]="'quantity-' + line.key" />
+            </div>
+            <div class="field">
+              <label class="field__label" [for]="'qu-' + line.key">Unité</label>
+              <select
+                *ngIf="line.units.length > 1; else unitText"
+                [id]="'qu-' + line.key"
+                class="field__input"
+                [ngModel]="line.unitId"
+                (ngModelChange)="setUnit(line, $event)"
+                [name]="'unit-' + line.key"
+              >
+                <option *ngFor="let u of line.units" [ngValue]="u.id">{{ u.name }}</option>
+              </select>
+              <ng-template #unitText>
+                <input [id]="'qu-' + line.key" class="field__input" type="text" maxlength="50" [(ngModel)]="line.unitName" (ngModelChange)="markDirty()" [name]="'unitName-' + line.key" placeholder="pièce, heure..." />
+              </ng-template>
+            </div>
+            <div class="field">
+              <label class="field__label" [for]="'qp-' + line.key">Prix unitaire *</label>
+              <input [id]="'qp-' + line.key" class="field__input num" type="number" min="0" step="1" [(ngModel)]="line.unitPrice" (ngModelChange)="markDirty()" [name]="'price-' + line.key" />
+            </div>
+            <div class="field line__total">
+              <span class="field__label">Montant</span>
+              <strong class="num">{{ money(lineTotal(line)) }}</strong>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <!-- 3. Conditions -->
+    <section class="card form-card">
+      <h3 class="form-card__title"><span class="step">3</span> Remise, validité et conditions</h3>
+      <div class="form-grid">
+        <div class="field">
+          <label class="field__label" for="qf_discount">Remise</label>
+          <input id="qf_discount" class="field__input num" type="number" min="0" step="1" [(ngModel)]="discount" (ngModelChange)="markDirty()" name="discount" placeholder="0" />
+        </div>
+        <div class="field">
+          <label class="field__label" for="qf_valid">Valable jusqu'au</label>
+          <input id="qf_valid" class="field__input" type="date" [(ngModel)]="validUntil" (ngModelChange)="markDirty()" name="validUntil" />
+          <span class="form-hint-inline text-muted">Imprimée sur le devis, à titre indicatif.</span>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field__label" for="qf_notes">Conditions et remarques</label>
+        <textarea id="qf_notes" class="field__input" rows="3" maxlength="2000" [(ngModel)]="notes" (ngModelChange)="markDirty()" name="notes" placeholder="Ex. Livraison sous 7 jours, paiement à la livraison..."></textarea>
+      </div>
+    </section>
+  </div>
+
+  <!-- Récapitulatif -->
+  <aside class="supply-form__aside">
+    <div class="card summary">
+      <h3 class="form-card__title">Récapitulatif</h3>
+      <dl class="summary__rows">
+        <div><dt>Boutique</dt><dd>{{ storeName || '—' }}</dd></div>
+        <div><dt>Client</dt><dd>{{ customerLabel }}</dd></div>
+        <div><dt>Lignes</dt><dd>{{ lines.length }}</dd></div>
+        <div *ngIf="discountValue > 0"><dt>Sous-total</dt><dd>{{ money(subtotal) }}</dd></div>
+        <div *ngIf="discountValue > 0"><dt>Remise</dt><dd>− {{ money(discountValue) }}</dd></div>
+      </dl>
+      <div class="summary__total">
+        <span>Total du devis</span>
+        <strong>{{ money(total) }}</strong>
+      </div>
+
+      <ul class="summary__issues" *ngIf="issues.length > 0">
+        <li *ngFor="let issue of issues"><i class="bi bi-dot"></i> {{ issue }}</li>
+      </ul>
+
+      <div class="summary__actions">
+        <button type="button" class="btn btn--primary" [disabled]="isSubmitting() || issues.length > 0" (click)="submit()">
+          <i class="bi bi-check-lg"></i> {{ isSubmitting() ? 'Enregistrement...' : isEdit ? 'Enregistrer les modifications' : 'Enregistrer le devis' }}
+        </button>
+      </div>
+      <p class="summary__hint text-muted">
+        <i class="bi bi-info-circle"></i>
+        Après l'enregistrement, envoyez le devis au client sur WhatsApp ou téléchargez le PDF depuis la liste.
+      </p>
+    </div>
+  </aside>
+</div>

@@ -1,0 +1,112 @@
+<div class="modal-backdrop" (click)="closed.emit()"></div>
+<div class="modal modal--xl" role="dialog" aria-modal="true" aria-labelledby="quote-detail-title">
+  <div class="modal__header">
+    <h3 id="quote-detail-title">Devis {{ quote()?.number || '' }}</h3>
+    <button type="button" class="icon-btn" title="Fermer" (click)="closed.emit()"><i class="bi bi-x-lg"></i></button>
+  </div>
+
+  <div class="alert alert--error" *ngIf="loadError()">{{ loadError() }}</div>
+  <div class="state-message text-center text-muted" *ngIf="!quote() && !loadError()">Chargement...</div>
+
+  <ng-container *ngIf="quote() as q">
+    <div class="sale-meta">
+      <div>
+        <span class="sale-meta__label">Date</span>
+        <strong>{{ q.date | date: 'dd/MM/yyyy' }}</strong>
+      </div>
+      <div>
+        <span class="sale-meta__label">Client</span>
+        <strong>{{ q.customer }}</strong>
+        <span class="text-muted" *ngIf="q.customer_phone">{{ q.customer_phone }}</span>
+      </div>
+      <div>
+        <span class="sale-meta__label">Statut</span>
+        <span class="badge qs qs--{{ q.status }}">{{ statusLabels[q.status] }}</span>
+      </div>
+      <div>
+        <span class="sale-meta__label">Valable jusqu'au</span>
+        <strong [class.validity-passed]="q.validity_passed">{{ q.valid_until ? formatIsoDate(q.valid_until) : '—' }}</strong>
+        <span class="validity-passed" *ngIf="q.validity_passed">Validité dépassée</span>
+      </div>
+      <div>
+        <span class="sale-meta__label">Établi par</span>
+        <strong>{{ q.author || '—' }}</strong>
+      </div>
+      <div>
+        <span class="sale-meta__label">Boutique</span>
+        <strong>{{ q.store?.name }}</strong>
+      </div>
+    </div>
+
+    <div class="status-note" [class.status-note--accepted]="q.status === 'accepted'" [class.status-note--refused]="q.status === 'refused'">
+      <ng-container [ngSwitch]="q.status">
+        <span *ngSwitchCase="'draft'"><i class="bi bi-pencil"></i> Brouillon : envoyez-le au client sur WhatsApp, ou marquez-le comme envoyé si vous l'avez transmis autrement.</span>
+        <span *ngSwitchCase="'sent'"><i class="bi bi-send-check"></i> Envoyé{{ q.sent_at ? ' le ' + (q.sent_at | date: 'dd/MM/yyyy à HH:mm') : '' }}. Il reste modifiable jusqu'à la réponse du client.</span>
+        <span *ngSwitchCase="'accepted'"><i class="bi bi-check-circle"></i> Accepté le {{ q.decided_at | date: 'dd/MM/yyyy' }}. Le devis est figé : dupliquez-le pour faire une nouvelle version.</span>
+        <span *ngSwitchCase="'refused'"><i class="bi bi-x-circle"></i> Refusé le {{ q.decided_at | date: 'dd/MM/yyyy' }}. Le devis est figé : dupliquez-le pour faire une nouvelle version.</span>
+      </ng-container>
+      <span class="text-muted" *ngIf="q.source_number"> · Copie du devis {{ q.source_number }}</span>
+    </div>
+
+    <!-- Réponse du client -->
+    <div class="decision" *ngIf="q.status === 'sent'">
+      <span>Réponse du client :</span>
+      <button type="button" class="btn btn--accept btn--sm" [disabled]="!!busy()" (click)="decide('accepted')"><i class="bi bi-check-lg"></i> Accepté</button>
+      <button type="button" class="btn btn--danger btn--sm" [disabled]="!!busy()" (click)="decide('refused')"><i class="bi bi-x-lg"></i> Refusé</button>
+    </div>
+
+    <h4 class="section-title">Lignes du devis</h4>
+    <div class="table-card detail-table">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Désignation</th>
+            <th class="text-right">Quantité</th>
+            <th class="text-right">Prix unitaire</th>
+            <th class="text-right">Montant</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of q.items">
+            <td>
+              {{ item.designation }}
+              <div class="person__sub" *ngIf="!item.product_id">Ligne libre</div>
+            </td>
+            <td class="text-right num">{{ formatNumber(item.quantity) }} {{ item.unit_name }}</td>
+            <td class="text-right num">{{ money(item.unit_price) }}</td>
+            <td class="text-right num">{{ money(item.subtotal) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <dl class="totals">
+      <div *ngIf="q.discount > 0"><dt>Sous-total</dt><dd>{{ money(q.gross_amount) }}</dd></div>
+      <div *ngIf="q.discount > 0"><dt>Remise</dt><dd>− {{ money(q.discount) }}</dd></div>
+      <div class="totals__main"><dt>Total</dt><dd>{{ money(q.total_amount) }}</dd></div>
+    </dl>
+
+    <ng-container *ngIf="q.notes">
+      <h4 class="section-title">Conditions et remarques</h4>
+      <p class="notes">{{ q.notes }}</p>
+    </ng-container>
+
+    <p class="whatsapp-hint text-muted" *ngIf="!q.whatsapp_available">
+      <i class="bi bi-info-circle"></i> Envoi WhatsApp indisponible : service non activé pour cette boutique ou client sans numéro valide.
+    </p>
+  </ng-container>
+
+  <div class="modal__actions quote-actions" *ngIf="quote() as q">
+    <button type="button" class="btn btn--danger" *ngIf="q.editable" [disabled]="!!busy()" (click)="remove()"><i class="bi bi-trash"></i> Supprimer</button>
+    <span class="quote-actions__spacer"></span>
+    <button type="button" class="btn btn--ghost" [disabled]="!!busy()" (click)="duplicate()"><i class="bi bi-copy"></i> Dupliquer</button>
+    <button type="button" class="btn btn--ghost" *ngIf="q.editable" [disabled]="!!busy()" (click)="edit()"><i class="bi bi-pencil"></i> Modifier</button>
+    <button type="button" class="btn btn--ghost" [disabled]="!!busy()" (click)="downloadPdf()">
+      <i class="bi bi-file-earmark-pdf"></i> {{ busy() === 'pdf' ? 'Génération…' : 'PDF' }}
+    </button>
+    <button type="button" class="btn btn--ghost" *ngIf="q.status === 'draft'" [disabled]="!!busy()" (click)="markSent()"><i class="bi bi-send-check"></i> Marquer comme envoyé</button>
+    <button type="button" class="btn btn--whatsapp" *ngIf="q.whatsapp_available" [disabled]="!!busy()" (click)="sendWhatsapp()">
+      <i class="bi bi-whatsapp"></i> {{ busy() === 'whatsapp' ? 'Envoi…' : q.sent_at ? 'Renvoyer sur WhatsApp' : 'Envoyer sur WhatsApp' }}
+    </button>
+  </div>
+</div>

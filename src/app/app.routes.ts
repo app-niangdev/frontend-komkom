@@ -38,6 +38,25 @@ const storeSpaceRoutes: Routes = [
     data: { title: 'page.invoices' }
   },
   {
+    path: 'quotes',
+    loadComponent: () => import('./pages/owner/owner-quotes/owner-quotes.component').then((m) => m.OwnerQuotesComponent),
+    data: { title: 'page.quotes' }
+  },
+  {
+    path: 'quotes/new',
+    loadComponent: () =>
+      import('./pages/owner/owner-quotes/quote-form/quote-form.component').then((m) => m.QuoteFormComponent),
+    canDeactivate: [formLeaveGuard],
+    data: { title: 'page.newQuote' }
+  },
+  {
+    path: 'quotes/:id/edit',
+    loadComponent: () =>
+      import('./pages/owner/owner-quotes/quote-form/quote-form.component').then((m) => m.QuoteFormComponent),
+    canDeactivate: [formLeaveGuard],
+    data: { title: 'page.editQuote' }
+  },
+  {
     path: 'products',
     loadComponent: () =>
       import('./pages/owner/owner-products/owner-products.component').then((m) => m.OwnerProductsComponent),

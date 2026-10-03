@@ -1,0 +1,94 @@
+@use '../../../../styles/tokens' as t;
+
+// Statut d'un devis (liste et détail)
+.qs {
+  white-space: nowrap;
+}
+
+.qs--draft {
+  background: rgba(107, 112, 134, 0.14);
+  color: t.$text-secondary;
+}
+
+.qs--sent {
+  background: rgba(91, 79, 229, 0.12);
+  color: t.$accent;
+}
+
+.qs--accepted {
+  background: rgba(22, 163, 74, 0.12);
+  color: t.$success;
+}
+
+.qs--refused {
+  background: rgba(220, 38, 38, 0.1);
+  color: t.$danger;
+}
+
+.validity-passed {
+  color: t.$warning;
+}
+
+// Compteurs par statut : servent aussi de filtre
+.status-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.status-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid t.$border-color;
+  border-radius: t.$radius-md;
+  background: t.$card-bg;
+  color: t.$text-primary;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+
+  &:hover {
+    border-color: rgba(91, 79, 229, 0.45);
+  }
+
+  &.is-active {
+    border-color: t.$accent;
+    box-shadow: 0 0 0 3px rgba(91, 79, 229, 0.12);
+  }
+}
+
+.status-tab__label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: t.$text-secondary;
+}
+
+.status-tab__count {
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.status-tab__total {
+  font-size: 0.78rem;
+  color: t.$text-secondary;
+}
+
+.quotes-table__row {
+  cursor: pointer;
+
+  &:hover td {
+    background: rgba(91, 79, 229, 0.04);
+  }
+}
+
+@media (max-width: 767.98px) {
+  .status-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

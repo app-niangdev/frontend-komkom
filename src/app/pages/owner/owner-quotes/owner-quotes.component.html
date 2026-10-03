@@ -1,0 +1,110 @@
+<div class="page-header card">
+  <span class="page-header__icon"><i class="bi bi-file-earmark-text"></i></span>
+  <div>
+    <h2 class="page-header__title">Devis — {{ context.selectedStore()?.name || 'Toutes les boutiques' }}</h2>
+    <p class="page-header__desc">Proposez un prix à un client avant la vente. Un devis ne touche ni au stock ni aux factures.</p>
+  </div>
+  <button type="button" class="btn btn--primary page-header__cta" (click)="create()"><i class="bi bi-plus-lg"></i> Nouveau devis</button>
+</div>
+
+<app-store-blocked *ngIf="context.selectedIsBlocked()" />
+
+<ng-container *ngIf="!context.selectedIsBlocked()">
+  <div class="alert alert--error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+  <div class="state-message text-center text-muted" *ngIf="isLoading() && !result()">Chargement...</div>
+
+  <ng-container *ngIf="result() as r">
+    <div class="status-tabs" role="group" aria-label="Filtrer par statut" [class.is-refreshing]="isLoading()">
+      <button
+        type="button"
+        class="status-tab"
+        *ngFor="let s of statuses"
+        [class.is-active]="status === s"
+        [attr.aria-pressed]="status === s"
+        (click)="filterStatus(s)"
+      >
+        <span class="status-tab__label">{{ statusLabels[s] }}</span>
+        <span class="status-tab__count">{{ formatNumber(r.summary[s].count) }}</span>
+        <span class="status-tab__total">{{ money(r.summary[s].total) }}</span>
+      </button>
+    </div>
+
+    <div class="card toolbar-card">
+      <div class="table-card__toolbar">
+        <div class="toolbar-filters">
+          <div class="search">
+            <i class="bi bi-search"></i>
+            <input type="text" placeholder="N° de devis, client, téléphone..." [(ngModel)]="search" (keyup.enter)="applyFilters()" aria-label="Rechercher un devis" />
+          </div>
+          <select class="filter-select" [(ngModel)]="status" (ngModelChange)="applyFilters()" aria-label="Filtrer par statut">
+            <option value="">Tous les devis</option>
+            <option *ngFor="let s of statuses" [value]="s">{{ statusLabels[s] }}</option>
+          </select>
+          <button type="button" class="btn btn--ghost" *ngIf="hasFilters()" (click)="resetFilters()">
+            <i class="bi bi-x-circle"></i> Réinitialiser
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="state-message text-center text-muted card" *ngIf="r.data.length === 0">
+      {{ hasFilters() ? 'Aucun devis ne correspond à ces critères.' : 'Aucun devis pour l\'instant. Créez le premier avec « Nouveau devis ».' }}
+    </div>
+
+    <div class="card table-card" *ngIf="r.data.length > 0" [class.is-refreshing]="isLoading()">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Devis</th>
+            <th *ngIf="!context.selectedId()">Boutique</th>
+            <th>Client</th>
+            <th class="text-right">Total</th>
+            <th>Validité</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let q of r.data"
+            class="quotes-table__row"
+            tabindex="0"
+            role="button"
+            [attr.aria-label]="'Voir le devis ' + q.number"
+            (click)="open(q)"
+            (keyup.enter)="open(q)"
+          >
+            <td>
+              <div class="person__name">{{ q.number }}</div>
+              <div class="person__sub">{{ q.date | date: 'dd/MM/yyyy' }}<ng-container *ngIf="q.author"> · par {{ q.author }}</ng-container></div>
+            </td>
+            <td *ngIf="!context.selectedId()">{{ q.store?.name }}</td>
+            <td>{{ q.customer }}</td>
+            <td class="text-right num">{{ money(q.total_amount) }}</td>
+            <td>
+              <span [class.validity-passed]="q.validity_passed">{{ q.valid_until ? formatIsoDate(q.valid_until) : '—' }}</span>
+              <div class="person__sub validity-passed" *ngIf="q.validity_passed">Dépassée</div>
+            </td>
+            <td>
+              <span class="badge qs qs--{{ q.status }}">{{ statusLabels[q.status] }}</span>
+              <div class="person__sub" *ngIf="q.decided_at">le {{ q.decided_at | date: 'dd/MM/yyyy' }}</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card pagination-card" *ngIf="r.meta.last_page > 1">
+      <div class="pagination">
+        <button type="button" class="icon-btn" [disabled]="r.meta.current_page === 1" (click)="goToPage(r.meta.current_page - 1)" aria-label="Page précédente">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <span class="pagination__label">Page {{ r.meta.current_page }} / {{ r.meta.last_page }}</span>
+        <button type="button" class="icon-btn" [disabled]="r.meta.current_page === r.meta.last_page" (click)="goToPage(r.meta.current_page + 1)" aria-label="Page suivante">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </ng-container>
+</ng-container>
+
+<app-quote-detail *ngIf="selectedId() as id" [quoteId]="id" (changed)="reload()" (closed)="closeDetail()" />
